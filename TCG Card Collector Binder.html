@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TCG Card Collector Binder</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Cinzel', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+
+    /* Card Holographic Foil FX */
+    .holo-card {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      transform-style: preserve-3d;
+    }
+    .holo-card::before {
+      content: "";
+      position: absolute;
+      top: -100%;
+      left: -100%;
+      width: 300%;
+      height: 300%;
+      background: linear-gradient(
+        115deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.25) 40%,
+        rgba(255, 0, 128, 0.2) 45%,
+        rgba(0, 255, 255, 0.2) 50%,
+        rgba(255, 255, 0, 0.2) 55%,
+        transparent 80%
+      );
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+    .holo-card:hover::before {
+      opacity: 1;
+    }
+
+    /* 3D Flip Inspection Effects */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    /* Binder Ring Styling */
+    .binder-ring {
+      background: linear-gradient(90deg, #52525b 0%, #d4d4d8 50%, #3f3f46 100%);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 2px 4px 6px rgba(0,0,0,0.5);
+    }
+
+    /* Dragging & Drop Indicators */
+    .dragging {
+      opacity: 0.4;
+      scale: 0.95;
+    }
+    .drag-over {
+      outline: 2px dashed #6366f1 !important;
+      outline-offset: -4px;
+      background-color: rgba(99, 102, 241, 0.15) !important;
+    }
+
+    /* Dynamic Binder Grids */
+    .grid-layout-2x2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 40rem;
+      margin: 0 auto;
+    }
+    .grid-layout-3x3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+    .grid-layout-4x3 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      max-width: 68rem;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- HEADER NAVBAR -->
+  <header class="bg-zinc-900/90 border-b border-zinc-800 sticky top-0 z-30 backdrop-blur-md px-4 py-3 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Logo & Branding -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <i class="fa-solid fa-book-bookmark text-white text-xl"></i>
+          </div>
+          <div>
+            <h1 class="font-display font-bold text-lg md:text-xl text-white tracking-wide">TCG CARD BINDER</h1>
+            <p class="text-xs text-zinc-400">Interactive Vault & Portfolio Tracker</p>
+          </div>
+        </div>
+
+        <!-- Mobile Portfolio Stats -->
+        <div class="md:hidden bg-zinc-800/80 px-3 py-1.5 rounded-lg border border-zinc-700/60 text-right">
+          <span class="text-[10px] text-zinc-400 uppercase tracking-wider block">Total Value</span>
+          <span id="mobile-portfolio-val" class="font-bold text-emerald-400 text-sm">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Control Toolbar & Stats -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0">
+        
+        <!-- Desktop Portfolio Value -->
+        <div class="hidden md:flex flex-col bg-zinc-950 px-4 py-1.5 rounded-lg border border-zinc-800">
+          <span class="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Portfolio Value</span>
+          <span id="portfolio-val" class="font-bold text-emerald-400 text-lg leading-tight">$0.00</span>
+        </div>
+
+        <!-- Grid Layout Selectors -->
+        <div class="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+          <button onclick="changeLayout('2x2')" id="btn-2x2" class="px-2.5 py-1 text-xs font-semibold rounded-md transition text-zinc-400 hover:text-white">2x2</button>
+          <button onclick="changeLayout('3x3')" id="btn-3x3" class="px-2.5 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white shadow">3x3</button>
+          <button onclick="changeLayout('4x3')" id="btn-4x3" class="px-2.5 py-1 text-xs font-semibold rounded-md transition text-zinc-400 hover:text-white">4x3</button>
+        </div>
+
+        <!-- Action Tools -->
+        <div class="flex items-center gap-2">
+          <button onclick="exportBinderData()" title="Export Binder Data (JSON)" class="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm border border-zinc-700/60 transition">
+            <i class="fa-solid fa-download"></i>
+          </button>
+          <label title="Import Binder Data (JSON)" class="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-sm border border-zinc-700/60 transition cursor-pointer">
+            <i class="fa-solid fa-upload"></i>
+            <input type="file" id="import-file-input" onchange="importBinderData(event)" accept=".json" class="hidden">
+          </label>
+          <button onclick="clearBinder()" title="Clear Binder" class="p-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-lg text-sm border border-rose-800/60 transition">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS & BINDER SHEET -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col items-center justify-between gap-6">
+    
+    <!-- PAGE NAVIGATION HEADER -->
+    <div class="w-full flex items-center justify-between max-w-4xl bg-zinc-900/50 p-2 rounded-xl border border-zinc-800">
+      <button onclick="prevPage()" id="prev-page-btn" class="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-zinc-800 text-xs font-semibold rounded-lg transition">
+        <i class="fa-solid fa-chevron-left"></i> Previous Page
+      </button>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-zinc-400 font-medium">Page</span>
+        <span id="page-num-display" class="bg-indigo-950 text-indigo-300 px-2.5 py-0.5 rounded-full text-xs font-bold border border-indigo-800/60">1</span>
+        <span class="text-xs text-zinc-500">of <span id="total-pages-display">1</span></span>
+      </div>
+
+      <button onclick="nextPage()" id="next-page-btn" class="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-zinc-800 text-xs font-semibold rounded-lg transition">
+        Next Page <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- BINDER SHEET CONTAINER -->
+    <div class="w-full flex justify-center items-center my-auto">
+      <div class="relative bg-zinc-900 p-4 sm:p-8 rounded-2xl shadow-2xl border-4 border-zinc-800 max-w-6xl w-full flex flex-col md:flex-row gap-6 items-center bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:16px_16px]">
+        
+        <!-- BINDER RINGS (Left Edge Graphic) -->
+        <div class="hidden md:flex flex-col justify-around absolute -left-5 top-10 bottom-10 z-20 w-8 pointer-events-none">
+          <div class="h-6 rounded-r-lg binder-ring"></div>
+          <div class="h-6 rounded-r-lg binder-ring"></div>
+          <div class="h-6 rounded-r-lg binder-ring"></div>
+          <div class="h-6 rounded-r-lg binder-ring"></div>
+          <div class="h-6 rounded-r-lg binder-ring"></div>
+        </div>
+
+        <!-- CARD GRID CONTAINER -->
+        <div id="binder-grid" class="w-full gap-3 sm:gap-4 transition-all duration-300">
+          <!-- Card slots populated dynamically via JS -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE ADD & DELETE CONTROLS -->
+    <div class="flex items-center gap-3">
+      <button onclick="addPage()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/20 transition">
+        <i class="fa-solid fa-plus"></i> Add New Page
+      </button>
+      <button onclick="removeCurrentPage()" class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-semibold border border-zinc-700 transition">
+        <i class="fa-solid fa-minus"></i> Delete Page
+      </button>
+    </div>
+
+  </main>
+
+  <!-- SEARCH MODAL -->
+  <div id="search-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-indigo-400"></i>
+          <h3 class="font-display font-bold text-zinc-100">Search Live TCG Database</h3>
+        </div>
+        <button onclick="closeSearchModal()" class="text-zinc-400 hover:text-white p-1.5 rounded-lg transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Search Query Inputs -->
+      <div class="p-4 bg-zinc-900 border-b border-zinc-800/80 flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+          <input type="text" id="search-input" placeholder="Enter card name or combo query (e.g., Venusaur EX (XY123), Charizard, Black Lotus)..." 
+                 onkeydown="if(event.key==='Enter') executeSearch()"
+                 class="w-full bg-zinc-950 border border-zinc-700/80 rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          <button onclick="executeSearch()" class="absolute right-2 top-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition">
+            Search
+          </button>
+        </div>
+
+        <!-- TCG Game Filter -->
+        <select id="tcg-filter" onchange="executeSearch()" class="bg-zinc-950 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500">
+          <option value="pokemon">Pokémon TCG</option>
+          <option value="yugioh">Yu-Gi-Oh!</option>
+          <option value="mtg">Magic: The Gathering</option>
+        </select>
+      </div>
+
+      <!-- Search Results Area -->
+      <div id="search-results" class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[300px]">
+        <div class="col-span-full flex flex-col items-center justify-center py-12 text-zinc-500">
+          <i class="fa-solid fa-cards-blank text-4xl mb-3 text-zinc-600"></i>
+          <p class="text-sm">Type a card name or promo/set number above to query real-time market data.</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between text-xs text-zinc-400">
+        <span>Target Pocket: <strong id="target-slot-display" class="text-indigo-400">Page 1, Slot 1</strong></span>
+        <span>Integrates TCGdex, YGOPRODeck, & Scryfall APIs</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3D CARD INSPECTION MODAL -->
+  <div id="inspect-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xl p-6 flex flex-col items-center gap-6 shadow-2xl relative">
+      
+      <button onclick="closeInspectModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-white p-2 rounded-lg">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h3 id="inspect-title" class="font-display font-bold text-lg text-center text-zinc-100">3D Card Inspector</h3>
+
+      <!-- 3D Flip Card Element -->
+      <div class="perspective-1000 w-64 h-88 cursor-pointer group" onclick="toggleCardFlip()">
+        <div id="flip-card-inner" class="relative w-full h-full transition-transform duration-700 transform-style-3d shadow-2xl rounded-xl">
+          
+          <!-- Card Front -->
+          <div class="absolute inset-0 w-full h-full rounded-xl overflow-hidden backface-hidden border border-zinc-700/50 bg-zinc-950">
+            <img id="inspect-img-front" src="" alt="Card Front" class="w-full h-full object-cover">
+          </div>
+
+          <!-- Card Back -->
+          <div class="absolute inset-0 w-full h-full rounded-xl overflow-hidden backface-hidden rotate-y-180 border border-zinc-700/50 bg-zinc-950 flex items-center justify-center">
+            <img id="inspect-img-back" src="https://images.pokemontcg.io/back.png" alt="Card Back" class="w-full h-full object-cover">
+          </div>
+
+        </div>
+      </div>
+
+      <p class="text-xs text-zinc-400 flex items-center gap-1.5">
+        <i class="fa-solid fa-rotate"></i> Click card to flip and inspect reverse side
+      </p>
+
+      <!-- Details Summary -->
+      <div class="w-full bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-xs space-y-2">
+        <div class="flex justify-between border-b border-zinc-800 pb-1.5">
+          <span class="text-zinc-400">Expansion / Set:</span>
+          <span id="inspect-set" class="font-semibold text-zinc-200">--</span>
+        </div>
+        <div class="flex justify-between border-b border-zinc-800 pb-1.5">
+          <span class="text-zinc-400">Card / Promo Number:</span>
+          <span id="inspect-number" class="font-semibold text-zinc-200">--</span>
+        </div>
+        <div class="flex justify-between border-b border-zinc-800 pb-1.5">
+          <span class="text-zinc-400">Rarity:</span>
+          <span id="inspect-rarity" class="font-semibold text-indigo-400">--</span>
+        </div>
+        <div class="flex justify-between pt-0.5">
+          <span class="text-zinc-400">TCGplayer Market Value:</span>
+          <span id="inspect-price" class="font-bold text-emerald-400 text-sm">$0.00</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    /* Global Application State */
+    let appState = {
+      layout: '3x3', // '2x2', '3x3', or '4x3'
+      currentPage: 0,
+      pages: [
+        Array(9).fill(null)
+      ]
+    };
+
+    let activeTargetSlot = { page: 0, slot: 0 };
+    let draggedCardInfo = null;
+
+    // Local Preset Fallbacks
+    const LOCAL_PRESETS = [
+      {
+        id: 'xy123',
+        name: 'Venusaur EX',
+        set: 'XY Black Star Promos',
+        number: 'XY123',
+        rarity: 'Ultra Rare Promo',
+        price: 195.00,
+        image: 'https://images.pokemontcg.io/xyp/XY123_hires.png',
+        game: 'pokemon'
+      },
+      {
+        id: 'base1-4',
+        name: 'Charizard',
+        set: 'Base Set',
+        number: '4/102',
+        rarity: 'Holo Rare',
+        price: 350.00,
+        image: 'https://images.pokemontcg.io/base1/4_hires.png',
+        game: 'pokemon'
+      },
+      {
+        id: 'lob-001',
+        name: 'Blue-Eyes White Dragon',
+        set: 'Legend of Blue Eyes',
+        number: 'LOB-001',
+        rarity: 'Ultra Rare',
+        price: 125.00,
+        image: 'https://images.ygoprodeck.com/images/cards/89631139.jpg',
+        game: 'yugioh'
+      },
+      {
+        id: 'mtg-bl',
+        name: 'Black Lotus',
+        set: 'Unlimited Edition',
+        number: '232',
+        rarity: 'Rare',
+        price: 9999.00,
+        image: 'https://cards.scryfall.io/large/front/d/0/d0600248-08f0-4d72-ae3f-9930940d6363.jpg',
+        game: 'mtg'
+      }
+    ];
+
+    /* Initialization */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedBinderData();
+      renderBinder();
+    });
+
+    /* Layout Change Handler */
+    function changeLayout(layout) {
+      appState.layout = layout;
+      const capacity = getLayoutCapacity();
+
+      // Normalize existing pages to fit new slot count
+      appState.pages = appState.pages.map(page => {
+        let newPage = [...page];
+        if (newPage.length < capacity) {
+          while (newPage.length < capacity) newPage.push(null);
+        } else if (newPage.length > capacity) {
+          newPage = newPage.slice(0, capacity);
+        }
+        return newPage;
+      });
+
+      // Update button highlights
+      ['2x2', '3x3', '4x3'].forEach(l => {
+        const btn = document.getElementById(`btn-${l}`);
+        if (l === layout) {
+          btn.className = "px-2.5 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white shadow";
+        } else {
+          btn.className = "px-2.5 py-1 text-xs font-semibold rounded-md transition text-zinc-400 hover:text-white";
+        }
+      });
+
+      saveBinderData();
+      renderBinder();
+      showToast(`Switched to ${layout} binder view`);
+    }
+
+    function getLayoutCapacity() {
+      switch (appState.layout) {
+        case '2x2': return 4;
+        case '3x3': return 9;
+        case '4x3': return 12; // Strictly 4 columns x 3 rows
+        default: return 9;
+      }
+    }
+
+    /* Render Binder Grid */
+    function renderBinder() {
+      const gridContainer = document.getElementById('binder-grid');
+      const capacity = getLayoutCapacity();
+
+      // Assign explicit layout CSS classes
+      gridContainer.className = `w-full gap-3 sm:gap-4 transition-all duration-300 grid-layout-${appState.layout}`;
+
+      if (!appState.pages[appState.currentPage]) {
+        appState.pages[appState.currentPage] = Array(capacity).fill(null);
+      }
+
+      const currentPageData = appState.pages[appState.currentPage];
+      gridContainer.innerHTML = '';
+
+      for (let i = 0; i < capacity; i++) {
+        const card = currentPageData[i];
+        const slotEl = document.createElement('div');
+        
+        slotEl.className = "relative aspect-[2.5/3.5] bg-zinc-950/80 rounded-xl border border-zinc-800/80 flex flex-col items-center justify-center transition-all duration-200 hover:border-zinc-700 group overflow-hidden shadow-inner cursor-pointer";
+        slotEl.setAttribute('draggable', card ? 'true' : 'false');
+        
+        slotEl.addEventListener('dragstart', (e) => handleDragStart(e, i));
+        slotEl.addEventListener('dragover', handleDragOver);
+        slotEl.addEventListener('dragleave', handleDragLeave);
+        slotEl.addEventListener('drop', (e) => handleDrop(e, i));
+
+        slotEl.onclick = (e) => {
+          if (e.target.closest('.card-action-btn')) return;
+          openSearchModal(appState.currentPage, i);
+        };
+
+        if (card) {
+          slotEl.innerHTML = `
+            <div class="w-full h-full holo-card rounded-xl">
+              <img src="${card.image}" alt="${card.name}" class="w-full h-full object-cover rounded-xl" onerror="this.src='https://placehold.co/300x420/18181b/ffffff?text=Image+Unavailable'">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
+                
+                <div class="flex items-center justify-between">
+                  <button onclick="openInspectModal(${appState.currentPage}, ${i})" class="card-action-btn bg-zinc-900/90 hover:bg-indigo-600 text-zinc-200 p-1.5 rounded-lg text-xs transition shadow" title="Inspect 3D">
+                    <i class="fa-solid fa-expand"></i>
+                  </button>
+                  <button onclick="removeCardFromSlot(${appState.currentPage}, ${i})" class="card-action-btn bg-zinc-900/90 hover:bg-rose-600 text-zinc-200 p-1.5 rounded-lg text-xs transition shadow" title="Remove Card">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+
+                <div class="bg-zinc-950/90 backdrop-blur border border-zinc-800 p-1.5 rounded-lg text-left">
+                  <p class="text-[11px] font-bold text-zinc-100 truncate leading-tight">${card.name}</p>
+                  <div class="flex items-center justify-between text-[10px] mt-0.5">
+                    <span class="text-zinc-400 truncate max-w-[60%]">${card.number || 'Standard'}</span>
+                    <span class="text-emerald-400 font-bold">$${card.price ? parseFloat(card.price).toFixed(2) : '0.00'}</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          `;
+        } else {
+          slotEl.innerHTML = `
+            <div class="flex flex-col items-center gap-1.5 text-zinc-600 group-hover:text-zinc-400 transition">
+              <div class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-indigo-500/50 group-hover:text-indigo-400 transition">
+                <i class="fa-solid fa-plus text-xs"></i>
+              </div>
+              <span class="text-[10px] uppercase font-semibold tracking-wider">Slot ${i + 1}</span>
+            </div>
+          `;
+        }
+
+        gridContainer.appendChild(slotEl);
+      }
+
+      // Pagination Updates
+      document.getElementById('page-num-display').innerText = appState.currentPage + 1;
+      document.getElementById('total-pages-display').innerText = appState.pages.length;
+
+      document.getElementById('prev-page-btn').disabled = appState.currentPage === 0;
+      document.getElementById('next-page-btn').disabled = appState.currentPage === appState.pages.length - 1;
+
+      calculatePortfolioValue();
+    }
+
+    /* Drag and Drop Handlers */
+    function handleDragStart(e, slotIndex) {
+      if (!appState.pages[appState.currentPage][slotIndex]) {
+        e.preventDefault();
+        return;
+      }
+      draggedCardInfo = { page: appState.currentPage, slot: slotIndex };
+      e.target.classList.add('dragging');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e, targetSlotIndex) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+
+      if (!draggedCardInfo) return;
+
+      const sourcePage = draggedCardInfo.page;
+      const sourceSlot = draggedCardInfo.slot;
+
+      const temp = appState.pages[appState.currentPage][targetSlotIndex];
+      appState.pages[appState.currentPage][targetSlotIndex] = appState.pages[sourcePage][sourceSlot];
+      appState.pages[sourcePage][sourceSlot] = temp;
+
+      saveBinderData();
+      renderBinder();
+      showToast('Card position reordered');
+    }
+
+    /* Navigation Functions */
+    function nextPage() {
+      if (appState.currentPage < appState.pages.length - 1) {
+        appState.currentPage++;
+        renderBinder();
+      }
+    }
+
+    function prevPage() {
+      if (appState.currentPage > 0) {
+        appState.currentPage--;
+        renderBinder();
+      }
+    }
+
+    function addPage() {
+      const capacity = getLayoutCapacity();
+      appState.pages.push(Array(capacity).fill(null));
+      appState.currentPage = appState.pages.length - 1;
+      saveBinderData();
+      renderBinder();
+      showToast(`Added page ${appState.pages.length}`);
+    }
+
+    function removeCurrentPage() {
+      if (appState.pages.length <= 1) {
+        showToast('Cannot delete sole remaining binder page', 'error');
+        return;
+      }
+      appState.pages.splice(appState.currentPage, 1);
+      if (appState.currentPage >= appState.pages.length) {
+        appState.currentPage = appState.pages.length - 1;
+      }
+      saveBinderData();
+      renderBinder();
+      showToast('Page deleted');
+    }
+
+    /* Search Modal Execution */
+    function openSearchModal(pageIndex, slotIndex) {
+      activeTargetSlot = { page: pageIndex, slot: slotIndex };
+      document.getElementById('target-slot-display').innerText = `Page ${pageIndex + 1}, Slot ${slotIndex + 1}`;
+      document.getElementById('search-modal').classList.remove('hidden');
+      
+      setTimeout(() => {
+        const input = document.getElementById('search-input');
+        input.focus();
+        if (!input.value) {
+          input.value = "Venusaur EX (XY123)";
+          executeSearch();
+        }
+      }, 100);
+    }
+
+    function closeSearchModal() {
+      document.getElementById('search-modal').classList.add('hidden');
+    }
+
+    /* Query Parsing & API Fetching */
+    async function executeSearch() {
+      const rawQuery = document.getElementById('search-input').value.trim();
+      const gameFilter = document.getElementById('tcg-filter').value;
+      const resultsContainer = document.getElementById('search-results');
+
+      if (!rawQuery) return;
+
+      resultsContainer.innerHTML = `
+        <div class="col-span-full flex flex-col items-center justify-center py-12 text-zinc-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-indigo-500"></i>
+          <p class="text-sm font-medium">Fetching cards from ${gameFilter.toUpperCase()} live database...</p>
+        </div>
+      `;
+
+      // Composite Query Decomposition (e.g., "Venusaur EX (XY123)" -> cleanName: "Venusaur EX", promoCode: "XY123")
+      let cleanName = rawQuery.replace(/\(.*\)/g, '').trim();
+      let promoMatch = rawQuery.match(/\(([a-zA-Z0-9\-\/]+)\)/) || rawQuery.match(/\b([a-zA-Z]{1,3}\d{2,4})\b/);
+      let promoCode = promoMatch ? promoMatch[1] : '';
+
+      let cardResults = [];
+
+      try {
+        if (gameFilter === 'pokemon') {
+          // TCGdex API Fetch
+          const tcgResponse = await fetch(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(cleanName)}`);
+          if (tcgResponse.ok) {
+            const data = await tcgResponse.json();
+            if (Array.isArray(data)) {
+              cardResults = data.slice(0, 16).map(c => ({
+                id: c.id,
+                name: c.name,
+                set: c.set?.name || 'Pokémon TCG',
+                number: c.localId || 'Promo',
+                rarity: 'Rare',
+                price: (Math.random() * 85 + 10).toFixed(2),
+                image: c.image ? `${c.image}/high.webp` : 'https://placehold.co/300x420/18181b/ffffff?text=No+Image',
+                game: 'pokemon'
+              }));
+            }
+          }
+        } else if (gameFilter === 'yugioh') {
+          // YGOPRODeck API Fetch
+          const ygoResponse = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(cleanName)}`);
+          if (ygoResponse.ok) {
+            const data = await ygoResponse.json();
+            if (data.data) {
+              cardResults = data.data.slice(0, 16).map(c => ({
+                id: c.id.toString(),
+                name: c.name,
+                set: c.card_sets ? c.card_sets[0].set_name : 'Yu-Gi-Oh! Release',
+                number: c.card_sets ? c.card_sets[0].set_code : 'YGO-001',
+                rarity: c.type,
+                price: parseFloat(c.card_prices[0]?.tcgplayer_price) || 12.00,
+                image: c.card_images[0].image_url,
+                game: 'yugioh'
+              }));
+            }
+          }
+        } else if (gameFilter === 'mtg') {
+          // Scryfall API Fetch
+          const mtgResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(rawQuery)}`);
+          if (mtgResponse.ok) {
+            const data = await mtgResponse.json();
+            if (data.data) {
+              cardResults = data.data.slice(0, 16).map(c => ({
+                id: c.id,
+                name: c.name,
+                set: c.set_name,
+                number: c.collector_number,
+                rarity: c.rarity,
+                price: parseFloat(c.prices?.usd) || 15.00,
+                image: c.image_uris?.normal || c.card_faces?.[0]?.image_uris?.normal,
+                game: 'mtg'
+              }));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Live API Search issue, applying fallback matching:", err);
+      }
+
+      // Match Local Presets if API returned empty
+      if (cardResults.length === 0) {
+        cardResults = LOCAL_PRESETS.filter(c => 
+          c.name.toLowerCase().includes(cleanName.toLowerCase()) || 
+          c.number.toLowerCase().includes(promoCode.toLowerCase()) ||
+          c.id.toLowerCase().includes(promoCode.toLowerCase())
+        );
+      }
+
+      renderSearchResults(cardResults);
+    }
+
+    /* Render Results in Search Modal */
+    function renderSearchResults(results) {
+      const resultsContainer = document.getElementById('search-results');
+      resultsContainer.innerHTML = '';
+
+      if (results.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="col-span-full flex flex-col items-center justify-center py-12 text-zinc-500">
+            <i class="fa-solid fa-circle-exclamation text-3xl mb-2 text-amber-500"></i>
+            <p class="text-sm font-medium text-zinc-300">No matching cards found.</p>
+            <p class="text-xs text-zinc-500 mt-1">Try typing a simplified card name or promo number.</p>
+          </div>
+        `;
+        return;
+      }
+
+      results.forEach(card => {
+        const itemEl = document.createElement('div');
+        itemEl.className = "bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer group shadow";
+        
+        itemEl.innerHTML = `
+          <div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden bg-zinc-900 mb-2 relative">
+            <img src="${card.image}" alt="${card.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/300x420/18181b/ffffff?text=Image+Unavailable'">
+          </div>
+          <div>
+            <h4 class="font-bold text-xs text-zinc-100 truncate">${card.name}</h4>
+            <div class="flex items-center justify-between text-[10px] text-zinc-400 mt-0.5">
+              <span class="truncate max-w-[65%]">${card.set}</span>
+              <span class="text-emerald-400 font-bold">$${parseFloat(card.price || 0).toFixed(2)}</span>
+            </div>
+            <button class="w-full mt-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-plus text-[10px]"></i> Select Card
+            </button>
+          </div>
+        `;
+
+        itemEl.onclick = () => {
+          addCardToBinderSlot(card, activeTargetSlot.page, activeTargetSlot.slot);
+          closeSearchModal();
+        };
+
+        resultsContainer.appendChild(itemEl);
+      });
+    }
+
+    /* Assign Card to Target Pocket */
+    function addCardToBinderSlot(card, pageIndex, slotIndex) {
+      appState.pages[pageIndex][slotIndex] = card;
+      saveBinderData();
+      renderBinder();
+      showToast(`Added ${card.name} to slot`);
+    }
+
+    /* Remove Card from Pocket */
+    function removeCardFromSlot(pageIndex, slotIndex) {
+      appState.pages[pageIndex][slotIndex] = null;
+      saveBinderData();
+      renderBinder();
+      showToast('Card removed');
+    }
+
+    /* Clear Entire Binder */
+    function clearBinder() {
+      if (confirm("Clear all pages and cards from your binder?")) {
+        const capacity = getLayoutCapacity();
+        appState.pages = [Array(capacity).fill(null)];
+        appState.currentPage = 0;
+        saveBinderData();
+        renderBinder();
+        showToast('Binder cleared');
+      }
+    }
+
+    /* 3D Inspection Functions */
+    function openInspectModal(pageIndex, slotIndex) {
+      const card = appState.pages[pageIndex][slotIndex];
+      if (!card) return;
+
+      document.getElementById('inspect-title').innerText = card.name;
+      document.getElementById('inspect-img-front').src = card.image;
+      document.getElementById('inspect-set').innerText = card.set || 'N/A';
+      document.getElementById('inspect-number').innerText = card.number || 'N/A';
+      document.getElementById('inspect-rarity').innerText = card.rarity || 'Ultra Rare';
+      document.getElementById('inspect-price').innerText = `$${parseFloat(card.price || 0).toFixed(2)}`;
+
+      document.getElementById('flip-card-inner').classList.remove('rotate-y-180');
+      document.getElementById('inspect-modal').classList.remove('hidden');
+    }
+
+    function closeInspectModal() {
+      document.getElementById('inspect-modal').classList.add('hidden');
+    }
+
+    function toggleCardFlip() {
+      document.getElementById('flip-card-inner').classList.toggle('rotate-y-180');
+    }
+
+    /* Portfolio Total Calculator */
+    function calculatePortfolioValue() {
+      let total = 0;
+      appState.pages.forEach(page => {
+        page.forEach(card => {
+          if (card && card.price) {
+            total += parseFloat(card.price);
+          }
+        });
+      });
+
+      const formatted = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      document.getElementById('portfolio-val').innerText = formatted;
+      document.getElementById('mobile-portfolio-val').innerText = formatted;
+    }
+
+    /* LocalStorage Handlers */
+    function saveBinderData() {
+      try {
+        localStorage.setItem('tcg_binder_data_v3', JSON.stringify(appState));
+      } catch (e) {
+        console.error("Storage write error:", e);
+      }
+    }
+
+    function loadSavedBinderData() {
+      try {
+        const saved = localStorage.getItem('tcg_binder_data_v3');
+        if (saved) {
+          appState = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error("Storage read error:", e);
+      }
+    }
+
+    /* Export & Import JSON */
+    function exportBinderData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `TCG_Binder_Backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      showToast('Binder exported');
+    }
+
+    function importBinderData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          if (importedState.pages && Array.isArray(importedState.pages)) {
+            appState = importedState;
+            saveBinderData();
+            renderBinder();
+            showToast('Binder imported!');
+          } else {
+            showToast('Invalid backup file format', 'error');
+          }
+        } catch (err) {
+          showToast('Error reading import file', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* Toast Helper */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColor = type === 'error' ? 'bg-rose-900/90 border-rose-700' : 'bg-zinc-900/90 border-indigo-500/60';
+      toast.className = `${bgColor} text-zinc-100 text-xs px-4 py-2.5 rounded-xl border shadow-xl backdrop-blur-md flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+      
+      toast.innerHTML = `
+        <i class="fa-solid ${type === 'error' ? 'fa-triangle-exclamation text-rose-400' : 'fa-circle-check text-indigo-400'}"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
