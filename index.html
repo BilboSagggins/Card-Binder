@@ -178,6 +178,23 @@
     padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   #lb-stage[hidden], .lb-badge[hidden] { display: none; }
   #lb-master { font-size: .72rem; letter-spacing: .08em; }
+  .lb-view { display: flex; flex-direction: column; align-items: center; gap: .55rem; transition: opacity .55s ease; }
+  #landing.booting .lb-view, #landing.booting .lb-empty { opacity: 0; }
+  #landing.focus .lb-view, #landing.focus .lb-empty { opacity: .15; filter: blur(3px); pointer-events: none; }
+  .lb-seg { display: inline-flex; padding: 3px; gap: 3px; border-radius: 999px; background: #18181b; border: 1px solid #27272a; }
+  .lb-seg button { appearance: none; border: 0; border-radius: 999px; padding: .5rem .95rem; background: none; color: #a1a1aa; font: 600 .78rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .lb-seg button[aria-pressed="true"] { background: #4f46e5; color: #fff; }
+  .lb-seg button:focus-visible, .lb-link:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
+  .lb-link { appearance: none; border: 0; background: none; color: #a5b4fc; font: 500 .72rem/1 Inter, system-ui, sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: .25rem; }
+  .lb-empty { display: flex; flex-direction: column; align-items: center; gap: .8rem; text-align: center; color: #a1a1aa; font: 500 .85rem/1.4 Inter, system-ui, sans-serif; }
+  .lb-empty[hidden] { display: none; }
+  .lb-empty p { margin: 0; }
+  .inv-code { font: 700 1.6rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .25em; text-align: center; color: #f4f4f5; padding: .8rem; border-radius: 12px; background: #09090b; border: 1px dashed #3f3f46; }
+  .inv-link { font: 500 .72rem/1.4 ui-monospace, Menlo, monospace; color: #a1a1aa; word-break: break-all; text-align: center; margin: 0; }
+  .inv-list { display: flex; flex-direction: column; gap: .4rem; }
+  .inv-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem .6rem; border: 1px solid #27272a; border-radius: 10px; font: 600 .8rem/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; }
+  .inv-row span { font: 500 .68rem/1 Inter, system-ui, sans-serif; letter-spacing: 0; color: #71717a; }
+  .inv-row .lb-btn { padding: .4rem .6rem; font-size: .7rem; }
   .lb-version { margin: 0; font: 500 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .08em; color: #52525b; font-variant-numeric: tabular-nums; }
   #landing.focus #lb-master, #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
   .lb-book { position: relative; flex: none; perspective: 1400px; border-radius: 3px 10px 10px 3px; box-shadow: 0 24px 50px rgba(0,0,0,.65); visibility: hidden; }
@@ -239,6 +256,17 @@
   <div class="lb-head">
     <h1 id="lb-heading">Card Binder</h1>
     <p>Tap your binder</p>
+  </div>
+  <div class="lb-view" id="lb-view">
+    <div class="lb-seg" role="group" aria-label="Which binders to show">
+      <button type="button" id="lb-v-mine" aria-pressed="true" onclick="setShelfView('mine')">My binders</button>
+      <button type="button" id="lb-v-inv" aria-pressed="false" onclick="setShelfView('invited')">+ Invited</button>
+    </div>
+    <button type="button" class="lb-link" onclick="enterInviteSheet()">Have an invite code?</button>
+  </div>
+  <div id="lb-empty" class="lb-empty" hidden>
+    <p>No binders on this phone yet.</p>
+    <button type="button" class="lb-btn primary" onclick="openMyBinderSheet()">Open my binder</button>
   </div>
   <div id="lb-scene" class="lb-scene"></div>
   <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()" hidden>Master PIN</button>
@@ -578,7 +606,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.19';
+const APP_VERSION = '2026-10-20.20';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2587,6 +2615,7 @@ function lockCurrent() {
   if (SIGN_IN_MODE === 'email') { if (auth) auth.signOut(); }
   else remember(UNLOCK_KEY, recall(UNLOCK_KEY, []).filter(x => x !== id));
   toast(`${nameOf(id)}'s binders are locked on this phone`);
+  $('lb-scene').dataset.shape = '';
   showLanding();
 }
 async function pinHash(salt, pin) {
@@ -2642,6 +2671,136 @@ function updateWho() {
   $('who-view').classList.toggle('hidden', !!peerUser);
 }
 
+/* --- Whose binders the shelf shows: mine (unlocked on this phone), plus people who invited me when toggled on --- */
+const VIEW_KEY = 'cardBinder.shelfView', INV_KEY = 'cardBinder.invites';
+let INVITED = {};   // code -> owner, for invites accepted on this phone that still exist
+function shelfView() { return recall(VIEW_KEY, 'mine') === 'invited' ? 'invited' : 'mine'; }
+function setShelfView(v) {
+  remember(VIEW_KEY, v === 'invited' ? 'invited' : 'mine');
+  paintShelfToggle();
+  if (!staged) renderShelf();
+}
+function paintShelfToggle() {
+  const inv = shelfView() === 'invited', n = new Set(Object.values(INVITED)).size;
+  $('lb-v-mine').setAttribute('aria-pressed', !inv); $('lb-v-inv').setAttribute('aria-pressed', inv);
+  $('lb-v-inv').textContent = n ? `+ Invited (${n})` : '+ Invited';
+}
+function visibleBinders() {
+  const invitedOwners = shelfView() === 'invited' ? new Set(Object.values(INVITED)) : new Set();
+  return binders().filter(b => isUnlocked(b.owner) || invitedOwners.has(b.owner));
+}
+// Check the invites saved on this phone; drop any that were cancelled
+function loadInvites() {
+  const codes = recall(INV_KEY, []);
+  codes.forEach(code => db.ref('invites/' + code).once('value').then(v => {
+    const inv = v.val();
+    if (inv && inv.owner) INVITED[code] = inv.owner;
+    else { delete INVITED[code]; remember(INV_KEY, recall(INV_KEY, []).filter(c => c !== code)); }
+    paintShelfToggle();
+    if (!$('landing').hidden && !staged && !$('landing').classList.contains('booting')) renderShelf();
+  }).catch(() => {}));
+}
+const cleanCode = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+async function acceptInvite(raw, quiet) {
+  const code = cleanCode(raw); if (!code) return 'Enter the code from the invite.';
+  let inv = null;
+  try { inv = (await db.ref('invites/' + code).once('value')).val(); } catch (e) { return 'No connection. Try again in a moment.'; }
+  if (!inv || !inv.owner) return 'That invite code isn\'t valid, or it was cancelled.';
+  const codes = recall(INV_KEY, []); if (!codes.includes(code)) remember(INV_KEY, [...codes, code]);
+  INVITED[code] = inv.owner;
+  remember(VIEW_KEY, 'invited'); paintShelfToggle();
+  if (!staged) renderShelf();
+  if (!quiet) toast(`You can now view ${nameOf(inv.owner)}'s binders`);
+  return true;
+}
+// An invite link looks like …/Card-Binder/?invite=CODE (or #invite=CODE); accept it and tidy the address
+function inviteFromAddress() {
+  const m = (location.search + location.hash).match(/invite[=-]([A-Za-z0-9]+)/);
+  if (!m) return;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  const tryIt = () => acceptInvite(m[1]).then(r => { if (r !== true) toast(r, 'error'); });
+  if (peopleLoaded) tryIt(); else setTimeout(tryIt, 900);
+}
+function enterInviteSheet() {
+  sheet(`<h2 id="lb-sheet-title">Enter invite code</h2>
+    <p class="sub">Someone shared their binders with you? Type the code from their invite.</p>
+    <form id="inv-form" class="lb-form">
+      <input id="inv-code" class="lb-field" type="text" inputmode="latin" autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="e.g. K7Q4XM" style="text-align:center;letter-spacing:.2em;font-weight:700">
+      <p class="lb-err" role="alert"></p>
+      <div class="lb-row"><button type="submit" class="lb-btn primary">Add their binders</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>
+    </form>`);
+  $('inv-code').focus();
+  $('inv-form').onsubmit = async e => {
+    e.preventDefault();
+    const r = await acceptInvite($('inv-code').value);
+    if (r === true) closeSheet(); else document.querySelector('#inv-form .lb-err').textContent = r;
+  };
+}
+// New phone: pick your name, enter your PIN, and your binders appear on the shelf
+function openMyBinderSheet() {
+  sheet(`<h2 id="lb-sheet-title">Open my binder</h2>
+    <p class="sub">Who are you? You'll enter your PIN next.</p>
+    <div class="lb-row" style="flex-direction:column">${people().map(p => `<button type="button" class="lb-btn" data-p="${lbEsc(p.id)}">${lbEsc(p.name)}</button>`).join('')}</div>
+    <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`);
+  document.querySelectorAll('#lb-sheet [data-p]').forEach(b => b.onclick = () => {
+    const u = b.dataset.p;
+    const reveal = () => { closeSheet(); renderShelf(); const el = document.querySelector(`.lb-scene .bk[data-user="${CSS.escape(u)}"]`); if (el) pickBinder(el); };
+    if (isUnlocked(u)) return reveal();
+    if (SIGN_IN_MODE === 'email') return emailSheet(u, reveal);
+    if (USERS[u] && USERS[u].pin) {
+      pinPad({ title: `${nameOf(u)}'s binders`, sub: `Enter ${nameOf(u)}'s PIN.`,
+        onPin: async pin => { if (await checkPin(u, pin)) { unlock(u); reveal(); return true; } return 'Wrong PIN. Try again.'; },
+        actions: [{ label: 'Forgot PIN?', fn: () => forgotPin(u) }, { label: 'Cancel', fn: closeSheet }] });
+    } else setPinSheet(u, reveal);
+  });
+}
+
+/* --- Invites (made inside your binder, from the Binders menu) --- */
+function inviteLink(code) { return location.origin + location.pathname + '?invite=' + code; }
+function newInviteCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return [...crypto.getRandomValues(new Uint8Array(6))].map(b => A[b % A.length]).join(''); }
+async function invitesSheet() {
+  const owner = ownerOf(currentUser);
+  let mine = {};
+  try { const all = (await db.ref('invites').once('value')).val() || {}; Object.entries(all).forEach(([c, v]) => { if (v && v.owner === owner) mine[c] = v; }); } catch (e) {}
+  const codes = Object.entries(mine).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  sheet(`<h2 id="lb-sheet-title">Invite to view</h2>
+    <p class="sub">Anyone with an invite sees all of ${lbEsc(nameOf(owner))}'s binders on their shelf, view-only. They still can't edit without your PIN.</p>
+    <div class="lb-row"><button type="button" class="lb-btn primary" id="inv-new">Create an invite</button></div>
+    ${codes.length ? `<div class="inv-list">${codes.map(([c, v]) => `<div class="inv-row">${lbEsc(c)} <span>${v.createdAt ? new Date(v.createdAt).toLocaleDateString() : ''}</span>
+      <button type="button" class="lb-btn" data-share="${lbEsc(c)}">Share</button><button type="button" class="lb-btn quiet" data-cancel="${lbEsc(c)}">Cancel invite</button></div>`).join('')}</div>
+      <p class="sub" style="margin:0">Cancelling stops that invite from adding your binders to anyone else's shelf, and removes them from shelves that used it.</p>` : ''}
+    <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="binderSheet()">Back</button></div>`);
+  $('inv-new').onclick = async () => {
+    const code = newInviteCode();
+    try { await db.ref('invites/' + code).set({ owner, createdAt: Date.now() }); }
+    catch (e) { return toast('Couldn\'t create the invite. Check your connection.', 'error'); }
+    showInvite(code);
+  };
+  document.querySelectorAll('#lb-sheet [data-share]').forEach(b => b.onclick = () => showInvite(b.dataset.share));
+  document.querySelectorAll('#lb-sheet [data-cancel]').forEach(b => b.onclick = async () => {
+    try { await db.ref('invites/' + b.dataset.cancel).remove(); toast('Invite cancelled'); } catch (e) { toast('Couldn\'t cancel it. Check your connection.', 'error'); }
+    invitesSheet();
+  });
+}
+function showInvite(code) {
+  const link = inviteLink(code), owner = ownerOf(currentUser);
+  sheet(`<h2 id="lb-sheet-title">Your invite</h2>
+    <p class="sub">Send this link. Opening it adds ${lbEsc(nameOf(owner))}'s binders to their shelf. Or they can tap "Have an invite code?" and type the code.</p>
+    <div class="inv-code" aria-label="Invite code">${lbEsc(code)}</div>
+    <p class="inv-link">${lbEsc(link)}</p>
+    <div class="lb-row"><button type="button" class="lb-btn primary" id="inv-share">${navigator.share ? 'Share link' : 'Copy link'}</button><button type="button" class="lb-btn" id="inv-copy">Copy code</button></div>
+    <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="invitesSheet()">Done</button></div>`);
+  const copy = (txt, msg) => {
+    try { navigator.clipboard.writeText(txt).then(() => toast(msg), () => toast('Couldn\'t copy. Press and hold the text to copy it.', 'error')); }
+    catch (e) { toast('Couldn\'t copy. Press and hold the text to copy it.', 'error'); }
+  };
+  $('inv-share').onclick = () => {
+    if (navigator.share) navigator.share({ title: `${nameOf(owner)}'s card binders`, text: `View my card binders (invite code ${code}):`, url: link }).catch(() => {});
+    else copy(link, 'Invite link copied');
+  };
+  $('inv-copy').onclick = () => copy(code, 'Invite code copied');
+}
+
 /* --- Welcome screen: a 3D bookshelf --- */
 const COVERS = {};
 let staged = null;   // id of the binder pulled off the shelf
@@ -2690,7 +2849,8 @@ function renderShelf() {
   const sc = $('lb-scene'); if (!sc) return;
   const T = 50, gap = 7, room = Math.min(sc.clientWidth || innerWidth, 640) - 48;
   const perRow = Math.max(3, Math.floor((room + gap) / (T + gap)));
-  const list = binders();
+  const list = visibleBinders();
+  $('lb-empty').hidden = list.length > 0;
   const items = [...list.map(b => b.id), '+'];
   const groupStart = new Set(list.filter((b, i) => i > 0 && list[i - 1].owner !== b.owner).map(b => b.id));
   const rows = []; for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
@@ -3217,6 +3377,9 @@ function binderSheet() {
       <label class="lb-label">This binder's title (on the spine)<input id="bn-title" class="lb-field" type="text" maxlength="28" required value="${lbEsc(titleOf(currentUser))}"></label>
       <div class="lb-row"><button type="submit" class="lb-btn">Save title</button></div>
     </form>
+    <div class="lb-form" style="border-top:1px solid #27272a;padding-top:1rem">
+      <button type="button" class="lb-btn" onclick="invitesSheet()">✉️ Invite someone to view your binders</button>
+    </div>
     <form id="bn-new" class="lb-form" style="border-top:1px solid #27272a;padding-top:1rem">
       <p class="sub" style="margin:0;text-align:left">Start another binder for ${lbEsc(nameOf(owner))}. It sits next to their other binders and opens with the same PIN.</p>
       <label class="lb-label">New binder title<input id="bn-new-title" class="lb-field" type="text" maxlength="28" required placeholder="e.g. ${lbEsc(nameOf(owner))} – Leaders"></label>
@@ -3333,6 +3496,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
   loadShelfCache();
   const versionCheck = checkForNewVersion();
+  paintShelfToggle(); loadInvites(); inviteFromAddress();
   fillSelects();
   watchPeople();
   watchBinderInfo();
