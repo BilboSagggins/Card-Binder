@@ -446,11 +446,16 @@
         <div class="absolute inset-0 rounded-xl overflow-hidden bfh border border-zinc-700/50 bg-zinc-950 holo-card">
           <img id="i-img" alt="" class="w-full h-full object-cover" onerror="imgErr(this)">
         </div>
-        <!-- Back Side -->
-        <div class="absolute inset-0 rounded-xl overflow-hidden bfh ry180 border border-zinc-700/50 bg-gradient-to-br from-indigo-900 to-zinc-900 flex items-center justify-center text-6xl">🎴</div>
+        <!-- Back Side (your card-back picture when set) -->
+        <div class="absolute inset-0 rounded-xl overflow-hidden bfh ry180 border border-zinc-700/50 bg-gradient-to-br from-indigo-900 to-zinc-900 flex items-center justify-center text-6xl"><img id="i-back-img" alt="" class="absolute inset-0 w-full h-full object-cover hidden"><span id="i-back-emoji">🎴</span></div>
       </div>
     </div>
     <p class="text-xs text-zinc-400">🔄 Tap the card to flip it</p>
+    <div id="cb-controls" class="flex items-center gap-2 -mt-2">
+      <button type="button" onclick="$('cb-file').click()" class="btn !py-1 !text-[11px]" id="cb-pick">🖼️ Set card back picture</button>
+      <button type="button" onclick="removeCardBack()" class="btn !py-1 !text-[11px] hidden" id="cb-remove">Remove</button>
+      <input type="file" id="cb-file" accept="image/*" class="hidden" onchange="saveCardBack(this)">
+    </div>
     
     <!-- Status Control -->
     <div id="i-status-panel" class="flex items-center justify-between w-full panel p-3">
@@ -1477,6 +1482,7 @@ function openInspect(p, s) {
     $('i-needed').className = `px-3 py-1.5 rounded-lg text-xs font-bold ${c.status === 'needed' ? 'bg-rose-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
   }
   
+  $('cb-controls').classList.toggle('hidden', !!peerUser);
   $('flip').classList.remove('ry180');$('i-modal').classList.remove('hidden');
 }
 
@@ -1923,6 +1929,10 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     document.getElementById('i-modal').classList.remove('hidden');
   }
   function closeInspect() { document.getElementById('i-modal').classList.add('hidden'); }
+  if (B.cardBack) {
+    const backFace = document.querySelector('#flip .ry180');
+    if (backFace) { backFace.textContent = ''; const bi = document.createElement('img'); bi.alt = ''; bi.src = B.cardBack; bi.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; backFace.appendChild(bi); }
+  }
   document.getElementById('i-modal').addEventListener('click', e => { if (e.target.id === 'i-modal') closeInspect(); });
 
   applyView();
@@ -1941,6 +1951,7 @@ function exportBinderHTML() {
     layout: S.layout || '4x3',
     pages: pages,
     cover: S.cover || null,
+    cardBack: CARD_BACK || '',
     exportedAt: new Date().toISOString()
   };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
@@ -2266,13 +2277,46 @@ function openBinder(u, viewOnly) {
   setTimeout(() => L.classList.add('out'), 1150);
   setTimeout(finish, 1650);
 }
+/* --- Card back picture: one image, shown on the back of every card --- */
+let CARD_BACK = '';
+function watchCardBack() {
+  db.ref('settings/cardBack').on('value', v => { CARD_BACK = v.val() || ''; paintCardBack(); }, () => {});
+}
+function paintCardBack() {
+  const im = $('i-back-img'), em = $('i-back-emoji'); if (!im) return;
+  if (CARD_BACK) { im.src = CARD_BACK; im.classList.remove('hidden'); em.classList.add('hidden'); }
+  else { im.removeAttribute('src'); im.classList.add('hidden'); em.classList.remove('hidden'); }
+  $('cb-pick').textContent = CARD_BACK ? '🖼️ Change card back' : '🖼️ Set card back picture';
+  $('cb-remove').classList.toggle('hidden', !CARD_BACK);
+}
+function saveCardBack(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    // Fit to a card shape (2.5 x 3.5) and keep it small enough to sync quickly
+    const W = 500, H = 700, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), k = Math.max(W / img.width, H / img.height);
+    g.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
+    URL.revokeObjectURL(url);
+    db.ref('settings/cardBack').set(cv.toDataURL('image/jpeg', 0.85))
+      .then(() => { toast('Card back saved for every card'); $('flip').classList.add('ry180'); })
+      .catch(() => toast('Couldn\'t save the card back. Check your connection.', 'error'));
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('That file isn\'t a picture this app can read.', 'error'); };
+  img.src = url;
+}
+function removeCardBack() {
+  db.ref('settings/cardBack').remove().then(() => toast('Card back removed')).catch(() => toast('Couldn\'t remove it. Check your connection.', 'error'));
+}
+
 /* --- View only: flip through someone else's binder in the export's 3D view --- */
 let pvUser = null, pvRef = null, pvData = null, pvShown = null;
 function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
   let pages; try { pages = normPages(d.pages).map((pg, i) => normPage(pg, i)); } finally { S.layout = keep; }
-  const payload = { user: nameOf(u), layout, pages, cover: d.cover || null, blankCover: true, exportedAt: new Date().toISOString() };
+  const payload = { user: nameOf(u), layout, pages, cover: d.cover || null, blankCover: true, cardBack: CARD_BACK || '', exportedAt: new Date().toISOString() };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(nameOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
@@ -2545,6 +2589,7 @@ window.addEventListener('DOMContentLoaded', () => {
   fillSelects();
   watchPeople();
   watchMaster();
+  watchCardBack();
   if (SIGN_IN_MODE === 'email') $('lb-master').hidden = true;
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
