@@ -398,6 +398,7 @@
           <button onclick="setMode('num')" id="m-num" class="px-3 py-1 text-xs font-semibold rounded-md">Pokémon + Number</button>
           <button onclick="setMode('set')" id="m-set" class="px-3 py-1 text-xs font-semibold rounded-md">Browse Set</button>
           <button onclick="setMode('custom')" id="m-custom" class="px-3 py-1 text-xs font-semibold rounded-md">📷 Custom</button>
+          <button onclick="setMode('coll')" id="m-coll" class="px-3 py-1 text-xs font-semibold rounded-md">📦 Collection</button>
         </div>
         <select id="lang" class="field !py-1.5 !text-xs hidden">
           <option value="en" selected>English</option>
@@ -432,6 +433,17 @@
     </div>
     <!-- Search Results View -->
     <div id="results" class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[260px] content-start"></div>
+
+    <!-- My collection (imported from a CSV, e.g. a Collectr export) -->
+    <div id="coll-panel" class="hidden p-4 overflow-y-auto flex-1 min-h-[260px] flex-col gap-3">
+      <div class="flex gap-2 items-center">
+        <input id="coll-q" type="search" oninput="renderCollection()" class="field flex-1" placeholder="Search your collection" autocomplete="off">
+        <label for="coll-file" class="btn-p cursor-pointer whitespace-nowrap">⬆ Import CSV</label>
+        <input type="file" id="coll-file" accept=".csv,text/csv,text/plain" class="hidden" onchange="pickCollectionFile(this)">
+      </div>
+      <p id="coll-info" class="text-xs text-zinc-400"></p>
+      <div id="coll-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 content-start"></div>
+    </div>
 
     <!-- Custom card form (for cards that are not in the database) -->
     <div id="custom-panel" class="hidden p-4 overflow-y-auto flex-1 min-h-[260px]">
@@ -566,7 +578,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.17';
+const APP_VERSION = '2026-10-20.18';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -745,6 +757,7 @@ async function ptcgLookup(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
+  if (card.source === 'collection') { const it = collectionItem(card); return it && it.price != null ? { price: it.price, url: card.url || null } : null; }
   if (card.game === 'onepiece') return opLookup(card);
   return (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
 };
@@ -875,6 +888,135 @@ function applyGameUI() {
   pending = null;
 }
 
+/* My collection: cards imported from a CSV (Collectr's exporter or any spreadsheet with name / price / quantity)
+   Stored per person and game at collections/<person>/<game> = { importedAt, file, items: { <id>: { name, price, qty, image, set, number, rarity } } } */
+const COLLECTIONS = {};          // "<person>|<game>" -> data
+const collRefs = {};
+const collKey = () => ownerOf(currentUser) + '|' + S.game;
+function watchCollection(owner, game) {
+  const k = owner + '|' + game; if (collRefs[k]) return;
+  collRefs[k] = db.ref('collections/' + owner + '/' + game);
+  collRefs[k].on('value', v => { COLLECTIONS[k] = v.val() || null; if (mode === 'coll' && collKey() === k) renderCollection(); }, () => {});
+}
+function collectionItem(card) {
+  const owner = ownerOf(currentUser), data = COLLECTIONS[owner + '|' + (card.game || S.game)];
+  return data && data.items && card.collId ? data.items[card.collId] : null;
+}
+function openCollection() {
+  watchCollection(ownerOf(currentUser), S.game);
+  renderCollection();
+  setTimeout(() => $('coll-q').focus(), 50);
+}
+function renderCollection() {
+  const data = COLLECTIONS[collKey()], box = $('coll-results'), info = $('coll-info');
+  const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it }));
+  if (!items.length) {
+    info.textContent = '';
+    box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-sm leading-relaxed">No ${GAMES[S.game]} collection yet.<br>Tap <b>⬆ Import CSV</b> and choose your export (for example from the Collectr Portfolio Exporter).</div>`;
+    return;
+  }
+  const q = lc($('coll-q').value.trim());
+  const inBinder = new Set(getPagesArray().flatMap(pg => pg.cards).filter(c => c && c.collId).map(c => c.collId));
+  const shown = items.filter(it => !q || lc(it.name).includes(q) || lc(it.set).includes(q) || lc(it.number).includes(q))
+    .sort((a, b) => (b.price || 0) - (a.price || 0) || String(a.name).localeCompare(String(b.name)));
+  const when = data.importedAt ? new Date(data.importedAt).toLocaleDateString() : '';
+  info.textContent = `${items.length} card${items.length === 1 ? '' : 's'} in your ${GAMES[S.game]} collection${when ? ` · imported ${when}` : ''}${q ? ` · ${shown.length} match` : ''}`;
+  box.innerHTML = '';
+  shown.slice(0, 300).forEach(it => {
+    const el = document.createElement('div');
+    el.className = 'panel p-2.5 flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer group';
+    el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden bg-zinc-900 mb-2 relative">${it.image ? imgTag(it.image, [], it.name, 'w-full h-full object-cover group-hover:scale-105 transition duration-300') : '<div class="w-full h-full flex items-center justify-center text-3xl">🎴</div>'}
+        ${it.qty > 1 ? `<span class="absolute top-1 right-1 bg-black/80 text-[10px] font-bold px-1.5 py-0.5 rounded">×${it.qty}</span>` : ''}
+        ${inBinder.has(it.id) ? '<span class="absolute bottom-1 left-1 bg-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded">In this binder</span>' : ''}</div>
+      <h4 class="font-bold text-xs line-clamp-2">${esc(it.name)}</h4>
+      <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[60%]">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From collection')}</span><b class="text-emerald-400">${fmt(it.price)}</b></div>
+      <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
+    el.onclick = () => {
+      const card = {
+        id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
+        price: it.price ?? null, url: S.game === 'onepiece' ? opLink(it.name, it.number) : null,
+        thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
+      };
+      const pages = getPagesArray(); pages[target.p].cards[target.s] = card;
+      saveActivePages(pages); render(); closeSearch(); toast('Added ' + card.name);
+    };
+    box.appendChild(el);
+  });
+  if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the 300 most valuable. Search to find the rest.</div>`);
+}
+
+// --- CSV reading ---
+function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  text = String(text || '').replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+const money = v => { const n = parseFloat(String(v || '').replace(/[^0-9.\-]/g, '')); return Number.isFinite(n) ? n : null; };
+const urlIn = v => { const m = String(v || '').match(/https?:\/\/[^"'\s)]+/); return m ? m[0] : ''; };
+function readCollectionCSV(text) {
+  const rows = parseCSV(text); if (rows.length < 2) throw new Error('That file has no rows of cards.');
+  // find the header row (Collectr's exporter puts it first; spreadsheets may have a title row above it)
+  let h = rows.findIndex(r => r.some(c => /item name|product name|card name|^name$/i.test(String(c).trim())));
+  if (h < 0) h = 0;
+  const head = rows[h].map(c => String(c).trim().toLowerCase());
+  const col = (...tests) => head.findIndex(c => tests.some(t => t.test(c)));
+  const iName = col(/^item name$/, /^product name$/, /^card name$/, /^name$/, /^card$/, /^product$/);
+  const iPrice = col(/^market value$/, /^market price$/, /^price$/, /^value$/, /market/);
+  const iQty = col(/^quantity$/, /^qty$/, /^count$/, /quantity/);
+  const iImgUrl = col(/^image url$/, /^image link$/, /^img$/), iImg = col(/^image$/);
+  const iSet = col(/^set$/, /^set name$/, /^expansion$/), iNum = col(/^number$/, /^card number$/, /^card #$/, /^no\.?$/), iRar = col(/^rarity$/);
+  if (iName < 0) throw new Error('Couldn\'t find a card name column (like "Item Name").');
+  const items = {};
+  rows.slice(h + 1).forEach(r => {
+    const name = String(r[iName] || '').trim(); if (!name) return;
+    const image = urlIn(iImgUrl >= 0 ? r[iImgUrl] : '') || urlIn(iImg >= 0 ? r[iImg] : '');
+    const it = { name, price: iPrice >= 0 ? money(r[iPrice]) : null, qty: Math.max(1, parseInt(iQty >= 0 ? r[iQty] : 1, 10) || 1), image,
+      set: iSet >= 0 ? String(r[iSet] || '').trim() : '', number: iNum >= 0 ? String(r[iNum] || '').trim() : '', rarity: iRar >= 0 ? String(r[iRar] || '').trim() : '' };
+    // the same card listed twice adds up
+    const id = 'c' + [...(name + '|' + image + '|' + it.set + '|' + it.number)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7).toString(36);
+    if (items[id]) items[id].qty += it.qty; else items[id] = it;
+  });
+  if (!Object.keys(items).length) throw new Error('No cards found under the header row.');
+  return items;
+}
+function pickCollectionFile(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onerror = () => toast('Couldn\'t read that file.', 'error');
+  rd.onload = () => {
+    let items;
+    try { items = readCollectionCSV(rd.result); } catch (e) { return toast(e.message || 'Couldn\'t read that file.', 'error'); }
+    const n = Object.keys(items).length, total = Object.values(items).reduce((a, it) => a + (it.qty || 1), 0);
+    const owner = ownerOf(currentUser);
+    sheet(`<h2 id="lb-sheet-title">Import collection</h2>
+      <p class="sub">${n} card${n === 1 ? '' : 's'} (${total} counting copies) in “${lbEsc(f.name)}”.</p>
+      ${gamePicker('coll-game', S.game)}
+      <p class="lb-help">This replaces ${lbEsc(nameOf(owner))}'s collection for the game you pick. Cards already placed in binders stay where they are.</p>
+      <div class="lb-row"><button type="button" class="lb-btn primary" id="coll-go">Import</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`);
+    $('coll-go').onclick = async () => {
+      const game = pickedGame('coll-game');
+      $('coll-go').disabled = true;
+      try { await db.ref('collections/' + owner + '/' + game).set({ importedAt: Date.now(), file: f.name.slice(0, 80), items }); }
+      catch (e) { $('coll-go').disabled = false; return toast('Couldn\'t save the collection. Check your connection.', 'error'); }
+      closeSheet(); watchCollection(owner, game);
+      COLLECTIONS[owner + '|' + game] = { importedAt: Date.now(), file: f.name, items };
+      toast(`Imported ${n} ${GAMES[game]} cards`);
+      if (mode === 'coll') renderCollection();
+    };
+  };
+  rd.readAsText(f);
+}
+
 /* Search Logic & Internationalization */
 const PAGE = 36;
 const norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, ''), lc = s => String(s ?? '').toLowerCase();
@@ -888,11 +1030,13 @@ const ptcgCard = c => ({
 
 function setMode(m) {
   mode = m;
-  const isCustom = m === 'custom';
-  $('search-ui').classList.toggle('hidden', isCustom);
-  $('results').classList.toggle('hidden', isCustom);
+  const isCustom = m === 'custom', isColl = m === 'coll';
+  $('search-ui').classList.toggle('hidden', isCustom || isColl);
+  $('results').classList.toggle('hidden', isCustom || isColl);
   $('custom-panel').classList.toggle('hidden', !isCustom);
-  ['name', 'num', 'set', 'custom'].forEach(k => $('m-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
+  $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
+  ['name', 'num', 'set', 'custom', 'coll'].forEach(k => $('m-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
+  if (isColl) return openCollection();
   if (isCustom) return;
   $('q').placeholder = S.game === 'onepiece'
     ? (m === 'name' ? 'Card name (e.g. Roronoa Zoro)' : m === 'num' ? 'Card ID (e.g. OP01-001)' : 'Optional: filter the set by name or ID')
@@ -1031,7 +1175,7 @@ function openSearch(p, s) {
   if (peerUser) return toast('Cannot add cards in read-only peer mode', 'error');
   target = { p, s }; $('tgt').textContent = `Page ${p + 1}, Slot ${s + 1}`;
   $('q').value = '';$('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Search by name, ${S.game === 'onepiece' ? 'card ID' : 'Pokémon + number'}, or browse a set. Pick a set in any mode to narrow results.</div>`;
-  resetCustom(); setMode(mode); setStatus(addStatus); $('s-modal').classList.remove('hidden');
+  resetCustom(); $('coll-q').value = ''; setMode(mode); setStatus(addStatus); $('s-modal').classList.remove('hidden');
 }
 
 const closeSearch = () => $('s-modal').classList.add('hidden');

@@ -25,6 +25,11 @@
       "$binder": {
         ".write": "auth != null && (root.child('users/' + $binder + '/email').val() === auth.token.email || root.child('users/' + root.child('binderInfo/' + $binder + '/owner').val() + '/email').val() === auth.token.email)"
       }
+    },
+    "collections": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
     }
   }
 }
