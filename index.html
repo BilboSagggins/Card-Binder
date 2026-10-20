@@ -166,14 +166,14 @@
   .lb-page i { border-radius: 4px; background: #27272a; box-shadow: inset 0 0 0 1px #3f3f46; }
   .lb-cover { position: absolute; inset: 0; border-radius: 3px 10px 10px 3px; overflow: hidden; transform-origin: left center; transition: transform .9s cubic-bezier(.5,.05,.25,1);
     backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-  #lb-stage.opening .lb-cover { transform: rotateY(-165deg); }
-  .lb-info { display: flex; flex-direction: column; align-items: center; gap: .9rem; opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .3s; }
-  #lb-stage.ready .lb-info { opacity: 1; transform: none; }
-  #lb-stage.opening .lb-info { opacity: 0; }
+  #lb-stage.opening .lb-cover { transform: rotateY(-165deg); transition-duration: 1.3s; }
+  /* Opening: the binder grows to fill the screen while the cover swings; its page becomes the app's background */
+  .lb-book.zoom { transition: transform 1.4s cubic-bezier(.65,0,.3,1), box-shadow 1.4s, border-radius 1.4s; box-shadow: none; border-radius: 0; }
+  .lb-book.zoom .lb-page { transition: background-color .5s .9s, inset 1.4s cubic-bezier(.65,0,.3,1), border-radius 1.4s; background-color: #09090b; inset: 0; border-radius: 0; }
+  .lb-book.zoom .lb-page i { transition: opacity .35s 1s; opacity: 0; }
+  #landing.opening { background: #09090b; transition: background-color 1s, opacity .45s ease; }
   .lb-name { font: 700 1.25rem/1.2 Cinzel, Georgia, serif; letter-spacing: .06em; text-align: center; }
   .lb-badge { display: block; margin-top: .35rem; text-align: center; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6ee7b7; }
-  .lb-acts { display: flex; gap: .6rem; }
-  .lb-acts .lb-btn { min-width: 7.5rem; padding: .85rem 1rem; font-size: .9rem; border-radius: 14px; }
 
   #lb-sheet { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
@@ -202,7 +202,7 @@
   .lb-form { display: flex; flex-direction: column; gap: 1rem; margin: 0; }
   .lb-label { display: flex; flex-direction: column; gap: .35rem; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #a1a1aa; }
   .lb-help { margin: 0; font-size: .78rem; line-height: 1.5; color: #d4d4d8; background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: .75rem .85rem; }
-  @media (prefers-reduced-motion: reduce) { .bk, .lb-cover, .lb-info, .lb-scene, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .bk, .lb-cover, .lb-book, .lb-page, .lb-scene, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
 </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
@@ -217,14 +217,6 @@
   <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()">Master PIN</button>
   <div id="lb-stage" hidden>
     <div id="lb-stage-book" class="lb-book"></div>
-    <div class="lb-info">
-      <div><div id="lb-stage-name" class="lb-name"></div><span id="lb-stage-badge" class="lb-badge" hidden>🔓 Unlocked on this phone</span></div>
-      <div class="lb-acts">
-        <button type="button" id="lb-go" class="lb-btn primary">Unlock</button>
-        <button type="button" id="lb-view" class="lb-btn">View only</button>
-      </div>
-      <button type="button" id="lb-back" class="lb-btn quiet">Back to shelf</button>
-    </div>
   </div>
 </div>
 <div id="lb-flylayer" hidden></div>
@@ -2187,15 +2179,8 @@ function pickBinder(el) {
   book.style.width = W + 'px'; book.style.height = Hh + 'px';
   tint(book, id);
   book.innerHTML = `<div class="lb-page" aria-hidden="true">${'<i></i>'.repeat(9)}</div><div class="lb-cover"><div class="cv">${coverInner(id)}</div></div>`;
-  $('lb-stage-name').textContent = nameOf(id);
-  const open = isUnlocked(id);
-  $('lb-stage-badge').hidden = !open;
-  $('lb-go').textContent = open ? 'Open' : '🔒 Unlock';
-  $('lb-go').onclick = () => open ? openBinder(id, false) : unlockStaged(id);
-  $('lb-view').onclick = () => openBinder(id, true);
-  $('lb-back').onclick = backToShelf;
   stage.className = ''; stage.hidden = false;
-  stage.onclick = e => { if (e.target === stage) backToShelf(); };
+  stage.onclick = e => { if (e.target === stage && !$('landing').classList.contains('opening')) backToShelf(); };
   $('landing').classList.add('focus');
   const to = book.getBoundingClientRect();
 
@@ -2210,12 +2195,18 @@ function pickBinder(el) {
   const place = (p, turn) => `translate(${p.x - T / 2}px, ${p.y - H / 2}px) scale(${p.s})${turn ? ' rotateY(-90deg)' : ''}`;
   fly.style.transition = 'none'; fly.style.transform = place(a, false);
   el.classList.add('away');
-  const land = () => { stage.classList.add('ready'); layer.hidden = true; layer.innerHTML = ''; $('lb-go').focus({ preventScroll: true }); };
+  let landed = false;
+  const land = () => {
+    if (landed) return; landed = true;
+    stage.classList.add('ready'); layer.hidden = true; layer.innerHTML = '';
+    // Unlocked here: open straight away. Otherwise ask for the PIN (View only is on the pad).
+    if (isUnlocked(id)) openBinder(id, false); else unlockStaged(id);
+  };
   if (reduceMotion()) return land();
   void fly.offsetWidth;
   fly.style.transition = ''; fly.style.transform = place(b, true);
   fly.addEventListener('transitionend', land, { once: true });
-  setTimeout(() => { if (!stage.classList.contains('ready') && staged === id) land(); }, 1100);
+  setTimeout(() => { if (staged === id) land(); }, 1100);
 }
 function backToShelf() {
   if (!staged) return;
@@ -2232,8 +2223,7 @@ function unlockStaged(id) {
 }
 function openBinder(u, viewOnly) {
   closeSheet();
-  const L = $('landing'), stage = $('lb-stage');
-  L.classList.add('opening'); stage.classList.add('opening');
+  const L = $('landing'), stage = $('lb-stage'), book = $('lb-stage-book');
   // Start loading while the cover swings open
   const same = activeListener === u && S.loadedFor === u && !!peerUser === viewOnly;
   if (viewOnly) { peerUser = u; if (!isUnlocked(currentUser)) currentUser = u; }
@@ -2241,18 +2231,27 @@ function openBinder(u, viewOnly) {
   $('user-select').value = currentUser; $('peer-select').value = '';
   if (!same) { S.cur = 0; setupFirebaseListener(u); }
   updateWho();
-  const r = reduceMotion();
-  setTimeout(() => {
-    L.classList.add('out');
-    setTimeout(() => { L.hidden = true; document.body.style.overflow = ''; stage.hidden = true; staged = null; }, r ? 0 : 400);
-  }, r ? 0 : 950);
+  window.scrollTo(0, 0);
+  const finish = () => { L.hidden = true; L.classList.remove('opening', 'out'); document.body.style.overflow = ''; stage.hidden = true; stage.className = ''; book.className = 'lb-book'; book.style.transform = ''; staged = null; };
+  if (reduceMotion()) return finish();
+  // Grow the binder until it covers the screen while the cover swings open
+  const r = book.getBoundingClientRect();
+  const k = Math.max(innerWidth / r.width, innerHeight / r.height) * 1.08;
+  const dx = innerWidth / 2 - (r.left + r.width / 2), dy = innerHeight / 2 - (r.top + r.height / 2);
+  L.classList.add('opening'); stage.classList.add('opening');
+  book.classList.add('zoom');
+  book.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
+  // As it fills the screen, fade straight into the binder
+  setTimeout(() => L.classList.add('out'), 1150);
+  setTimeout(finish, 1650);
 }
+function cancelToShelf() { closeSheet(); if (staged && !$('landing').classList.contains('opening')) backToShelf(); }
 
 /* --- Sheets: PIN pad, email form, add person --- */
 function closeSheet() { const sh = $('lb-sheet'); if (sh) { sh.hidden = true; sh.innerHTML = ''; sh.onkeydown = null; } }
 function sheet(html) {
   const sh = $('lb-sheet'); sh.innerHTML = `<div class="lb-card">${html}</div>`; sh.hidden = false;
-  sh.onclick = e => { if (e.target === sh) closeSheet(); };
+  sh.onclick = e => { if (e.target === sh) cancelToShelf(); };
   return sh;
 }
 // A 4-digit keypad. onPin(pin) resolves to true when done, or an error message to show.
@@ -2288,11 +2287,11 @@ function pinPad({ title, sub, onPin, actions = [] }) {
   };
   sh.querySelectorAll('[data-k]').forEach(b => b.onclick = () => press(b.dataset.k));
   sh.querySelectorAll('[data-a]').forEach(b => b.onclick = () => actions[+b.dataset.a].fn());
-  sh.onkeydown = e => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('back'); else if (e.key === 'Escape') closeSheet(); };
+  sh.onkeydown = e => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('back'); else if (e.key === 'Escape') cancelToShelf(); };
   sh.querySelector('[data-k="1"]').focus();
 }
 const viewOnlyAction = u => ({ label: 'View only', fn: () => openBinder(u, true) });
-const cancelAction = { label: 'Cancel', fn: closeSheet };
+const cancelAction = { label: 'Cancel', fn: () => cancelToShelf() };
 
 function enterPinSheet(u) {
   pinPad({
@@ -2348,8 +2347,8 @@ function masterResetSheet(u) {
       if (USERS[u]) delete USERS[u].pin;
       remember(UNLOCK_KEY, recall(UNLOCK_KEY, []).filter(x => x !== u));
       closeSheet();
-      if (staged === u) { $('lb-go').textContent = '🔒 Unlock'; $('lb-go').onclick = () => unlockStaged(u); $('lb-stage-badge').hidden = true; }
-      toast(`${nameOf(u)}'s PIN is cleared. Tap Unlock to set a new one.`);
+      toast(`${nameOf(u)}'s PIN is cleared. Set a new one now, or cancel to leave it blank.`);
+      if (staged === u) setPinSheet(u);
       return true;
     },
     actions: [{ label: 'Back', fn: () => forgotPin(u) }]
@@ -2406,10 +2405,10 @@ function emailSheet(u, onDone) {
       <label class="lb-label">Password<input id="lb-pass" class="lb-field" type="password" autocomplete="${known ? 'current-password' : 'new-password'}" minlength="6" required></label>
       <p class="lb-err" role="alert"></p>
       <div class="lb-row"><button type="submit" class="lb-btn primary">${known ? 'Sign in' : 'Create sign-in'}</button>
-        <button type="button" class="lb-btn quiet" id="lb-view">View only</button><button type="button" class="lb-btn quiet" id="lb-cancel">Cancel</button></div>
+        <button type="button" class="lb-btn quiet" id="lb-viewonly">View only</button><button type="button" class="lb-btn quiet" id="lb-cancel">Cancel</button></div>
     </form>`);
-  $('lb-view').onclick = () => openBinder(u, true);
-  $('lb-cancel').onclick = closeSheet;
+  $('lb-viewonly').onclick = () => openBinder(u, true);
+  $('lb-cancel').onclick = cancelToShelf;
   $('lb-email-form').onsubmit = async e => {
     e.preventDefault();
     const email = $('lb-email').value.trim(), pass = $('lb-pass').value, err = document.querySelector('#lb-email-form .lb-err');
