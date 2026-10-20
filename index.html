@@ -138,7 +138,7 @@
   .bk-add { flex: none; width: var(--T); height: var(--H); transform: translateZ(calc(var(--D) / 2)); appearance: none; padding: 0; margin: 0 0 0 4px; cursor: pointer;
     border: 2px dashed #52525b; border-radius: 16px / 12px; background: rgba(24,24,27,.5); color: #a1a1aa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
     font: 300 1.6rem/1 Inter, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; transition: border-color .2s, color .2s; }
-  .bk-add span { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
+  .bk-add span { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 .58rem/1 Inter, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
   .bk-add:hover, .bk-add:focus-visible { border-color: #818cf8; color: #c7d2fe; outline: none; }
 
   /* Front cover, shared by the 3D binder and the flat binder on the stage */
@@ -549,7 +549,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.3';
+const APP_VERSION = '2026-10-20.4';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2353,7 +2353,7 @@ function renderShelf() {
   const groupStart = new Set(list.filter((b, i) => i > 0 && list[i - 1].owner !== b.owner).map(b => b.id));
   const rows = []; for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
   sc.innerHTML = rows.map(r => `<div class="lb-row" style="--w:${Math.min(r.length * (T + gap) + 72, room + 40)}px">${r.map(id => id === '+'
-      ? `<button type="button" class="bk-add" onclick="addPerson()" aria-label="Add person">+<span>Add</span></button>`
+      ? `<button type="button" class="bk-add" onclick="addPerson()" aria-label="Add a new person">+<span>Add person</span></button>`
       : `<button type="button" class="bk${groupStart.has(id) ? ' gstart' : ''}" data-user="${lbEsc(id)}" aria-label="${lbEsc(titleOf(id))} (${lbEsc(nameOf(ownerOf(id)))}, ${GAMES[gameOf(id)]})" onclick="pickBinder(this)"></button>`).join('')}
       <div class="lb-plank" aria-hidden="true"><i></i><b></b></div></div>`).join('');
   list.forEach(b => {
@@ -2777,8 +2777,9 @@ function emailError(x) {
 
 function addPerson() {
   sheet(`
-    <h2 id="lb-sheet-title">Add a person</h2>
-    <p class="sub">They'll get their own binder${SIGN_IN_MODE === 'pin' ? ' and PIN' : ' and sign-in'}.</p>
+    <h2 id="lb-sheet-title">Add a new person</h2>
+    <p class="sub">They'll get their own spot on the shelf and their own ${SIGN_IN_MODE === 'pin' ? 'PIN' : 'sign-in'}.</p>
+    <p class="lb-help"><b>Adding another binder for yourself?</b> Cancel, open your own binder, and tap <b>📚 Binders</b>. It will sit next to your other binders and use your PIN.</p>
     <form id="lb-add-form" class="lb-form">
       <label class="lb-label">Name<input id="lb-add-name" class="lb-field" type="text" maxlength="24" autocomplete="off" required></label>
       ${gamePicker('lb-add-game')}
@@ -2791,6 +2792,11 @@ function addPerson() {
     const name = $('lb-add-name').value.trim().replace(/\s+/g, ' '), err = document.querySelector('#lb-add-form .lb-err');
     if (!name) return;
     if (people().some(p => p.name.toLowerCase() === name.toLowerCase())) { err.textContent = `There's already a binder for ${name}.`; return; }
+    // A game or binder-sounding name is almost always meant to be a binder for someone who's already here
+    if (/^(one ?piece|op|pok[eé]mon|ptcg|tcg|binder|cards?|leaders?|.*\bbinder\b.*)$/i.test(name)) {
+      err.textContent = `"${name}" sounds like a binder, not a person. To add a binder for yourself, open your binder and tap 📚 Binders.`;
+      return;
+    }
     let base = name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'person', id = base, n = 2;
     while (USERS[id]) id = base + '-' + n++;
     const order = Math.max(0, ...people().map(p => p.order || 0)) + 1;
