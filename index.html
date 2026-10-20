@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.9';
+const APP_VERSION = '2026-10-20.10';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -803,7 +803,7 @@ async function opLoadSets() {
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
 }
-const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!! Card' };
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!!' };
 // Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
 const opRarLabel = r => !OP_RARITY[r] ? r : r === 'DON!!' ? OP_RARITY[r] : `${OP_RARITY[r]} (${r})`;
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'DON!!'];
