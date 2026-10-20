@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TCG Card Collector Binder</title>
+<style>html, body { background: #09090b; color: #f4f4f5; color-scheme: dark; }</style>
 <!-- Home-screen app setup: opens full screen with no browser bar -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#18181b">
@@ -94,6 +95,11 @@
     background: radial-gradient(ellipse at 50% 30%, rgba(79,70,229,.28), transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.12), transparent 55%), #09090b;
     color: #f4f4f5; overflow-y: auto; transition: opacity .4s ease; }
   #landing.out { opacity: 0; pointer-events: none; }
+  /* Opening: hold the welcome screen back until fonts, binders and the version check are ready, then fade it in once */
+  #landing .lb-head, #landing .lb-scene, #lb-master, #lb-version { transition: opacity .55s ease, transform .55s ease; }
+  #landing.booting .lb-head, #landing.booting .lb-scene, #landing.booting #lb-master, #landing.booting #lb-version { opacity: 0; }
+  #landing.booting .lb-scene { transform: translateY(10px); }
+  @media (prefers-reduced-motion: reduce) { #landing .lb-head, #landing .lb-scene { transition: none; } }
   #landing[hidden], #lb-sheet[hidden], #lb-flylayer[hidden] { display: none; }
   .lb-head { text-align: center; }
   .lb-head h1 { margin: 0; font-family: Cinzel, Georgia, serif; font-weight: 700; letter-spacing: .14em; font-size: clamp(1.5rem, 6vw, 2.25rem); text-wrap: balance; }
@@ -229,7 +235,7 @@
 <body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
 
 <!-- Welcome screen: choose whose binder to open -->
-<div id="landing" role="dialog" aria-modal="true" aria-labelledby="lb-heading">
+<div id="landing" class="booting" role="dialog" aria-modal="true" aria-labelledby="lb-heading">
   <div class="lb-head">
     <h1 id="lb-heading">Card Binder</h1>
     <p>Tap your binder</p>
@@ -560,7 +566,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.16';
+const APP_VERSION = '2026-10-20.17';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2465,9 +2471,10 @@ function binderBox(id) {
     <div class="f spine"><div class="nm"><span style="font-size:${spineSize(titleOf(id))}px">${lbEsc(titleOf(id))}</span></div><div class="hole"></div>${isUnlocked(ownerOf(id)) ? '<div class="ok" title="Unlocked on this phone"></div>' : ''}</div>`;
 }
 function paintBinder(id) {
+  const html = binderBox(id);
   document.querySelectorAll(`.bk[data-user="${CSS.escape(id)}"]`).forEach(el => {
     tint(el, id);
-    el.innerHTML = binderBox(id);
+    if (el.dataset.drawn !== html) { el.innerHTML = html; el.dataset.drawn = html; }
   });
 }
 const coverRefs = {};
@@ -2484,6 +2491,9 @@ function renderShelf() {
   const items = [...list.map(b => b.id), '+'];
   const groupStart = new Set(list.filter((b, i) => i > 0 && list[i - 1].owner !== b.owner).map(b => b.id));
   const rows = []; for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
+  const shape = JSON.stringify([perRow, room, list.map(b => [b.id, titleOf(b.id), b.owner, b.game])]);
+  if (sc.dataset.shape === shape && sc.children.length) { list.forEach(b => { paintBinder(b.id); watchCover(b.id); }); return; }
+  sc.dataset.shape = shape;
   sc.innerHTML = rows.map(r => `<div class="lb-row" style="--w:${Math.min(r.length * (T + gap) + 72, room + 40)}px">${r.map(id => id === '+'
       ? `<button type="button" class="bk-add" onclick="addPerson()" aria-label="Add a new person">+<span>Add person</span></button>`
       : `<button type="button" class="bk${groupStart.has(id) ? ' gstart' : ''}" data-user="${lbEsc(id)}" aria-label="${lbEsc(titleOf(id))} (${lbEsc(nameOf(ownerOf(id)))}, ${GAMES[gameOf(id)]})" onclick="pickBinder(this)"></button>`).join('')}
@@ -2502,6 +2512,7 @@ function showLanding() {
   $('lb-flylayer').hidden = true; $('lb-flylayer').innerHTML = '';
   L.classList.remove('opening', 'out', 'focus'); L.hidden = false;
   document.body.style.overflow = 'hidden';
+  document.querySelectorAll('.lb-scene .bk.away').forEach(b => b.classList.remove('away'));   // put the last-opened binder back
   renderShelf();
 }
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3091,21 +3102,34 @@ function startEmailAuth() {
 
 /* If GitHub handed this phone an older saved copy of the app, switch to the newest one */
 function checkForNewVersion() {
-  fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
+  return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
     const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
-    if (!v || v === APP_VERSION) return;
+    if (!v || v === APP_VERSION) return 'current';
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
-    if (tried === v) return;   // already tried once this visit; don't loop
+    if (tried === v) return 'current';   // already tried once this visit; don't loop
     try { sessionStorage.setItem('cardBinder.reloadedFor', v); } catch (e) {}
     location.replace(location.pathname + '?v=' + encodeURIComponent(v));
-  }).catch(() => {});
+    return 'reloading';
+  }).catch(() => 'current');
+}
+// Fade the welcome screen in once: after fonts, binders and the version check are ready (at least a beat, at most ~1.8s)
+function revealWhenReady(versionCheck) {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const fonts = document.fonts && document.fonts.ready ? document.fonts.ready.catch(() => {}) : Promise.resolve();
+  const data = new Promise(r => { const t = setInterval(() => { if ((peopleLoaded && binfoLoaded) || recall(SHELF_KEY, null)) { clearInterval(t); r(); } }, 50); });
+  const ready = Promise.all([fonts, data, versionCheck, wait(350)]);
+  Promise.race([ready, wait(1800).then(() => 'timeout')]).then(res => {
+    if (Array.isArray(res) && res[2] === 'reloading') return;   // a newer version is loading; stay dark until it does
+    renderShelf();
+    requestAnimationFrame(() => $('landing').classList.remove('booting'));
+  });
 }
 
 /* Application Initialization */
 window.addEventListener('DOMContentLoaded', () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
   loadShelfCache();
-  checkForNewVersion();
+  const versionCheck = checkForNewVersion();
   fillSelects();
   watchPeople();
   watchBinderInfo();
@@ -3116,6 +3140,7 @@ window.addEventListener('DOMContentLoaded', () => {
   $('lb-version').textContent = 'Version ' + APP_VERSION;
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
+  revealWhenReady(versionCheck);
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
   db.ref('.info/connected').on('value', s => {
     clearTimeout(offlineTimer);
