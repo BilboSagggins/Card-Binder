@@ -94,37 +94,76 @@
     background: radial-gradient(ellipse at 50% 30%, rgba(79,70,229,.28), transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.12), transparent 55%), #09090b;
     color: #f4f4f5; overflow-y: auto; transition: opacity .4s ease; }
   #landing.out { opacity: 0; pointer-events: none; }
-  #landing[hidden], #lb-sheet[hidden] { display: none; }
+  #landing[hidden], #lb-sheet[hidden], #lb-flylayer[hidden] { display: none; }
   .lb-head { text-align: center; }
   .lb-head h1 { margin: 0; font-family: Cinzel, Georgia, serif; font-weight: 700; letter-spacing: .14em; font-size: clamp(1.5rem, 6vw, 2.25rem); text-wrap: balance; }
   .lb-head p { margin: .5rem 0 0; font: 500 .75rem/1.4 Inter, system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #a1a1aa; }
-  .lb-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(1.25rem, 6vw, 3rem); width: 100%; max-width: 44rem; }
-  .lb-pick { -webkit-tap-highlight-color: transparent; appearance: none; border: 0; background: none; padding: 0; color: inherit; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: .9rem; width: clamp(8.5rem, 38vw, 12.5rem); transition: transform .35s ease, opacity .35s ease; }
-  .lb-pick:focus-visible { outline: none; }
-  .lb-pick:focus-visible .lb-book { box-shadow: 0 0 0 3px #818cf8, 0 18px 40px rgba(0,0,0,.6); }
-  .lb-book { position: relative; width: 100%; aspect-ratio: 3 / 4; perspective: 1200px; border-radius: 6px 12px 12px 6px; box-shadow: 0 18px 40px rgba(0,0,0,.6); transition: box-shadow .3s; }
-  .lb-page { position: absolute; inset: 3% 2% 3% 6%; border-radius: 4px 10px 10px 4px; background: #18181b;
+  /* Bookshelf: binders stand spine-out as 3D boxes (T = spine width, H = height, D = cover width) */
+  .lb-scene, #lb-flylayer { --T: 50px; --H: 216px; --D: 158px; }
+  .lb-scene { width: 100%; max-width: 40rem; display: flex; flex-direction: column; gap: 4.25rem; padding: 1.5rem 0 1.75rem;
+    perspective: 1100px; perspective-origin: 50% -30%; transition: opacity .35s, filter .35s; }
+  .lb-row { position: relative; transform-style: preserve-3d; display: flex; justify-content: center; align-items: flex-end; gap: 7px; height: var(--H); }
+  .lb-plank { position: absolute; left: 50%; width: var(--w, 100%); margin-left: calc(var(--w, 100%) / -2); bottom: -16px; height: 16px; transform-style: preserve-3d; transform: translateZ(calc(var(--D) / 2 + 14px)); pointer-events: none; }
+  .lb-plank b { position: absolute; inset: 0; border-radius: 2px; background: linear-gradient(#5b4030, #3a281c 60%, #2a1c13); box-shadow: 0 22px 30px rgba(0,0,0,.55); }
+  .lb-plank i { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--D) + 36px); transform-origin: top center; transform: rotateX(-90deg);
+    background: linear-gradient(to top, #6b4c39, #3b2a1f); }
+  .bk { --c: #1e1b4b; position: relative; flex: none; width: var(--T); height: var(--H); transform-style: preserve-3d; appearance: none; border: 0; padding: 0; margin: 0;
+    background: none; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .25s ease; }
+  .bk:hover, .bk:focus-visible { transform: translateZ(22px); outline: none; }
+  .bk:focus-visible .spine { box-shadow: 0 0 0 3px #818cf8; }
+  .bk.away { visibility: hidden; }
+  .bk .f { position: absolute; left: 50%; top: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+  .bk .spine { width: var(--T); height: var(--H); margin: calc(var(--H) / -2) 0 0 calc(var(--T) / -2); transform: translateZ(calc(var(--D) / 2)); border-radius: 3px;
+    background: linear-gradient(90deg, rgba(0,0,0,.5), rgba(255,255,255,.08) 30%, rgba(255,255,255,.08) 55%, rgba(0,0,0,.55)), var(--c); }
+  .bk .cr, .bk .cl { width: var(--D); height: var(--H); margin: calc(var(--H) / -2) 0 0 calc(var(--D) / -2); border-radius: 2px 8px 8px 2px; }
+  .bk .cr { transform: rotateY(90deg) translateZ(calc(var(--T) / 2)); }
+  .bk .cl { transform: rotateY(-90deg) translateZ(calc(var(--T) / 2)); background: linear-gradient(135deg, var(--c), #09090b); }
+  .bk .tp { width: var(--T); height: var(--D); margin: calc(var(--D) / -2) 0 0 calc(var(--T) / -2); transform: rotateX(90deg) translateZ(calc(var(--H) / 2));
+    background: linear-gradient(90deg, rgba(0,0,0,.6), rgba(0,0,0,.35) 20%, #e7e2d6 22%, #d6d0c2 78%, rgba(0,0,0,.35) 80%, rgba(0,0,0,.6)), var(--c); }
+  .bk .lab { position: absolute; left: 17%; right: 17%; top: 14%; bottom: 26%; border-radius: 3px; background: #f1ede4; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .bk .lab span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: 92%;
+    font: 700 .82rem/1 Cinzel, Georgia, serif; letter-spacing: .12em; text-transform: uppercase; color: #1c1917; }
+  .bk .hole { position: absolute; left: 50%; bottom: 9%; width: 42%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #09090b 55%, rgba(0,0,0,.4)); box-shadow: 0 1px 0 rgba(255,255,255,.15); }
+  .bk .ok { position: absolute; left: 50%; top: 5.5%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
+  .bk-add { flex: none; width: var(--T); height: var(--H); transform: translateZ(calc(var(--D) / 2)); appearance: none; padding: 0; margin: 0 0 0 4px; cursor: pointer;
+    border: 2px dashed #52525b; border-radius: 4px; background: rgba(24,24,27,.5); color: #a1a1aa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+    font: 300 1.6rem/1 Inter, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; transition: border-color .2s, color .2s; }
+  .bk-add span { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
+  .bk-add:hover, .bk-add:focus-visible { border-color: #818cf8; color: #c7d2fe; outline: none; }
+
+  /* Front cover, shared by the 3D binder and the flat binder on the stage */
+  .cv { position: absolute; inset: 0; background: linear-gradient(135deg, var(--c, #1e1b4b), #09090b); }
+  .cv img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cv::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, rgba(255,255,255,.14), transparent 35%); pointer-events: none; }
+  .cv .hinge { position: absolute; left: 0; top: 0; bottom: 0; width: 9%; background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.15)); box-shadow: 1px 0 0 rgba(255,255,255,.08); }
+  .cv .lb-title { position: absolute; left: 9%; right: 0; bottom: 0; padding: 30% 8% 9%; text-align: center; background: linear-gradient(to top, rgba(0,0,0,.78), transparent);
+    font: 700 .78rem/1.3 Cinzel, Georgia, serif; letter-spacing: .08em; text-transform: uppercase; word-break: break-word; color: #f4f4f5; }
+
+  /* Stage: the chosen binder, front and center */
+  #lb-flylayer { position: fixed; inset: 0; z-index: 66; perspective: 1100px; perspective-origin: 50% 50%; pointer-events: none; }
+  #lb-flylayer .bk { position: absolute; left: 0; top: 0; transition: transform .75s cubic-bezier(.45,.05,.2,1); }
+  #lb-stage { position: fixed; inset: 0; z-index: 65; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem;
+    padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  #lb-stage[hidden], .lb-badge[hidden] { display: none; }
+  #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
+  .lb-book { position: relative; flex: none; perspective: 1400px; border-radius: 3px 10px 10px 3px; box-shadow: 0 24px 50px rgba(0,0,0,.65); visibility: hidden; }
+  #lb-stage.ready .lb-book { visibility: visible; }
+  .lb-page { position: absolute; inset: 2% 2% 2% 5%; border-radius: 3px 9px 9px 3px; background: #18181b;
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 6%; padding: 9% 9% 9% 14%; }
   .lb-page i { border-radius: 4px; background: #27272a; box-shadow: inset 0 0 0 1px #3f3f46; }
-  .lb-cover { position: absolute; inset: 0; transform-origin: left center; transform-style: preserve-3d; border-radius: 6px 12px 12px 6px; overflow: hidden;
-    background: linear-gradient(135deg, var(--c, #1e1b4b), #09090b); transition: transform .9s cubic-bezier(.5,.05,.25,1); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-  .lb-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .lb-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, rgba(255,255,255,.14), transparent 35%); pointer-events: none; }
-  .lb-spine { position: absolute; left: 0; top: 0; bottom: 0; width: 15%; background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.2)); display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 18% 0; }
-  .lb-spine span { width: 46%; aspect-ratio: 1 / 1.6; border-radius: 99px; background: linear-gradient(90deg, #52525b, #d4d4d8 50%, #3f3f46); box-shadow: inset 0 1px 2px #000c, 1px 2px 4px #0008; }
-  .lb-title { position: absolute; left: 15%; right: 0; bottom: 0; padding: 30% 8% 9%; text-align: center; background: linear-gradient(to top, rgba(0,0,0,.78), transparent);
-    font: 700 clamp(.6rem, 2.6vw, .8rem)/1.3 Cinzel, Georgia, serif; letter-spacing: .08em; text-transform: uppercase; word-break: break-word; }
-  .lb-name { font: 600 1rem/1.2 Inter, system-ui, sans-serif; }
-  .lb-last { display: block; margin-top: .3rem; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #a5b4fc; }
-  @media (hover: hover) { .lb-pick:hover { transform: translateY(-6px); } .lb-pick:hover .lb-cover { transform: rotateY(-14deg); } }
-  #landing.opening .lb-pick:not(.chosen) { opacity: 0; transform: scale(.9); }
-  #landing.opening .lb-pick.chosen { transition: transform .9s cubic-bezier(.5,.05,.25,1); }
-  #landing.opening .lb-pick.chosen .lb-cover { transform: rotateY(-165deg); }
-  #landing.opening .lb-head { opacity: 0; transition: opacity .3s; }
-  .lb-badge { display: block; margin-top: .3rem; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6ee7b7; }
-  .lb-add .lb-book { box-shadow: none; border: 2px dashed #3f3f46; display: grid; place-items: center; color: #a1a1aa; font: 300 2.5rem/1 Inter, system-ui, sans-serif; transition: border-color .2s, color .2s; }
-  .lb-add:hover .lb-book, .lb-add:focus-visible .lb-book { border-color: #818cf8; color: #c7d2fe; }
+  .lb-cover { position: absolute; inset: 0; border-radius: 3px 10px 10px 3px; overflow: hidden; transform-origin: left center; transition: transform .9s cubic-bezier(.5,.05,.25,1);
+    backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .lb-cover .lb-title { font-size: .95rem; }
+  #lb-stage.opening .lb-cover { transform: rotateY(-165deg); }
+  .lb-info { display: flex; flex-direction: column; align-items: center; gap: .9rem; opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .3s; }
+  #lb-stage.ready .lb-info { opacity: 1; transform: none; }
+  #lb-stage.opening .lb-info { opacity: 0; }
+  .lb-name { font: 700 1.25rem/1.2 Cinzel, Georgia, serif; letter-spacing: .06em; text-align: center; }
+  .lb-badge { display: block; margin-top: .35rem; text-align: center; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6ee7b7; }
+  .lb-acts { display: flex; gap: .6rem; }
+  .lb-acts .lb-btn { min-width: 7.5rem; padding: .85rem 1rem; font-size: .9rem; border-radius: 14px; }
 
   #lb-sheet { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
@@ -153,7 +192,7 @@
   .lb-form { display: flex; flex-direction: column; gap: 1rem; margin: 0; }
   .lb-label { display: flex; flex-direction: column; gap: .35rem; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #a1a1aa; }
   .lb-help { margin: 0; font-size: .78rem; line-height: 1.5; color: #d4d4d8; background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: .75rem .85rem; }
-  @media (prefers-reduced-motion: reduce) { .lb-pick, .lb-cover, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .bk, .lb-cover, .lb-info, .lb-scene, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
 </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
@@ -162,10 +201,22 @@
 <div id="landing" role="dialog" aria-modal="true" aria-labelledby="lb-heading">
   <div class="lb-head">
     <h1 id="lb-heading">Card Binder</h1>
-    <p>Whose binder are we opening?</p>
+    <p>Tap your binder</p>
   </div>
-  <div id="lb-shelf" class="lb-shelf"></div>
+  <div id="lb-scene" class="lb-scene"></div>
+  <div id="lb-stage" hidden>
+    <div id="lb-stage-book" class="lb-book"></div>
+    <div class="lb-info">
+      <div><div id="lb-stage-name" class="lb-name"></div><span id="lb-stage-badge" class="lb-badge" hidden>🔓 Unlocked on this phone</span></div>
+      <div class="lb-acts">
+        <button type="button" id="lb-go" class="lb-btn primary">Unlock</button>
+        <button type="button" id="lb-view" class="lb-btn">View only</button>
+      </div>
+      <button type="button" id="lb-back" class="lb-btn quiet">Back to shelf</button>
+    </div>
+  </div>
 </div>
+<div id="lb-flylayer" hidden></div>
 <div id="lb-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="lb-sheet-title"></div>
 
 <!-- Main Top Header -->
@@ -2034,7 +2085,7 @@ function watchPeople() {
       if (SIGN_IN_MODE === 'pin') db.ref('users').set(DEFAULT_USERS).catch(() => {});
     }
     fillSelects(); updateWho();
-    if (!$('landing').hidden && !$('landing').classList.contains('opening')) renderShelf();
+    if (!$('landing').hidden && !staged && !$('landing').classList.contains('opening')) renderShelf();
   }, () => {});
 }
 function updateWho() {
@@ -2046,60 +2097,117 @@ function updateWho() {
   $('who-lock').classList.toggle('hidden', !!peerUser);
 }
 
-/* --- Welcome screen --- */
-function lbPaintCover(id, cover) {
-  const btn = document.querySelector(`.lb-pick[data-user="${CSS.escape(id)}"]`); if (!btn) return;
-  const c = cover || {}, el = btn.querySelector('.lb-cover');
-  el.style.setProperty('--c', c.color || '#1e1b4b');
-  el.querySelector('img')?.remove();
-  if (c.image) { const im = document.createElement('img'); im.alt = ''; im.src = c.image; el.prepend(im); }
-  const t = el.querySelector('.lb-title');
-  t.textContent = c.title || (nameOf(id) + "'s Card Binder");
-  t.hidden = c.showTitle === false;
+/* --- Welcome screen: a 3D bookshelf --- */
+const COVERS = {};
+let staged = null;   // id of the binder pulled off the shelf
+const PERSP = 1100;
+
+function coverInner(id) {
+  const c = COVERS[id] || {};
+  return `${c.image ? `<img alt="" src="${lbEsc(c.image)}">` : ''}<div class="hinge"></div>${c.showTitle === false ? '' : `<div class="lb-title">${lbEsc(c.title || nameOf(id) + "'s Card Binder")}</div>`}`;
+}
+function binderBox(id) {
+  const c = (COVERS[id] && COVERS[id].color) || '#1e1b4b';
+  return `<div class="f tp"></div><div class="f cl"></div><div class="f cr"><div class="cv">${coverInner(id)}</div></div>
+    <div class="f spine"><div class="lab"><span>${lbEsc(nameOf(id))}</span></div><div class="hole"></div>${isUnlocked(id) ? '<div class="ok" title="Unlocked on this phone"></div>' : ''}</div>`;
+}
+function paintBinder(id) {
+  document.querySelectorAll(`.bk[data-user="${CSS.escape(id)}"]`).forEach(el => {
+    el.style.setProperty('--c', (COVERS[id] && COVERS[id].color) || '#1e1b4b');
+    el.innerHTML = binderBox(id);
+  });
 }
 function renderShelf() {
-  const last = recall(LAST_USER_KEY, '');
-  $('lb-shelf').innerHTML = people().map(u => `
-    <button type="button" class="lb-pick" data-user="${lbEsc(u.id)}" onclick="pickBinder(this)">
-      <div class="lb-book">
-        <div class="lb-page" aria-hidden="true">${'<i></i>'.repeat(9)}</div>
-        <div class="lb-cover"><div class="lb-spine" aria-hidden="true"><span></span><span></span><span></span></div><div class="lb-title"></div></div>
-      </div>
-      <div><span class="lb-name">${lbEsc(u.name)}</span>${isUnlocked(u.id) ? '<span class="lb-badge">🔓 Unlocked here</span>' : (u.id === last ? '<span class="lb-last">Last opened</span>' : '')}</div>
-    </button>`).join('') + `
-    <button type="button" class="lb-pick lb-add" onclick="addPerson()">
-      <div class="lb-book" aria-hidden="true">+</div>
-      <div><span class="lb-name">Add person</span></div>
-    </button>`;
+  const sc = $('lb-scene'); if (!sc) return;
+  const T = 50, gap = 7, room = Math.min(sc.clientWidth || innerWidth, 640) - 48;
+  const perRow = Math.max(3, Math.floor((room + gap) / (T + gap)));
+  const items = [...people().map(u => u.id), '+'];
+  const rows = []; for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
+  sc.innerHTML = rows.map(r => `<div class="lb-row" style="--w:${Math.min(r.length * (T + gap) + 72, room + 40)}px">${r.map(id => id === '+'
+      ? `<button type="button" class="bk-add" onclick="addPerson()" aria-label="Add person">+<span>Add</span></button>`
+      : `<button type="button" class="bk" data-user="${lbEsc(id)}" aria-label="${lbEsc(nameOf(id))}'s binder" onclick="pickBinder(this)"></button>`).join('')}
+      <div class="lb-plank" aria-hidden="true"><i></i><b></b></div></div>`).join('');
   people().forEach(u => {
-    lbPaintCover(u.id, null);
-    db.ref('binders/' + u.id + '/cover').once('value').then(s => lbPaintCover(u.id, s.val())).catch(() => {});
+    paintBinder(u.id);
+    db.ref('binders/' + u.id + '/cover').once('value').then(s => { COVERS[u.id] = s.val() || null; paintBinder(u.id); }).catch(() => {});
   });
 }
 function showLanding() {
   const L = $('landing'); if (!L) return;
   closeSheet();
-  L.classList.remove('opening', 'out'); L.hidden = false;
+  staged = null;
+  $('lb-stage').hidden = true; $('lb-stage').className = '';
+  $('lb-flylayer').hidden = true; $('lb-flylayer').innerHTML = '';
+  L.classList.remove('opening', 'out', 'focus'); L.hidden = false;
   document.body.style.overflow = 'hidden';
   renderShelf();
 }
-function pickBinder(btn) {
-  if ($('landing').classList.contains('opening')) return;
-  const u = btn.dataset.user;
-  if (isUnlocked(u)) return openBinder(u, false);
-  if (SIGN_IN_MODE === 'email') return emailSheet(u);
-  return USERS[u] && USERS[u].pin ? enterPinSheet(u) : setPinSheet(u);
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Where a box should sit in the fly layer so its face at depth z lands on a target point at a target size
+function flyPlace(cx, cy, k, depth) {
+  const s = k * PERSP / (PERSP + k * depth);          // scale before perspective
+  const f = PERSP / (PERSP - s * depth);              // perspective enlargement at that depth
+  const ox = innerWidth / 2, oy = innerHeight / 2;
+  return { s, x: ox + (cx - ox) / f, y: oy + (cy - oy) / f };
+}
+function pickBinder(el) {
+  if (staged || $('landing').classList.contains('opening')) return;
+  const id = el.dataset.user; staged = id;
+  const T = 50, H = 216, D = 158;
+  // Lay out the stage first so we know where the binder should land
+  const stage = $('lb-stage'), book = $('lb-stage-book');
+  const W = Math.min(220, innerWidth * .56), Hh = W * H / D;
+  book.style.width = W + 'px'; book.style.height = Hh + 'px';
+  book.style.setProperty('--c', (COVERS[id] && COVERS[id].color) || '#1e1b4b');
+  book.innerHTML = `<div class="lb-page" aria-hidden="true">${'<i></i>'.repeat(9)}</div><div class="lb-cover"><div class="cv">${coverInner(id)}</div></div>`;
+  $('lb-stage-name').textContent = nameOf(id);
+  const open = isUnlocked(id);
+  $('lb-stage-badge').hidden = !open;
+  $('lb-go').textContent = open ? 'Open' : '🔒 Unlock';
+  $('lb-go').onclick = () => open ? openBinder(id, false) : unlockStaged(id);
+  $('lb-view').onclick = () => openBinder(id, true);
+  $('lb-back').onclick = backToShelf;
+  stage.className = ''; stage.hidden = false;
+  stage.onclick = e => { if (e.target === stage) backToShelf(); };
+  $('landing').classList.add('focus');
+  const to = book.getBoundingClientRect();
+
+  // Fly a copy of the 3D binder from the shelf to the stage, turning to show its front cover
+  const from = el.querySelector('.spine').getBoundingClientRect();
+  const layer = $('lb-flylayer'); layer.hidden = false;
+  layer.innerHTML = `<div class="bk" data-user="${lbEsc(id)}">${binderBox(id)}</div>`;
+  const fly = layer.firstElementChild;
+  fly.style.setProperty('--c', (COVERS[id] && COVERS[id].color) || '#1e1b4b');
+  const a = flyPlace(from.left + from.width / 2, from.top + from.height / 2, from.height / H, D / 2);
+  const b = flyPlace(to.left + to.width / 2, to.top + to.height / 2, to.width / D, T / 2);
+  const place = (p, turn) => `translate(${p.x - T / 2}px, ${p.y - H / 2}px) scale(${p.s})${turn ? ' rotateY(-90deg)' : ''}`;
+  fly.style.transition = 'none'; fly.style.transform = place(a, false);
+  el.classList.add('away');
+  const land = () => { stage.classList.add('ready'); layer.hidden = true; layer.innerHTML = ''; $('lb-go').focus({ preventScroll: true }); };
+  if (reduceMotion()) return land();
+  void fly.offsetWidth;
+  fly.style.transition = ''; fly.style.transform = place(b, true);
+  fly.addEventListener('transitionend', land, { once: true });
+  setTimeout(() => { if (!stage.classList.contains('ready') && staged === id) land(); }, 1100);
+}
+function backToShelf() {
+  if (!staged) return;
+  const id = staged; staged = null;
+  closeSheet();
+  $('lb-stage').hidden = true; $('lb-stage').className = '';
+  $('landing').classList.remove('focus');
+  document.querySelectorAll('.lb-scene .bk.away').forEach(b => b.classList.remove('away'));
+  if (id) paintBinder(id);
+}
+function unlockStaged(id) {
+  if (SIGN_IN_MODE === 'email') return emailSheet(id);
+  return USERS[id] && USERS[id].pin ? enterPinSheet(id) : setPinSheet(id);
 }
 function openBinder(u, viewOnly) {
   closeSheet();
-  const L = $('landing'), btn = document.querySelector(`.lb-pick[data-user="${CSS.escape(u)}"]`);
-  if (btn) {
-    // Glide the chosen binder to the middle of the screen as its cover opens
-    const r = btn.getBoundingClientRect();
-    btn.style.transform = `translate(${innerWidth / 2 - (r.left + r.width / 2)}px, ${innerHeight / 2 - (r.top + r.height / 2)}px) scale(1.15)`;
-    btn.classList.add('chosen');
-  }
-  L.classList.add('opening');
+  const L = $('landing'), stage = $('lb-stage');
+  L.classList.add('opening'); stage.classList.add('opening');
   // Start loading while the cover swings open
   const same = activeListener === u && S.loadedFor === u && !!peerUser === viewOnly;
   if (viewOnly) { peerUser = u; if (!isUnlocked(currentUser)) currentUser = u; }
@@ -2107,11 +2215,11 @@ function openBinder(u, viewOnly) {
   $('user-select').value = currentUser; $('peer-select').value = '';
   if (!same) { S.cur = 0; setupFirebaseListener(u); }
   updateWho();
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const r = reduceMotion();
   setTimeout(() => {
     L.classList.add('out');
-    setTimeout(() => { L.hidden = true; document.body.style.overflow = ''; }, reduce ? 0 : 400);
-  }, reduce ? 0 : 950);
+    setTimeout(() => { L.hidden = true; document.body.style.overflow = ''; stage.hidden = true; staged = null; }, r ? 0 : 400);
+  }, r ? 0 : 950);
 }
 
 /* --- Sheets: PIN pad, email form, add person --- */
@@ -2196,7 +2304,7 @@ function forgotPin(u) {
     <div class="lb-row"><button type="button" class="lb-btn primary" onclick="enterPinSheet('${lbEsc(u)}')">Back</button></div>`);
 }
 
-function emailSheet(u) {
+function emailSheet(u, onDone) {
   const known = USERS[u] && USERS[u].email;
   sheet(`
     <h2 id="lb-sheet-title">${known ? `${lbEsc(nameOf(u))}'s Binder` : `Set up ${lbEsc(nameOf(u))}'s sign-in`}</h2>
@@ -2223,7 +2331,7 @@ function emailSheet(u) {
         await db.ref('users/' + u + '/email').set(email);
         USERS[u] = { ...(USERS[u] || {}), email };
       }
-      openBinder(u, false);
+      (onDone || (() => openBinder(u, false)))();
     } catch (x) { err.textContent = emailError(x); btn.disabled = false; }
   };
   setTimeout(() => (known ? $('lb-pass') : $('lb-email')).focus(), 50);
@@ -2262,8 +2370,9 @@ function addPerson() {
     catch (x) { err.textContent = 'Couldn\'t add them. Check your connection.'; return; }
     USERS[id] = { name, order };
     renderShelf();
-    if (SIGN_IN_MODE === 'email') emailSheet(id);
-    else setPinSheet(id);
+    const stageNew = () => { closeSheet(); renderShelf(); const el = document.querySelector(`.bk[data-user="${CSS.escape(id)}"]`); if (el) pickBinder(el); };
+    if (SIGN_IN_MODE === 'email') emailSheet(id, stageNew);
+    else setPinSheet(id, stageNew);
   };
 }
 
@@ -2274,7 +2383,7 @@ function startEmailAuth() {
     sc.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
     sc.onload = () => {
       auth = firebase.auth();
-      auth.onAuthStateChanged(() => { updateWho(); if (!$('landing').hidden && !$('landing').classList.contains('opening')) renderShelf(); });
+      auth.onAuthStateChanged(() => { updateWho(); if (!$('landing').hidden && !staged && !$('landing').classList.contains('opening')) renderShelf(); });
       res();
     };
     sc.onerror = () => { toast('Couldn\'t load sign-in. Check your connection.', 'error'); res(); };
@@ -2289,6 +2398,7 @@ window.addEventListener('DOMContentLoaded', () => {
   watchPeople();
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
   db.ref('.info/connected').on('value', s => {
     clearTimeout(offlineTimer);
     if (s.val() === true) { if (bannerKind === 'offline') dbOk(); }
