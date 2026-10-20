@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.7';
+const APP_VERSION = '2026-10-20.8';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -767,14 +767,14 @@ const opLink = (name, number) => `https://www.tcgplayer.com/search/one-piece-car
 function opCard(r) {
   return {
     id: r.card_image_id || r.card_set_id, name: r.card_name || 'Unknown', set: r.set_name || r.structure_deck_name || '',
-    number: r.card_set_id || '', rarity: r.rarity || 'Unknown', price: r.market_price ?? null, url: opLink(r.card_name, r.card_set_id),
+    number: r.card_set_id || r.set_id || '', rarity: r.rarity || 'Unknown', price: r.market_price ?? null, url: opLink(r.card_name, r.card_set_id),
     thumb: r.card_image, image: r.card_image, alts: [], game: 'onepiece', source: 'optcg', lang: 'en'
   };
 }
 // Every One Piece card (sets, starter decks, promos), loaded once per visit and searched on the phone
 function opLoadAll() {
   if (opAll) return Promise.resolve(opAll);
-  if (!opAllP) opAllP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
+  if (!opAllP) opAllP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/', 'allDonCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
     .then(lists => {
       const seen = new Set();
       const all = lists.flat().filter(r => r && r.card_name && r.card_image).filter(r => {
@@ -803,8 +803,8 @@ async function opLoadSets() {
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
 }
-const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', DON: 'DON!!' };
-const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P'];
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!! card' };
+const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'DON!!'];
 const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
 async function opFillRarities() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
@@ -830,13 +830,14 @@ async function opSearch() {
     const pre = setVal ? (setVal === 'P' ? 'P-' : opPrefix(setVal) + '-') : '';
     let items = all.filter(r => {
       const cid = String(r.card_set_id || '').toUpperCase();
-      if (pre && !cid.startsWith(pre)) return false;
+      // DON!! cards have no card number; they belong to a set by its id (OP-14)
+      if (pre && !cid.startsWith(pre) && !(r.set_id && opPrefix(r.set_id) + '-' === pre)) return false;
       if (rar && (rar === 'parallel' ? !opParallel(r) : String(r.rarity || '').trim() !== rar)) return false;
       if (!text) return true;
       if (mode === 'num') return cid === idq || cid.startsWith(idq);
       return lc(r.card_name).includes(lc(text)) || (mode === 'set' && cid.includes(text.toUpperCase()));
     });
-    items.sort((a, b) => String(a.card_set_id).localeCompare(String(b.card_set_id), undefined, { numeric: true }) || String(a.card_image_id).localeCompare(String(b.card_image_id), undefined, { numeric: true }));
+    items.sort((a, b) => String(a.card_set_id || a.set_id).localeCompare(String(b.card_set_id || b.set_id), undefined, { numeric: true }) || String(a.card_image_id).localeCompare(String(b.card_image_id), undefined, { numeric: true }));
     if (!items.length) { box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching cards found.</div>'; return; }
     pending = { items, shown: 0, make: async r => opCard(r) };
     await loadBatch(false);
