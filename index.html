@@ -246,7 +246,7 @@
 <div id="peer-viewer" hidden>
   <iframe id="peer-frame" title="Binder viewer"></iframe>
   <div class="pv-bar">
-    <button type="button" class="pv-btn" onclick="closePeerViewer()" aria-label="Back to shelf">‹ Shelf</button>
+    <button type="button" id="pv-back" class="pv-btn" onclick="closePeerViewer()" aria-label="Back to shelf">‹ Shelf</button>
     <span id="pv-name" class="pv-name"></span>
     <button type="button" id="pv-refresh" class="pv-btn pv-new" onclick="refreshPeerViewer()" hidden>New changes · Refresh</button>
   </div>
@@ -281,6 +281,7 @@
           <span id="who-mode" class="text-[10px] uppercase font-semibold text-emerald-400">Editing</span>
           <span id="who-name" class="text-xs font-semibold text-zinc-100"></span>
           <button type="button" onclick="showLanding()" class="btn !py-1">Switch</button>
+          <button type="button" id="who-view" onclick="openPeerViewer(currentUser, true)" class="btn !py-1" title="Flip through this binder in 3D">👁 View</button>
           <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
           <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
         </div>
@@ -559,7 +560,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.15';
+const APP_VERSION = '2026-10-20.16';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2429,6 +2430,7 @@ function updateWho() {
   $('who-mode').className = 'text-[10px] uppercase font-semibold ' + (peerUser ? 'text-amber-400' : 'text-emerald-400');
   $('who-lock').classList.toggle('hidden', !!peerUser);
   $('who-binders').classList.toggle('hidden', !!peerUser);
+  $('who-view').classList.toggle('hidden', !!peerUser);
 }
 
 /* --- Welcome screen: a 3D bookshelf --- */
@@ -2694,7 +2696,7 @@ function removeCardBack(path, label) {
 }
 
 /* --- View only: flip through someone else's binder in the export's 3D view --- */
-let pvUser = null, pvRef = null, pvData = null, pvShown = null;
+let pvUser = null, pvRef = null, pvData = null, pvShown = null, pvFromEdit = false;
 function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
@@ -2703,9 +2705,13 @@ function peerViewerHTML(u, data) {
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
-function openPeerViewer(u) {
+// fromEdit: opened with "View" from inside your own binder, so "Back" returns there instead of the shelf
+function openPeerViewer(u, fromEdit) {
   closePeerViewer(true);
-  pvUser = u; pvData = undefined; pvShown = null;
+  pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit;
+  $('pv-back').textContent = pvFromEdit ? '‹ Back to editing' : '‹ Shelf';
+  $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
+  if (pvFromEdit) document.body.style.overflow = 'hidden';
   $('pv-name').textContent = titleOf(u);
   $('pv-refresh').hidden = true;
   $('peer-frame').srcdoc = '';
@@ -2725,9 +2731,11 @@ function refreshPeerViewer() {
   $('pv-refresh').hidden = true;
 }
 function closePeerViewer(silent) {
+  const backToEdit = pvFromEdit; pvFromEdit = false;
   if (pvRef) pvRef.off(); pvRef = null; pvUser = null;
   const v = $('peer-viewer'); if (v) { v.hidden = true; $('peer-frame').srcdoc = ''; }
-  if (!silent) showLanding();
+  if (backToEdit) document.body.style.overflow = '';
+  if (!silent && !backToEdit) showLanding();
 }
 function cancelToShelf() { closeSheet(); if (staged && !$('landing').classList.contains('opening')) backToShelf(); }
 
