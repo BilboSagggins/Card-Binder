@@ -405,8 +405,8 @@
           <option value="">Any set</option>
         </select>
       </div>
-      <!-- One Piece only: narrow results by rarity -->
-      <div id="op-rar-row" class="flex items-center gap-2 panel px-3 py-2 hidden">
+      <!-- Narrow results by rarity (options depend on the game) -->
+      <div id="op-rar-row" class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">Rarity:</span>
         <select id="op-rarity" onchange="if($('q').value.trim() || $('set').value || this.value) search()" class="field !py-1.5 !text-xs w-full">
           <option value="">Any rarity</option>
@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.6';
+const APP_VERSION = '2026-10-20.7';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -807,7 +807,7 @@ const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Su
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P'];
 const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
 async function opFillRarities() {
-  const dd = $('op-rarity'); if (!dd || dd.dataset.ready) return;
+  const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
   try {
     const all = await opLoadAll();
     const found = [...new Set(all.map(r => String(r.rarity || '').trim()).filter(Boolean))]
@@ -815,7 +815,8 @@ async function opFillRarities() {
     const keep = dd.value;
     dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(OP_RARITY[r] ? `${OP_RARITY[r]} (${r})` : r)}</option>`).join('')
       + '<option value="parallel">Parallel / alt art only</option>';
-    dd.value = keep; dd.dataset.ready = '1';
+    if (S.game !== 'onepiece') return;
+    dd.value = keep; dd.dataset.ready = 'onepiece';
   } catch (e) {}
 }
 async function opSearch() {
@@ -854,8 +855,10 @@ function applyGameUI() {
   const op = S.game === 'onepiece';
   $('s-head').textContent = op ? '🔍 Search One Piece TCG' : '🔍 Search Pokémon TCG';
   $('m-num').textContent = op ? 'Card ID' : 'Pokémon + Number';
-  $('op-rar-row').classList.toggle('hidden', !op);
-  if (!op) $('op-rarity').value = '';
+  // Same Rarity picker for both games; its choices are refilled for the binder's game
+  const rd = $('op-rarity');
+  if (rd.dataset.ready && rd.dataset.ready !== S.game) { rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; }
+  rd.value = '';
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
 }
@@ -887,6 +890,7 @@ function setMode(m) {
 
 async function loadSets() {
   if (S.game === 'onepiece') { opFillRarities(); return opLoadSets(); }
+  pkFillRarities();
   const lang = $('lang').value, dd =$('set');
   if (!setsCache[lang]) {
     dd.innerHTML = '<option value="">Loading sets…</option>';
@@ -908,25 +912,54 @@ async function loadSets() {
   dd.value = keep;
 }
 
+// Pokémon rarities, exactly as TCGdex names them (used for exact-match filtering)
+const PK_RARITIES = ['Common', 'Uncommon', 'Rare', 'Rare Holo', 'Double rare', 'Ultra Rare', 'Illustration rare', 'Special illustration rare', 'Hyper rare',
+  'Secret Rare', 'ACE SPEC Rare', 'Shiny rare', 'Shiny Ultra Rare', 'Radiant Rare', 'Amazing Rare', 'Holo Rare V', 'Holo Rare VMAX', 'Holo Rare VSTAR', 'Rare Holo LV.X', 'Rare PRIME', 'LEGEND', 'Classic Collection', 'Promo'];
+const pkRarityCards = {};   // "lang|rarity" -> Set of card ids
+async function pkFillRarities() {
+  const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'pokemon') return;
+  let list = PK_RARITIES;
+  try { const l = await fetchJSON(`${API}en/rarities`, 8000); if (Array.isArray(l) && l.length) list = l.filter(r => r && typeof r === 'string' && r !== 'None'); } catch (e) {}
+  if (S.game !== 'pokemon') return;
+  const keep = dd.value;
+  dd.innerHTML = '<option value="">Any rarity</option>' + list.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  dd.value = keep; dd.dataset.ready = 'pokemon';
+}
+async function pkCardsOfRarity(lang, rar) {
+  const k = lang + '|' + rar;
+  if (!pkRarityCards[k]) {
+    const l = await fetchJSON(`${API}${lang}/cards?rarity=${encodeURIComponent('eq:' + rar)}`, 20000);
+    pkRarityCards[k] = Array.isArray(l) ? l : [];
+  }
+  return pkRarityCards[k];
+}
 async function search() {
   if (S.game === 'onepiece') return opSearch();
   const lang = $('lang').value, setVal =$('set').value, box = $('results'), text =$('q').value.trim();
   const parsed = mode === 'name' ? { name: text, number: '' } : parseQ(text);
   const prefix = mode === 'set' && /^[a-z]{1,3}\d*$/i.test(text) ? lc(text) : '';
   const name = prefix ? '' : parsed.name, number = prefix ? '' : parsed.number;
-  if (mode === 'set' && !setVal) return toast('Please choose a set', 'error');
-  if (!setVal && !name) return toast('Type a card name or choose a set', 'error');
+  const rar = $('op-rarity').value;
+  if (mode === 'set' && !setVal && !rar) return toast('Choose a set or a rarity', 'error');
+  if (!setVal && !name && !rar) return toast('Type a card name, or choose a set or rarity', 'error');
   box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
   try {
     let meta = null, items;
     if (setVal.startsWith('ptcg:')) {
       const r = (await fetchJSON(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent('set.id:' + setVal.slice(5))}&pageSize=250&select=id,name,number,rarity,images,set,tcgplayer`, 15000)).data || [];
-      items = r.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true })).map(c => ({ id: c.id, name: c.name, localId: c.number, raw: c }));
+      items = r.filter(c => !rar || lc(c.rarity) === lc(rar)).sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true })).map(c => ({ id: c.id, name: c.name, localId: c.number, raw: c }));
     } else if (setVal) {
       meta = await fetchJSON(`${API}${lang}/sets/${encodeURIComponent(setVal)}`, 12000); items = meta.cards || [];
-    } else {
+    } else if (name) {
       const l = await fetchJSON(`${API}${lang}/cards?name=${encodeURIComponent(name)}`, 10000);
       items = Array.isArray(l) ? l : [];
+    } else {
+      items = (await pkCardsOfRarity(lang, rar)).slice().reverse();   // rarity only: newest sets first
+    }
+    // A rarity narrows a set or name search to the cards TCGdex lists for that rarity
+    if (rar && !setVal.startsWith('ptcg:') && (setVal || name)) {
+      const ids = new Set((await pkCardsOfRarity(lang, rar)).map(c => c.id));
+      items = items.filter(c => ids.has(c.id));
     }
     items = items.filter(c => !isPocket(c)
       && (!name || lc(c.name).includes(lc(name)))
