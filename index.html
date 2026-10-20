@@ -208,6 +208,7 @@
   .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
   .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
   .lb-btn:disabled { opacity: .5; cursor: default; }
+  .lb-btn.lb-danger { background: #4c0519; border-color: #9f1239; color: #fecdd3; }
   .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
   .lb-field { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 12px; padding: .7rem .8rem; color: #f4f4f5; font: 500 1rem/1.2 Inter, system-ui, sans-serif; }
   .lb-form { display: flex; flex-direction: column; gap: 1rem; margin: 0; }
@@ -2755,7 +2756,12 @@ function binderSheet() {
       ${gamePicker('bn-game', 'onepiece')}
       <p class="lb-err" role="alert"></p>
       <div class="lb-row"><button type="submit" class="lb-btn primary">Create binder</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>
-    </form>`);
+    </form>
+    <div class="lb-form" style="border-top:1px solid #27272a;padding-top:1rem">
+      ${currentUser !== owner
+        ? `<button type="button" class="lb-btn lb-danger" onclick="deleteBinderSheet()">Delete this binder…</button>`
+        : `<p class="sub" style="margin:0;text-align:left">This is ${lbEsc(nameOf(owner))}'s first binder, so it can't be deleted. You can rename it above or empty it with 🗑️.</p>`}
+    </div>`);
   $('bn-rename').onsubmit = async e => {
     e.preventDefault();
     const title = $('bn-title').value.trim().replace(/\s+/g, ' '); if (!title) return;
@@ -2782,6 +2788,37 @@ function binderSheet() {
     S.cur = 0; setupFirebaseListener(id); updateWho(); window.scrollTo(0, 0);
     toast(`Created "${title}" (${GAMES[game]})`);
   };
+}
+
+// Delete the open binder (not a person's first one): confirm with that person's PIN, then remove its cards and backups
+function deleteBinderSheet() {
+  const id = currentUser, owner = ownerOf(id), title = titleOf(id);
+  if (peerUser || id === owner) return;
+  const doDelete = async () => {
+    try {
+      if (activeListener === id) { db.ref('binders/' + id).off(); activeListener = null; }
+      await Promise.all(['binders/', 'backups/', 'backupIndex/'].map(path => db.ref(path + id).remove()));
+      await db.ref('binderInfo/' + id).remove();
+    } catch (e) { toast('Couldn\'t delete it. Check your connection.', 'error'); return false; }
+    delete BINFO[id]; delete COVERS[id];
+    S.loadedFor = null; S.cloud = null; currentUser = owner;
+    closeSheet(); toast(`Deleted "${title}"`);
+    showLanding();
+    return true;
+  };
+  const intro = `This removes "${lbEsc(title)}" from the shelf, along with its cards and backups. It can't be undone.`;
+  if (SIGN_IN_MODE === 'pin' && USERS[owner] && USERS[owner].pin) {
+    pinPad({
+      title: 'Delete binder?',
+      sub: `${intro} Enter ${lbEsc(nameOf(owner))}'s PIN to delete it.`,
+      onPin: async pin => { if (!(await checkPin(owner, pin))) return 'Wrong PIN. Nothing was deleted.'; return (await doDelete()) || 'Couldn\'t delete it.'; },
+      actions: [{ label: 'Cancel', fn: binderSheet }]
+    });
+  } else {
+    sheet(`<h2 id="lb-sheet-title">Delete binder?</h2><p class="sub">${intro}</p>
+      <div class="lb-row"><button type="button" class="lb-btn lb-danger" id="bn-del-yes">Delete "${lbEsc(title)}"</button><button type="button" class="lb-btn quiet" onclick="binderSheet()">Cancel</button></div>`);
+    $('bn-del-yes').onclick = doDelete;
+  }
 }
 
 /* --- Email sign-in support (only loaded when SIGN_IN_MODE is 'email') --- */
