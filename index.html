@@ -2117,10 +2117,11 @@ function mixHex(a, b, t) {
   const p = h => { h = String(h).replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); const n = parseInt(h, 16); return isNaN(n) ? [30, 27, 75] : [n >> 16 & 255, n >> 8 & 255, n & 255]; };
   const x = p(a), y = p(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
 }
-// Tint an element's leather from the binder's chosen cover color (same mix as the export); black when none is chosen
+// Tint an element's leather from the binder's chosen cover color (same mix as the export); black when none is chosen or there's a cover photo
 function tint(el, id) {
   let hex = COVERS[id] && COVERS[id].color;
   if (hex && hex.toLowerCase() === '#1e1b4b') hex = '';   // the cover editor's untouched default counts as no color
+  if (COVERS[id] && COVERS[id].image) hex = '';            // a cover photo gets a black spine
   const [a, b] = hex ? [hex, mixHex(hex, '#09090b', .6)] : ['#2a2a2e', '#141416'];
   el.style.setProperty('--lc1', a); el.style.setProperty('--lc2', b); el.style.setProperty('--lc3', '#09090b');
 }
