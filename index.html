@@ -208,6 +208,14 @@
   .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
   .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
   .lb-btn:disabled { opacity: .5; cursor: default; }
+  .cb-list { display: flex; flex-direction: column; gap: .5rem; max-height: 52vh; overflow-y: auto; }
+  .cb-row { display: flex; align-items: center; gap: .7rem; padding: .5rem; border: 1px solid #27272a; border-radius: 12px; background: #09090b; }
+  .cb-thumb { flex: none; width: 2.2rem; aspect-ratio: 2.5 / 3.5; border-radius: 4px; background: #27272a; overflow: hidden; }
+  .cb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cb-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; font-size: .8rem; }
+  .cb-text span { font-size: .7rem; color: #a1a1aa; }
+  .cb-acts { display: flex; gap: .3rem; flex: none; }
+  .cb-acts .lb-btn { padding: .5rem .65rem; font-size: .72rem; }
   .lb-btn.lb-danger { background: #4c0519; border-color: #9f1239; color: #fecdd3; }
   .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
   .lb-field { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 12px; padding: .7rem .8rem; color: #f4f4f5; font: 500 1rem/1.2 Inter, system-ui, sans-serif; }
@@ -549,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.4';
+const APP_VERSION = '2026-10-20.5';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -795,7 +803,7 @@ async function opLoadSets() {
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
 }
-const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special (SP)', SP: 'Special (SP)', TR: 'Treasure Rare', P: 'Promo', DON: 'DON!!' };
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', DON: 'DON!!' };
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P'];
 const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
 async function opFillRarities() {
@@ -1605,6 +1613,7 @@ function openInspect(p, s) {
   }
   
   $('cb-controls').classList.toggle('hidden', !!peerUser);
+  paintCardBack(c);
   $('flip').classList.remove('ry180');$('i-modal').classList.remove('hidden');
 }
 
@@ -2042,6 +2051,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     if (!c) return;
     document.getElementById('i-title').textContent = c.name;
     document.getElementById('i-img').src = c.image || c.thumb;
+    paintBack(c);
     document.getElementById('i-set').textContent = c.set || '—';
     document.getElementById('i-num').textContent = c.number || '—';
     document.getElementById('i-rar').textContent = c.rarity || '—';
@@ -2051,10 +2061,16 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     document.getElementById('i-modal').classList.remove('hidden');
   }
   function closeInspect() { document.getElementById('i-modal').classList.add('hidden'); }
-  if (B.cardBack) {
-    const backFace = document.querySelector('#flip .ry180');
-    if (backFace) { backFace.textContent = ''; const bi = document.createElement('img'); bi.alt = ''; bi.src = B.cardBack; bi.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; backFace.appendChild(bi); }
+  function paintBack(c) {
+    const backFace = document.querySelector('#flip .ry180'); if (!backFace) return;
+    if (backFace.dataset.orig == null) backFace.dataset.orig = backFace.innerHTML;
+    const rk = c && c.rarity ? String(c.rarity).trim().replace(/[\\s.#$\\[\\]\\/]+/g, '_') : '';
+    const src = (B.cardBacksByRarity && rk && B.cardBacksByRarity[rk]) || B.cardBack;
+    if (!src) { backFace.innerHTML = backFace.dataset.orig; return; }
+    backFace.textContent = ''; const bi = document.createElement('img'); bi.alt = ''; bi.src = src;
+    bi.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; backFace.appendChild(bi);
   }
+  paintBack(null);
   document.getElementById('i-modal').addEventListener('click', e => { if (e.target.id === 'i-modal') closeInspect(); });
 
   applyView();
@@ -2075,6 +2091,7 @@ function exportBinderHTML() {
     pages: pages,
     cover: S.cover || null,
     cardBack: CARD_BACKS[S.game] || '',
+    cardBacksByRarity: S.game === 'onepiece' ? OP_RAR_BACKS : {},
     exportedAt: new Date().toISOString()
   };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
@@ -2464,19 +2481,31 @@ function openBinder(u, viewOnly) {
   setTimeout(() => L.classList.add('out'), 1150);
   setTimeout(finish, 1650);
 }
-/* --- Card back pictures: one per game, shown on the back of every card of that game --- */
+/* --- Card back pictures: one per game, plus optional One Piece backs per rarity --- */
 const CARD_BACKS = { pokemon: '', onepiece: '' };
 const CARD_BACK_PATH = { pokemon: 'settings/cardBack', onepiece: 'settings/cardBackOnePiece' };
+const OP_RAR_PATH = 'settings/cardBackOnePieceRarity';
+let OP_RAR_BACKS = {};                                   // { L: dataURL, SR: dataURL, "SP_CARD": ... }
+const rarKey = r => String(r || '').trim().replace(/[\s.#$\[\]\/]+/g, '_');
 function watchCardBack() {
   Object.keys(CARD_BACK_PATH).forEach(g => db.ref(CARD_BACK_PATH[g]).on('value', v => { CARD_BACKS[g] = v.val() || ''; paintCardBack(); }, () => {}));
+  db.ref(OP_RAR_PATH).on('value', v => { OP_RAR_BACKS = v.val() || {}; paintCardBack(); }, () => {});
 }
-function paintCardBack() {
+// The back for a card: its rarity's picture (One Piece), else the game's picture, else none
+function backFor(card, game) {
+  if (game === 'onepiece' && card && card.rarity && OP_RAR_BACKS[rarKey(card.rarity)]) return OP_RAR_BACKS[rarKey(card.rarity)];
+  return CARD_BACKS[game] || '';
+}
+let backCard = null;   // the card open in the details window
+function paintCardBack(card) {
+  if (card !== undefined) backCard = card;
   const im = $('i-back-img'), em = $('i-back-emoji'); if (!im) return;
-  const CARD_BACK = CARD_BACKS[S.game] || '';
+  const CARD_BACK = backFor(backCard, S.game);
   if (CARD_BACK) { im.src = CARD_BACK; im.classList.remove('hidden'); em.classList.add('hidden'); }
   else { im.removeAttribute('src'); im.classList.add('hidden'); em.classList.remove('hidden'); }
 }
-// Only someone with the master PIN can change the card back
+// Only someone with the master PIN can change card backs
+let cbTarget = null;   // { path, label } chosen in the card-back screen
 function cardBackSheet() {
   if (!MASTER) {
     sheet(`<h2 id="lb-sheet-title">Card back</h2>
@@ -2486,26 +2515,50 @@ function cardBackSheet() {
   }
   pinPad({
     title: `${GAMES[S.game]} card back`,
-    sub: `Enter the master PIN to change the picture on the back of every ${GAMES[S.game]} card.`,
+    sub: S.game === 'onepiece' ? 'Enter the master PIN to change One Piece card backs.' : `Enter the master PIN to change the picture on the back of every ${GAMES[S.game]} card.`,
     onPin: async pin => {
       if (!(await checkMaster(pin))) return 'Wrong master PIN.';
-      // A real tap on "Choose picture" opens the photo picker (phones block it otherwise)
-      const CARD_BACK = CARD_BACKS[S.game] || '';
-      sheet(`<h2 id="lb-sheet-title">${GAMES[S.game]} card back</h2>
-        <p class="sub">This picture shows on the back of every ${GAMES[S.game]} card, for everyone.</p>
-        <div class="lb-row">
-          <label for="cb-file" class="lb-btn primary" onclick="setTimeout(closeSheet, 300)">${CARD_BACK ? 'Choose a new picture' : 'Choose picture'}</label>
-          ${CARD_BACK ? '<button type="button" class="lb-btn" onclick="removeCardBack(); closeSheet()">Remove</button>' : ''}
-          <button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button>
-        </div>`);
+      cardBackChoices();
       return true;
     },
     actions: [{ label: 'Cancel', fn: closeSheet }]
   });
 }
+function cardBackRow(path, label, current, note) {
+  const p = lbEsc(path), l = lbEsc(label);
+  return `<div class="cb-row">
+    <div class="cb-thumb">${current ? `<img alt="" src="${lbEsc(current)}">` : ''}</div>
+    <div class="cb-text"><b>${l}</b><span>${current ? 'Picture set' : lbEsc(note)}</span></div>
+    <div class="cb-acts">
+      <label for="cb-file" class="lb-btn ${current ? '' : 'primary'}" onclick="cbTarget = { path: '${p}', label: '${l}' }; setTimeout(closeSheet, 300)">${current ? 'Change' : 'Choose'}</label>
+      ${current ? `<button type="button" class="lb-btn quiet" onclick="removeCardBack('${p}', '${l}')">Remove</button>` : ''}
+    </div></div>`;
+}
+// A real tap on "Choose" opens the photo picker (phones block it otherwise)
+async function cardBackChoices() {
+  const g = S.game;
+  if (g !== 'onepiece') {
+    sheet(`<h2 id="lb-sheet-title">${GAMES[g]} card back</h2>
+      <p class="sub">This picture shows on the back of every ${GAMES[g]} card, for everyone.</p>
+      ${cardBackRow(CARD_BACK_PATH[g], `All ${GAMES[g]} cards`, CARD_BACKS[g], 'No picture yet')}
+      <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Done</button></div>`);
+    return;
+  }
+  // One Piece: a general back, plus one per rarity (rarities taken from the card data when it's loaded)
+  let rars = OP_RANK.filter(r => r !== 'SP');
+  try { const all = await opLoadAll(); [...new Set(all.map(r => String(r.rarity || '').trim()).filter(Boolean))].forEach(r => { if (!rars.includes(r)) rars.push(r); }); } catch (e) {}
+  sheet(`<h2 id="lb-sheet-title">One Piece card backs</h2>
+    <p class="sub">Give each rarity its own back, or set one for all. A rarity without its own picture uses the "All One Piece cards" one.</p>
+    <div class="cb-list">
+      ${cardBackRow(CARD_BACK_PATH.onepiece, 'All One Piece cards', CARD_BACKS.onepiece, 'No picture yet')}
+      ${rars.map(r => cardBackRow(OP_RAR_PATH + '/' + rarKey(r), OP_RARITY[r] ? `${OP_RARITY[r]} (${r})` : r, OP_RAR_BACKS[rarKey(r)], 'Uses the all-cards back')).join('')}
+    </div>
+    <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Done</button></div>`);
+}
 function saveCardBack(input) {
   closeSheet();
   const f = input.files && input.files[0]; input.value = '';
+  const target = cbTarget || { path: CARD_BACK_PATH[S.game], label: `All ${GAMES[S.game]} cards` }; cbTarget = null;
   if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);
   img.onload = () => {
@@ -2514,16 +2567,17 @@ function saveCardBack(input) {
     const g = cv.getContext('2d'), k = Math.max(W / img.width, H / img.height);
     g.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
     URL.revokeObjectURL(url);
-    const gm = S.game;
-    db.ref(CARD_BACK_PATH[gm]).set(cv.toDataURL('image/jpeg', 0.85))
-      .then(() => { toast(`Card back saved for every ${GAMES[gm]} card`); $('flip').classList.add('ry180'); })
+    db.ref(target.path).set(cv.toDataURL('image/jpeg', 0.85))
+      .then(() => { toast(`Card back saved: ${target.label}`); $('flip').classList.add('ry180'); })
       .catch(() => toast('Couldn\'t save the card back. Check your connection.', 'error'));
   };
   img.onerror = () => { URL.revokeObjectURL(url); toast('That file isn\'t a picture this app can read.', 'error'); };
   img.src = url;
 }
-function removeCardBack() {
-  db.ref(CARD_BACK_PATH[S.game]).remove().then(() => toast('Card back removed')).catch(() => toast('Couldn\'t remove it. Check your connection.', 'error'));
+function removeCardBack(path, label) {
+  path = path || CARD_BACK_PATH[S.game];
+  db.ref(path).remove().then(() => { toast(`Card back removed${label ? ': ' + label : ''}`); if (!$('lb-sheet').hidden) cardBackChoices(); })
+    .catch(() => toast('Couldn\'t remove it. Check your connection.', 'error'));
 }
 
 /* --- View only: flip through someone else's binder in the export's 3D view --- */
@@ -2532,7 +2586,7 @@ function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
   let pages; try { pages = normPages(d.pages).map((pg, i) => normPage(pg, i)); } finally { S.layout = keep; }
-  const payload = { user: titleOf(u), coverTitle: binderCoverTitle(u), layout, pages, cover: d.cover || null, blankCover: true, cardBack: CARD_BACKS[gameOf(u)] || '', exportedAt: new Date().toISOString() };
+  const payload = { user: titleOf(u), coverTitle: binderCoverTitle(u), layout, pages, cover: d.cover || null, blankCover: true, cardBack: CARD_BACKS[gameOf(u)] || '', cardBacksByRarity: gameOf(u) === 'onepiece' ? OP_RAR_BACKS : {}, exportedAt: new Date().toISOString() };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
