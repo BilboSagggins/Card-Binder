@@ -397,6 +397,13 @@
           <option value="">Any set</option>
         </select>
       </div>
+      <!-- One Piece only: narrow results by rarity -->
+      <div id="op-rar-row" class="flex items-center gap-2 panel px-3 py-2 hidden">
+        <span class="text-xs text-zinc-400 whitespace-nowrap">Rarity:</span>
+        <select id="op-rarity" onchange="if($('q').value.trim() || $('set').value || this.value) search()" class="field !py-1.5 !text-xs w-full">
+          <option value="">Any rarity</option>
+        </select>
+      </div>
       </div>
       <div class="flex items-center justify-between panel px-3 py-2">
         <span class="text-xs text-zinc-400">Add selected card as:</span>
@@ -784,10 +791,26 @@ async function opLoadSets() {
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
 }
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special (SP)', SP: 'Special (SP)', TR: 'Treasure Rare', P: 'Promo', DON: 'DON!!' };
+const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P'];
+const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
+async function opFillRarities() {
+  const dd = $('op-rarity'); if (!dd || dd.dataset.ready) return;
+  try {
+    const all = await opLoadAll();
+    const found = [...new Set(all.map(r => String(r.rarity || '').trim()).filter(Boolean))]
+      .sort((a, b) => ((OP_RANK.indexOf(a) + 1) || 99) - ((OP_RANK.indexOf(b) + 1) || 99) || a.localeCompare(b));
+    const keep = dd.value;
+    dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(OP_RARITY[r] ? `${OP_RARITY[r]} (${r})` : r)}</option>`).join('')
+      + '<option value="parallel">Parallel / alt art only</option>';
+    dd.value = keep; dd.dataset.ready = '1';
+  } catch (e) {}
+}
 async function opSearch() {
   const setVal = $('set').value, box = $('results'), text = $('q').value.trim();
   if (mode === 'set' && !setVal) return toast('Please choose a set', 'error');
-  if (!setVal && !text) return toast(mode === 'num' ? 'Type a card ID like OP01-001' : 'Type a card name or choose a set', 'error');
+  const rar = $('op-rarity').value;
+  if (!setVal && !text && !(rar && mode !== 'num')) return toast(mode === 'num' ? 'Type a card ID like OP01-001' : 'Type a card name, or choose a set or rarity', 'error');
   box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
   try {
     const all = await opLoadAll();
@@ -796,6 +819,7 @@ async function opSearch() {
     let items = all.filter(r => {
       const cid = String(r.card_set_id || '').toUpperCase();
       if (pre && !cid.startsWith(pre)) return false;
+      if (rar && (rar === 'parallel' ? !opParallel(r) : String(r.rarity || '').trim() !== rar)) return false;
       if (!text) return true;
       if (mode === 'num') return cid === idq || cid.startsWith(idq);
       return lc(r.card_name).includes(lc(text)) || (mode === 'set' && cid.includes(text.toUpperCase()));
@@ -819,6 +843,8 @@ function applyGameUI() {
   const op = S.game === 'onepiece';
   $('s-head').textContent = op ? '🔍 Search One Piece TCG' : '🔍 Search Pokémon TCG';
   $('m-num').textContent = op ? 'Card ID' : 'Pokémon + Number';
+  $('op-rar-row').classList.toggle('hidden', !op);
+  if (!op) $('op-rarity').value = '';
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
 }
@@ -849,7 +875,7 @@ function setMode(m) {
 }
 
 async function loadSets() {
-  if (S.game === 'onepiece') return opLoadSets();
+  if (S.game === 'onepiece') { opFillRarities(); return opLoadSets(); }
   const lang = $('lang').value, dd =$('set');
   if (!setsCache[lang]) {
     dd.innerHTML = '<option value="">Loading sets…</option>';
