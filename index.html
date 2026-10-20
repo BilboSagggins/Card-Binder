@@ -578,7 +578,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.18';
+const APP_VERSION = '2026-10-20.19';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -757,7 +757,7 @@ async function ptcgLookup(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
-  if (card.source === 'collection') { const it = collectionItem(card); return it && it.price != null ? { price: it.price, url: card.url || null } : null; }
+  if (card.source === 'collection') { const m = await matchCollectionCard(card); return m && m.price != null ? { price: m.price, url: m.url || null } : null; }
   if (card.game === 'onepiece') return opLookup(card);
   return (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
 };
@@ -918,7 +918,7 @@ function renderCollection() {
   const q = lc($('coll-q').value.trim());
   const inBinder = new Set(getPagesArray().flatMap(pg => pg.cards).filter(c => c && c.collId).map(c => c.collId));
   const shown = items.filter(it => !q || lc(it.name).includes(q) || lc(it.set).includes(q) || lc(it.number).includes(q))
-    .sort((a, b) => (b.price || 0) - (a.price || 0) || String(a.name).localeCompare(String(b.name)));
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
   const when = data.importedAt ? new Date(data.importedAt).toLocaleDateString() : '';
   info.textContent = `${items.length} card${items.length === 1 ? '' : 's'} in your ${GAMES[S.game]} collection${when ? ` · imported ${when}` : ''}${q ? ` · ${shown.length} match` : ''}`;
   box.innerHTML = '';
@@ -929,20 +929,80 @@ function renderCollection() {
         ${it.qty > 1 ? `<span class="absolute top-1 right-1 bg-black/80 text-[10px] font-bold px-1.5 py-0.5 rounded">×${it.qty}</span>` : ''}
         ${inBinder.has(it.id) ? '<span class="absolute bottom-1 left-1 bg-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded">In this binder</span>' : ''}</div>
       <h4 class="font-bold text-xs line-clamp-2">${esc(it.name)}</h4>
-      <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[60%]">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From collection')}</span><b class="text-emerald-400">${fmt(it.price)}</b></div>
+      <div class="text-[10px] text-zinc-400 mt-0.5 truncate">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From your collection')}</div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
     el.onclick = () => {
       const card = {
         id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
-        price: it.price ?? null, url: S.game === 'onepiece' ? opLink(it.name, it.number) : null,
-        thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
+        price: null, url: null, thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
       };
-      const pages = getPagesArray(); pages[target.p].cards[target.s] = card;
-      saveActivePages(pages); render(); closeSearch(); toast('Added ' + card.name);
+      const at = { ...target }, binder = currentUser;
+      const pages = getPagesArray(); pages[at.p].cards[at.s] = card;
+      saveActivePages(pages); render(); closeSearch(); toast('Added ' + card.name + ' · looking up its price…');
+      matchCollectionCard(card).then(m => {
+        if (!m) return toast(`Couldn't match "${card.name}" to a ${GAMES[card.game]} card, so it has no price`, 'error');
+        // Swap in the database card wherever this placed copy is now (it may have been dragged, and a save may still be settling)
+        const swap = tries => {
+          if (currentUser !== binder) return;
+          const pg = getPagesArray();
+          for (const page of pg) {
+            const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
+            if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
+          }
+          if (tries > 0) setTimeout(() => swap(tries - 1), 500);
+        };
+        swap(6);
+      });
     };
     box.appendChild(el);
   });
-  if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the 300 most valuable. Search to find the rest.</div>`);
+  if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the first 300. Search to find the rest.</div>`);
+}
+
+// --- Match a collection entry to a card in the Pokémon / One Piece database (for price, link and refresh) ---
+function splitCollName(raw) {
+  let name = String(raw || '').trim(), num = '', total = '', opId = '';
+  const op = name.match(/\b((?:OP|ST|EB|PRB)\d{2}-\d{3}|P-\d{3})\b/i);
+  if (op) { opId = op[1].toUpperCase(); name = name.replace(op[0], ''); }
+  const pk = name.match(/[-–#\s]\s*#?(\w*\d+[a-z]?)\s*\/\s*(\w*\d+)\s*$/i) || name.match(/\s[-–]\s*#?(\w*\d+[a-z]?)\s*$/i) || name.match(/\s#(\w*\d+[a-z]?)\s*$/i);
+  if (pk) { num = pk[1]; total = pk[2] || ''; name = name.slice(0, pk.index); }
+  const parallel = /parallel|alternate art|\balt\b/i.test(name);
+  name = name.replace(/\[[^\]]*\]/g, '').replace(/\s*[-–]\s*$/, '').replace(/\s+/g, ' ').trim();
+  return { name, num, total, opId, parallel };
+}
+const matchCache = {};
+async function matchCollectionCard(card) {
+  const key = card.game + '|' + card.name + '|' + card.set + '|' + card.number;
+  if (key in matchCache) return matchCache[key];
+  let found = null;
+  try { found = card.game === 'onepiece' ? await matchOnePiece(card) : await matchPokemon(card); } catch (e) { found = null; }
+  if (found) matchCache[key] = found;
+  return found;
+}
+async function matchPokemon(card) {
+  const p = splitCollName(card.name);
+  const num = p.num || (card.number !== '—' ? String(card.number).split('/')[0] : ''), total = p.total || (String(card.number).split('/')[1] || '');
+  const base = p.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim(); if (!base) return null;
+  const l = await fetchJSON(`${API}en/cards?name=${encodeURIComponent(base)}`, 10000);
+  let cands = (Array.isArray(l) ? l : []).filter(c => !isPocket(c) && lc(c.name) === lc(base));
+  if (num) cands = cands.filter(c => sameNum(c.localId, num));
+  if (!cands.length) return null;
+  const full = await pool(cands.slice(0, 8), 4, c => fetchCard(c, 'en', null));
+  let pick = full;
+  if (total) { const t = full.filter(c => String(c.number).split('/')[1] && sameNum(String(c.number).split('/')[1], total)); if (t.length) pick = t; }
+  if (card.set && card.set !== 'Collection') { const t = pick.filter(c => lc(c.set) === lc(card.set)); if (t.length) pick = t; }
+  if (pick.length !== 1 && !num) return null;   // several prints and nothing to tell them apart
+  return pick.find(c => c.price != null) || pick[0] || null;
+}
+async function matchOnePiece(card) {
+  const p = splitCollName(card.name), all = await opLoadAll();
+  const id = p.opId || (/^[A-Z]{1,3}\d{0,2}-\d{3}$/i.test(card.number) ? card.number.toUpperCase() : '');
+  const bare = n => lc(String(n || '').replace(/\s*\((?:parallel|alternate art|alt art)\)/ig, '').replace(/\s*\(\d{3}\)/g, '').trim());
+  let cands = id ? all.filter(r => String(r.card_set_id || '').toUpperCase() === id) : all.filter(r => bare(r.card_name) === bare(p.name));
+  if (id && p.name) { const t = cands.filter(r => bare(r.card_name) === bare(p.name)); if (t.length) cands = t; }
+  if (cands.length > 1) { const t = cands.filter(r => opParallel(r) === p.parallel); if (t.length) cands = t; }
+  if (cands.length !== 1 && !id) return null;
+  return cands[0] ? opCard(cands[0]) : null;
 }
 
 // --- CSV reading ---
@@ -970,7 +1030,6 @@ function readCollectionCSV(text) {
   const head = rows[h].map(c => String(c).trim().toLowerCase());
   const col = (...tests) => head.findIndex(c => tests.some(t => t.test(c)));
   const iName = col(/^item name$/, /^product name$/, /^card name$/, /^name$/, /^card$/, /^product$/);
-  const iPrice = col(/^market value$/, /^market price$/, /^price$/, /^value$/, /market/);
   const iQty = col(/^quantity$/, /^qty$/, /^count$/, /quantity/);
   const iImgUrl = col(/^image url$/, /^image link$/, /^img$/), iImg = col(/^image$/);
   const iSet = col(/^set$/, /^set name$/, /^expansion$/), iNum = col(/^number$/, /^card number$/, /^card #$/, /^no\.?$/), iRar = col(/^rarity$/);
@@ -979,7 +1038,7 @@ function readCollectionCSV(text) {
   rows.slice(h + 1).forEach(r => {
     const name = String(r[iName] || '').trim(); if (!name) return;
     const image = urlIn(iImgUrl >= 0 ? r[iImgUrl] : '') || urlIn(iImg >= 0 ? r[iImg] : '');
-    const it = { name, price: iPrice >= 0 ? money(r[iPrice]) : null, qty: Math.max(1, parseInt(iQty >= 0 ? r[iQty] : 1, 10) || 1), image,
+    const it = { name, qty: Math.max(1, parseInt(iQty >= 0 ? r[iQty] : 1, 10) || 1), image,
       set: iSet >= 0 ? String(r[iSet] || '').trim() : '', number: iNum >= 0 ? String(r[iNum] || '').trim() : '', rarity: iRar >= 0 ? String(r[iRar] || '').trim() : '' };
     // the same card listed twice adds up
     const id = 'c' + [...(name + '|' + image + '|' + it.set + '|' + it.number)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7).toString(36);
