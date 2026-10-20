@@ -1,0 +1,25 @@
+{
+  "rules": {
+    ".read": true,
+    "users": {
+      "$person": {
+        ".write": "auth != null && (!data.child('email').exists() || data.child('email').val() === auth.token.email)"
+      }
+    },
+    "binders": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
+    },
+    "backups": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
+    },
+    "backupIndex": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
+    }
+  }
+}

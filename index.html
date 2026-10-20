@@ -94,6 +94,7 @@
     background: radial-gradient(ellipse at 50% 30%, rgba(79,70,229,.28), transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.12), transparent 55%), #09090b;
     color: #f4f4f5; overflow-y: auto; transition: opacity .4s ease; }
   #landing.out { opacity: 0; pointer-events: none; }
+  #landing[hidden], #lb-sheet[hidden] { display: none; }
   .lb-head { text-align: center; }
   .lb-head h1 { margin: 0; font-family: Cinzel, Georgia, serif; font-weight: 700; letter-spacing: .14em; font-size: clamp(1.5rem, 6vw, 2.25rem); text-wrap: balance; }
   .lb-head p { margin: .5rem 0 0; font: 500 .75rem/1.4 Inter, system-ui, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #a1a1aa; }
@@ -121,7 +122,38 @@
   #landing.opening .lb-pick.chosen { transition: transform .9s cubic-bezier(.5,.05,.25,1); }
   #landing.opening .lb-pick.chosen .lb-cover { transform: rotateY(-165deg); }
   #landing.opening .lb-head { opacity: 0; transition: opacity .3s; }
-  @media (prefers-reduced-motion: reduce) { .lb-pick, .lb-cover, #landing { transition: none !important; } }
+  .lb-badge { display: block; margin-top: .3rem; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6ee7b7; }
+  .lb-add .lb-book { box-shadow: none; border: 2px dashed #3f3f46; display: grid; place-items: center; color: #a1a1aa; font: 300 2.5rem/1 Inter, system-ui, sans-serif; transition: border-color .2s, color .2s; }
+  .lb-add:hover .lb-book, .lb-add:focus-visible .lb-book { border-color: #818cf8; color: #c7d2fe; }
+
+  #lb-sheet { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .lb-card { width: min(21rem, 100%); max-height: 100%; overflow-y: auto; background: #18181b; border: 1px solid #27272a; border-radius: 22px; padding: 1.5rem 1.25rem 1.25rem; color: #f4f4f5;
+    display: flex; flex-direction: column; gap: 1rem; box-shadow: 0 30px 60px rgba(0,0,0,.6); font-family: Inter, system-ui, sans-serif; }
+  .lb-card h2 { margin: 0; text-align: center; font: 700 1.05rem/1.3 Cinzel, Georgia, serif; letter-spacing: .06em; text-wrap: balance; }
+  .lb-card .sub { margin: -.5rem 0 0; text-align: center; font-size: .8rem; line-height: 1.45; color: #a1a1aa; }
+  .lb-err { min-height: 1.1em; margin: 0; text-align: center; font-size: .78rem; font-weight: 600; color: #fb7185; }
+  .lb-dots { display: flex; justify-content: center; gap: .9rem; }
+  .lb-dots i { width: .85rem; height: .85rem; border-radius: 50%; border: 2px solid #52525b; transition: background .12s, border-color .12s; }
+  .lb-dots i.on { background: #818cf8; border-color: #818cf8; }
+  .lb-dots.shake { animation: lbshake .4s; }
+  @keyframes lbshake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .lb-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+  .lb-keys button { appearance: none; border: 0; height: 3.4rem; border-radius: 14px; background: #27272a; color: #f4f4f5; font: 600 1.3rem/1 Inter, system-ui, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; font-variant-numeric: tabular-nums; }
+  .lb-keys button:active { background: #3f3f46; transform: scale(.96); }
+  .lb-keys button.ghost { background: none; font-size: 1.1rem; color: #a1a1aa; }
+  .lb-keys .gap { visibility: hidden; }
+  .lb-row { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+  .lb-btn { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 12px; padding: .6rem .9rem; font: 600 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+  .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
+  .lb-btn:disabled { opacity: .5; cursor: default; }
+  .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
+  .lb-field { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 12px; padding: .7rem .8rem; color: #f4f4f5; font: 500 1rem/1.2 Inter, system-ui, sans-serif; }
+  .lb-form { display: flex; flex-direction: column; gap: 1rem; margin: 0; }
+  .lb-label { display: flex; flex-direction: column; gap: .35rem; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #a1a1aa; }
+  .lb-help { margin: 0; font-size: .78rem; line-height: 1.5; color: #d4d4d8; background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: .75rem .85rem; }
+  @media (prefers-reduced-motion: reduce) { .lb-pick, .lb-cover, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
 </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
@@ -134,6 +166,7 @@
   </div>
   <div id="lb-shelf" class="lb-shelf"></div>
 </div>
+<div id="lb-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="lb-sheet-title"></div>
 
 <!-- Main Top Header -->
 <header class="bg-zinc-900/90 border-b border-zinc-800 sticky top-0 z-30 backdrop-blur-md px-4 py-3">
@@ -158,24 +191,16 @@
 
       <!-- Controls Row 1: Profile, Peer View, Portfolio, Grid Layout -->
       <div class="flex items-center gap-3 flex-wrap justify-center">
-        <!-- Profile Selector for Multiple Users -->
+        <!-- Who is using the binder, and whether they can edit -->
         <div class="flex items-center gap-2 panel px-3 py-1.5">
-          <span class="text-[10px] text-zinc-400 uppercase font-semibold">User:</span>
-          <select id="user-select" onchange="switchUser(this.value)" class="field !py-1 !text-xs bg-zinc-900 text-zinc-200">
-            <option value="kyle" selected>Kyle</option>
-            <option value="dustin">Dustin</option>
-          </select>
+          <span id="who-mode" class="text-[10px] uppercase font-semibold text-emerald-400">Editing</span>
+          <span id="who-name" class="text-xs font-semibold text-zinc-100"></span>
+          <button type="button" onclick="showLanding()" class="btn !py-1">Switch</button>
+          <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
         </div>
-
-        <!-- Peer View Selector (Read-Only Other Users) -->
-        <div class="flex items-center gap-2 panel px-3 py-1.5 border-amber-500/40 bg-amber-950/10">
-          <span class="text-[10px] text-amber-400 uppercase font-semibold whitespace-nowrap">👀 Peer View:</span>
-          <select id="peer-select" onchange="switchPeer(this.value)" class="field !py-1 !text-xs bg-zinc-900 text-zinc-200 border-amber-500/40">
-            <option value="" selected>None (My Binder)</option>
-            <option value="kyle">Kyle</option>
-            <option value="dustin">Dustin</option>
-          </select>
-        </div>
+        <!-- Kept for older code paths; filled from the people list -->
+        <select id="user-select" class="hidden" aria-hidden="true" tabindex="-1"></select>
+        <select id="peer-select" class="hidden" aria-hidden="true" tabindex="-1"><option value=""></option></select>
 
         <div class="hidden md:flex flex-col panel px-4 py-1.5">
           <span class="text-[10px] text-zinc-400 uppercase font-semibold">Portfolio Value (Owned)</span>
@@ -224,6 +249,7 @@
 <!-- Read-Only Banner Notice -->
 <div id="readonly-banner" class="hidden bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs text-center py-2 px-4 font-semibold tracking-wide">
   ⚠️ READ-ONLY PEER MODE: You are currently viewing <span id="readonly-username" class="underline uppercase"></span>'s binder in real-time. Modifications are disabled.
+  <button type="button" onclick="showLanding()" class="ml-2 underline underline-offset-2 text-amber-200">Switch binder</button>
 </div>
 
 <!-- Main Binder Content Container -->
@@ -423,6 +449,17 @@
 </div>
 
 <script>
+/* ========================================================
+   SIGN-IN MODE  (the switch)
+   'pin'   = each person sets a 4-digit PIN on their binder (current)
+   'email' = each person signs in with an email + password through Firebase.
+             Before flipping: Firebase console -> Authentication -> enable
+             Email/Password, then paste firebase-rules-email.json into
+             Realtime Database -> Rules. Everyone sets up their sign-in
+             the first time they open their binder.
+   ======================================================== */
+const SIGN_IN_MODE = 'pin';
+
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
    ======================================================== */
@@ -1946,65 +1983,312 @@ function toast(msg, type = 'info') {
   t.textContent = msg; $('toasts').appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 
-/* Welcome Screen: pick a binder, then the cover opens into it */
-const LAST_USER_KEY = 'cardBinder.lastUser';
-function lbUsers() { return [...$('user-select').options].map(o => ({ id: o.value, name: o.textContent.trim() })); }
-function lbEsc(t) { return String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+/* Welcome Screen, PIN locks & optional email sign-in */
+const DEFAULT_USERS = { kyle: { name: 'Kyle', order: 1 }, dustin: { name: 'Dustin', order: 2 } };
+const LAST_USER_KEY = 'cardBinder.lastUser', UNLOCK_KEY = 'cardBinder.unlocked';
+let USERS = { ...DEFAULT_USERS };
+let auth = null;
+
+function remember(k, v) { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function recall(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function lbEsc(t) { return String(t ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function people() { return Object.entries(USERS).map(([id, u]) => ({ id, ...u, name: (u && u.name) || id })).sort((x, y) => (x.order || 0) - (y.order || 0) || x.name.localeCompare(y.name)); }
+function nameOf(id) { return (USERS[id] && USERS[id].name) || id || ''; }
+
+/* --- Who can edit on this phone --- */
+function isUnlocked(id) {
+  if (SIGN_IN_MODE === 'email') {
+    const em = auth && auth.currentUser && auth.currentUser.email, want = USERS[id] && USERS[id].email;
+    return !!(em && want && em.toLowerCase() === want.toLowerCase());
+  }
+  return recall(UNLOCK_KEY, []).includes(id);
+}
+function unlock(id) { if (SIGN_IN_MODE === 'pin') { const l = recall(UNLOCK_KEY, []); if (!l.includes(id)) remember(UNLOCK_KEY, [...l, id]); } }
+function lockCurrent() {
+  const id = currentUser;
+  if (SIGN_IN_MODE === 'email') { if (auth) auth.signOut(); }
+  else remember(UNLOCK_KEY, recall(UNLOCK_KEY, []).filter(x => x !== id));
+  toast(`${nameOf(id)}'s binder is locked on this phone`);
+  showLanding();
+}
+async function pinHash(salt, pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pin));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function newSalt() { return [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join(''); }
+async function pinRecord(pin) { const salt = newSalt(); return { salt, hash: await pinHash(salt, pin) }; }
+async function checkPin(id, pin) { const r = USERS[id] && USERS[id].pin; return !!(r && r.salt && (await pinHash(r.salt, pin)) === r.hash); }
+
+/* --- People list, kept live from the database --- */
+function fillSelects() {
+  const opts = people().map(u => `<option value="${lbEsc(u.id)}">${lbEsc(u.name)}</option>`).join('');
+  $('user-select').innerHTML = opts; $('user-select').value = currentUser;
+  $('peer-select').innerHTML = '<option value=""></option>' + opts; $('peer-select').value = '';
+}
+function watchPeople() {
+  db.ref('users').on('value', s => {
+    const v = s.val();
+    if (v) USERS = v;
+    else {
+      USERS = { ...DEFAULT_USERS };
+      if (SIGN_IN_MODE === 'pin') db.ref('users').set(DEFAULT_USERS).catch(() => {});
+    }
+    fillSelects(); updateWho();
+    if (!$('landing').hidden && !$('landing').classList.contains('opening')) renderShelf();
+  }, () => {});
+}
+function updateWho() {
+  const viewing = peerUser || currentUser;
+  if (!$('who-name')) return;
+  $('who-name').textContent = nameOf(viewing);
+  $('who-mode').textContent = peerUser ? 'View only' : 'Editing';
+  $('who-mode').className = 'text-[10px] uppercase font-semibold ' + (peerUser ? 'text-amber-400' : 'text-emerald-400');
+  $('who-lock').classList.toggle('hidden', !!peerUser);
+}
+
+/* --- Welcome screen --- */
 function lbPaintCover(id, cover) {
-  const btn = document.querySelector(`.lb-pick[data-user="${id}"]`); if (!btn) return;
-  const c = cover || {}, el = btn.querySelector('.lb-cover'), name = btn.dataset.name;
+  const btn = document.querySelector(`.lb-pick[data-user="${CSS.escape(id)}"]`); if (!btn) return;
+  const c = cover || {}, el = btn.querySelector('.lb-cover');
   el.style.setProperty('--c', c.color || '#1e1b4b');
   el.querySelector('img')?.remove();
   if (c.image) { const im = document.createElement('img'); im.alt = ''; im.src = c.image; el.prepend(im); }
   const t = el.querySelector('.lb-title');
-  t.textContent = c.title || (name + "'s Card Binder");
+  t.textContent = c.title || (nameOf(id) + "'s Card Binder");
   t.hidden = c.showTitle === false;
 }
-function showLanding() {
-  const L = $('landing'); if (!L) return;
-  let last = ''; try { last = localStorage.getItem(LAST_USER_KEY) || ''; } catch (e) {}
-  $('lb-shelf').innerHTML = lbUsers().map(u => `
-    <button type="button" class="lb-pick" data-user="${lbEsc(u.id)}" data-name="${lbEsc(u.name)}" onclick="pickBinder(this)">
+function renderShelf() {
+  const last = recall(LAST_USER_KEY, '');
+  $('lb-shelf').innerHTML = people().map(u => `
+    <button type="button" class="lb-pick" data-user="${lbEsc(u.id)}" onclick="pickBinder(this)">
       <div class="lb-book">
         <div class="lb-page" aria-hidden="true">${'<i></i>'.repeat(9)}</div>
         <div class="lb-cover"><div class="lb-spine" aria-hidden="true"><span></span><span></span><span></span></div><div class="lb-title"></div></div>
       </div>
-      <div><span class="lb-name">${lbEsc(u.name)}</span>${u.id === last ? '<span class="lb-last">Last opened</span>' : ''}</div>
-    </button>`).join('');
-  lbUsers().forEach(u => {
+      <div><span class="lb-name">${lbEsc(u.name)}</span>${isUnlocked(u.id) ? '<span class="lb-badge">🔓 Unlocked here</span>' : (u.id === last ? '<span class="lb-last">Last opened</span>' : '')}</div>
+    </button>`).join('') + `
+    <button type="button" class="lb-pick lb-add" onclick="addPerson()">
+      <div class="lb-book" aria-hidden="true">+</div>
+      <div><span class="lb-name">Add person</span></div>
+    </button>`;
+  people().forEach(u => {
     lbPaintCover(u.id, null);
     db.ref('binders/' + u.id + '/cover').once('value').then(s => lbPaintCover(u.id, s.val())).catch(() => {});
   });
+}
+function showLanding() {
+  const L = $('landing'); if (!L) return;
+  closeSheet();
   L.classList.remove('opening', 'out'); L.hidden = false;
   document.body.style.overflow = 'hidden';
+  renderShelf();
 }
 function pickBinder(btn) {
-  const L = $('landing'); if (L.classList.contains('opening')) return;
+  if ($('landing').classList.contains('opening')) return;
   const u = btn.dataset.user;
-  // Glide the chosen binder to the middle of the screen as its cover opens
-  const r = btn.getBoundingClientRect();
-  const dx = window.innerWidth / 2 - (r.left + r.width / 2), dy = window.innerHeight / 2 - (r.top + r.height / 2);
-  btn.classList.add('chosen'); L.classList.add('opening');
-  btn.style.transform = `translate(${dx}px, ${dy}px) scale(1.15)`;
-  try { localStorage.setItem(LAST_USER_KEY, u); } catch (e) {}
-  // Start loading the binder while the cover swings open
-  if ($('user-select').value !== u || S.loadedFor !== u || peerUser) {
-    currentUser = u; peerUser = ''; S.cur = 0;
-    $('user-select').value = u; $('peer-select').value = '';
-    setupFirebaseListener(u);
+  if (isUnlocked(u)) return openBinder(u, false);
+  if (SIGN_IN_MODE === 'email') return emailSheet(u);
+  return USERS[u] && USERS[u].pin ? enterPinSheet(u) : setPinSheet(u);
+}
+function openBinder(u, viewOnly) {
+  closeSheet();
+  const L = $('landing'), btn = document.querySelector(`.lb-pick[data-user="${CSS.escape(u)}"]`);
+  if (btn) {
+    // Glide the chosen binder to the middle of the screen as its cover opens
+    const r = btn.getBoundingClientRect();
+    btn.style.transform = `translate(${innerWidth / 2 - (r.left + r.width / 2)}px, ${innerHeight / 2 - (r.top + r.height / 2)}px) scale(1.15)`;
+    btn.classList.add('chosen');
   }
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  L.classList.add('opening');
+  // Start loading while the cover swings open
+  const same = activeListener === u && S.loadedFor === u && !!peerUser === viewOnly;
+  if (viewOnly) { peerUser = u; if (!isUnlocked(currentUser)) currentUser = u; }
+  else { currentUser = u; peerUser = ''; remember(LAST_USER_KEY, u); }
+  $('user-select').value = currentUser; $('peer-select').value = '';
+  if (!same) { S.cur = 0; setupFirebaseListener(u); }
+  updateWho();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(() => {
     L.classList.add('out');
     setTimeout(() => { L.hidden = true; document.body.style.overflow = ''; }, reduce ? 0 : 400);
   }, reduce ? 0 : 950);
 }
 
+/* --- Sheets: PIN pad, email form, add person --- */
+function closeSheet() { const sh = $('lb-sheet'); if (sh) { sh.hidden = true; sh.innerHTML = ''; sh.onkeydown = null; } }
+function sheet(html) {
+  const sh = $('lb-sheet'); sh.innerHTML = `<div class="lb-card">${html}</div>`; sh.hidden = false;
+  sh.onclick = e => { if (e.target === sh) closeSheet(); };
+  return sh;
+}
+// A 4-digit keypad. onPin(pin) resolves to true when done, or an error message to show.
+function pinPad({ title, sub, onPin, actions = [] }) {
+  const sh = sheet(`
+    <h2 id="lb-sheet-title">${lbEsc(title)}</h2>
+    ${sub ? `<p class="sub">${sub}</p>` : ''}
+    <div class="lb-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p class="lb-err" role="alert"></p>
+    <div class="lb-keys">
+      ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" data-k="${n}">${n}</button>`).join('')}
+      <span class="gap"></span><button type="button" data-k="0">0</button><button type="button" class="ghost" data-k="back" aria-label="Delete">⌫</button>
+    </div>
+    <div class="lb-row">${actions.map((a, i) => `<button type="button" class="lb-btn ${a.cls || 'quiet'}" data-a="${i}">${lbEsc(a.label)}</button>`).join('')}</div>`);
+  let pin = '', busy = false;
+  const dots = sh.querySelector('.lb-dots'), err = sh.querySelector('.lb-err');
+  const paint = () => dots.querySelectorAll('i').forEach((d, i) => d.classList.toggle('on', i < pin.length));
+  const press = async k => {
+    if (busy) return;
+    if (k === 'back') pin = pin.slice(0, -1);
+    else if (pin.length < 4) { pin += k; err.textContent = ''; }
+    paint();
+    if (pin.length === 4) {
+      busy = true;
+      const res = await onPin(pin);
+      busy = false;
+      if (res !== true && sh.contains(dots)) {
+        err.textContent = res || 'Try again.';
+        dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake');
+        pin = ''; paint();
+      }
+    }
+  };
+  sh.querySelectorAll('[data-k]').forEach(b => b.onclick = () => press(b.dataset.k));
+  sh.querySelectorAll('[data-a]').forEach(b => b.onclick = () => actions[+b.dataset.a].fn());
+  sh.onkeydown = e => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('back'); else if (e.key === 'Escape') closeSheet(); };
+  sh.querySelector('[data-k="1"]').focus();
+}
+const viewOnlyAction = u => ({ label: 'View only', fn: () => openBinder(u, true) });
+const cancelAction = { label: 'Cancel', fn: closeSheet };
+
+function enterPinSheet(u) {
+  pinPad({
+    title: `${nameOf(u)}'s Binder`,
+    sub: 'Enter the PIN to make changes.',
+    onPin: async pin => { if (await checkPin(u, pin)) { unlock(u); openBinder(u, false); return true; } return 'Wrong PIN. Try again.'; },
+    actions: [viewOnlyAction(u), { label: 'Forgot PIN?', fn: () => forgotPin(u) }, cancelAction]
+  });
+}
+function setPinSheet(u, onSaved) {
+  pinPad({
+    title: `Set ${nameOf(u)}'s PIN`,
+    sub: 'Pick 4 digits. You\'ll need them to make changes on a new phone.',
+    onPin: async first => {
+      pinPad({
+        title: 'Enter it again',
+        sub: 'Just to be sure.',
+        onPin: async second => {
+          if (second !== first) { setTimeout(() => setPinSheet(u, onSaved), 900); return 'Those didn\'t match. Start over.'; }
+          try { await db.ref('users/' + u + '/pin').set(await pinRecord(second)); }
+          catch (e) { return 'Couldn\'t save the PIN. Check your connection.'; }
+          unlock(u); (onSaved || (() => openBinder(u, false)))(); return true;
+        },
+        actions: [cancelAction]
+      });
+      return true;
+    },
+    actions: onSaved ? [cancelAction] : [viewOnlyAction(u), cancelAction]
+  });
+}
+function forgotPin(u) {
+  sheet(`
+    <h2 id="lb-sheet-title">Reset ${lbEsc(nameOf(u))}'s PIN</h2>
+    <p class="lb-help">In the Firebase console, open <b>Realtime Database</b> → <b>users</b> → <b>${lbEsc(u)}</b> and delete <b>pin</b>. The next time ${lbEsc(nameOf(u))}'s binder is opened here, it will ask for a new PIN. The cards aren't touched.</p>
+    <div class="lb-row"><button type="button" class="lb-btn primary" onclick="enterPinSheet('${lbEsc(u)}')">Back</button></div>`);
+}
+
+function emailSheet(u) {
+  const known = USERS[u] && USERS[u].email;
+  sheet(`
+    <h2 id="lb-sheet-title">${known ? `${lbEsc(nameOf(u))}'s Binder` : `Set up ${lbEsc(nameOf(u))}'s sign-in`}</h2>
+    <p class="sub">${known ? 'Sign in to make changes.' : 'Create an email and password for this binder.'}</p>
+    <form id="lb-email-form" class="lb-form">
+      <label class="lb-label">Email<input id="lb-email" class="lb-field" type="email" autocomplete="username" required value="${lbEsc(known || '')}"></label>
+      <label class="lb-label">Password<input id="lb-pass" class="lb-field" type="password" autocomplete="${known ? 'current-password' : 'new-password'}" minlength="6" required></label>
+      <p class="lb-err" role="alert"></p>
+      <div class="lb-row"><button type="submit" class="lb-btn primary">${known ? 'Sign in' : 'Create sign-in'}</button>
+        <button type="button" class="lb-btn quiet" id="lb-view">View only</button><button type="button" class="lb-btn quiet" id="lb-cancel">Cancel</button></div>
+    </form>`);
+  $('lb-view').onclick = () => openBinder(u, true);
+  $('lb-cancel').onclick = closeSheet;
+  $('lb-email-form').onsubmit = async e => {
+    e.preventDefault();
+    const email = $('lb-email').value.trim(), pass = $('lb-pass').value, err = document.querySelector('#lb-email-form .lb-err');
+    const btn = e.submitter || document.querySelector('#lb-email-form [type=submit]'); btn.disabled = true; err.textContent = '';
+    try {
+      if (known) {
+        if (known.toLowerCase() !== email.toLowerCase()) throw { code: 'wrong-binder' };
+        await auth.signInWithEmailAndPassword(email, pass);
+      } else {
+        await auth.createUserWithEmailAndPassword(email, pass);
+        await db.ref('users/' + u + '/email').set(email);
+        USERS[u] = { ...(USERS[u] || {}), email };
+      }
+      openBinder(u, false);
+    } catch (x) { err.textContent = emailError(x); btn.disabled = false; }
+  };
+  setTimeout(() => (known ? $('lb-pass') : $('lb-email')).focus(), 50);
+}
+function emailError(x) {
+  const c = String((x && x.code) || '');
+  if (c === 'wrong-binder') return 'That email belongs to a different binder.';
+  if (/wrong-password|invalid-credential|invalid-login|user-not-found/.test(c)) return 'Email or password is wrong.';
+  if (/email-already-in-use/.test(c)) return 'That email already has an account. Use its password.';
+  if (/weak-password/.test(c)) return 'Use at least 6 characters for the password.';
+  if (/invalid-email/.test(c)) return 'That email address doesn\'t look right.';
+  if (/operation-not-allowed/.test(c)) return 'Email sign-in isn\'t turned on in Firebase yet.';
+  if (/network/.test(c)) return 'No connection. Try again when you\'re online.';
+  return 'Couldn\'t sign in (' + (c || 'unknown error') + ').';
+}
+
+function addPerson() {
+  sheet(`
+    <h2 id="lb-sheet-title">Add a person</h2>
+    <p class="sub">They'll get their own binder${SIGN_IN_MODE === 'pin' ? ' and PIN' : ' and sign-in'}.</p>
+    <form id="lb-add-form" class="lb-form">
+      <label class="lb-label">Name<input id="lb-add-name" class="lb-field" type="text" maxlength="24" autocomplete="off" required></label>
+      <p class="lb-err" role="alert"></p>
+      <div class="lb-row"><button type="submit" class="lb-btn primary">Continue</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>
+    </form>`);
+  $('lb-add-name').focus();
+  $('lb-add-form').onsubmit = async e => {
+    e.preventDefault();
+    const name = $('lb-add-name').value.trim().replace(/\s+/g, ' '), err = document.querySelector('#lb-add-form .lb-err');
+    if (!name) return;
+    if (people().some(p => p.name.toLowerCase() === name.toLowerCase())) { err.textContent = `There's already a binder for ${name}.`; return; }
+    let base = name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'person', id = base, n = 2;
+    while (USERS[id]) id = base + '-' + n++;
+    const order = Math.max(0, ...people().map(p => p.order || 0)) + 1;
+    try { await db.ref('users/' + id).set({ name, order }); }
+    catch (x) { err.textContent = 'Couldn\'t add them. Check your connection.'; return; }
+    USERS[id] = { name, order };
+    renderShelf();
+    if (SIGN_IN_MODE === 'email') emailSheet(id);
+    else setPinSheet(id);
+  };
+}
+
+/* --- Email sign-in support (only loaded when SIGN_IN_MODE is 'email') --- */
+function startEmailAuth() {
+  return new Promise(res => {
+    const sc = document.createElement('script');
+    sc.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
+    sc.onload = () => {
+      auth = firebase.auth();
+      auth.onAuthStateChanged(() => { updateWho(); if (!$('landing').hidden && !$('landing').classList.contains('opening')) renderShelf(); });
+      res();
+    };
+    sc.onerror = () => { toast('Couldn\'t load sign-in. Check your connection.', 'error'); res(); };
+    document.head.appendChild(sc);
+  });
+}
+
 /* Application Initialization */
 window.addEventListener('DOMContentLoaded', () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
-  if ($('landing')) showLanding();
-  else { const userSelect = $('user-select'); if (userSelect) currentUser = userSelect.value; setupFirebaseListener(currentUser); }
+  fillSelects();
+  watchPeople();
+  if (SIGN_IN_MODE === 'email') startEmailAuth();
+  showLanding();
   db.ref('.info/connected').on('value', s => {
     clearTimeout(offlineTimer);
     if (s.val() === true) { if (bannerKind === 'offline') dbOk(); }
