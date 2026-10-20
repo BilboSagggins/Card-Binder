@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.11';
+const APP_VERSION = '2026-10-20.12';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1773,6 +1773,8 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   .card, .empty { position: relative; width: var(--cw); height: calc(var(--cw) * 1.4); border: 2px solid #27272a; border-radius: var(--cr); overflow: hidden; background: rgba(9,9,11,.8); }
   .empty { border-color: rgba(63,63,70,.55); background: linear-gradient(160deg, rgba(39,39,42,.55), rgba(9,9,11,.75)); box-shadow: inset 0 0 calc(var(--cw) * .12) rgba(0,0,0,.6); }
   /* Clear plastic pocket over every slot: a soft diagonal glare, a faint edge, and the pocket's opening near the top */
+  .card.out img, .card.out .ov, .card.out .badge, .card.out .holo-card { visibility: hidden; }
+  .card.out { border-color: rgba(63,63,70,.55); background: linear-gradient(160deg, rgba(39,39,42,.55), rgba(9,9,11,.75)); }
   .card::after, .empty::after { content: ""; position: absolute; inset: 0; z-index: 13; pointer-events: none; border-radius: inherit;
     background:
       linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)) 0 7% / 100% 1px no-repeat,
@@ -2066,7 +2068,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   stage.addEventListener('click', e => {
     if (moved) { moved = false; return; }
     const card = e.target.closest('.card');
-    if (card) { openInspect(P[+card.dataset.p].cards[+card.dataset.i]); return; }
+    if (card) { pullOut(card, P[+card.dataset.p].cards[+card.dataset.i]); return; }
     const sh = e.target.closest('.sheet');
     if (!sh) return;
     const i = +sh.dataset.i;
@@ -2101,7 +2103,61 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     document.getElementById('flip').classList.remove('ry180');
     document.getElementById('i-modal').classList.remove('hidden');
   }
-  function closeInspect() { document.getElementById('i-modal').classList.add('hidden'); }
+  /* Pull a card out of its sleeve: it slides up out of the pocket, then flies to the front and becomes the details card.
+     Closing sends it back into the same pocket. */
+  let pulled = null;
+  const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function flyImg(src, r) {
+    const f = document.createElement('img'); f.src = src; f.alt = '';
+    f.style.cssText = 'position:fixed;margin:0;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;z-index:60;object-fit:cover;border-radius:5px;box-shadow:0 14px 34px rgba(0,0,0,.65);transform-origin:0 0;pointer-events:none;will-change:transform';
+    document.body.appendChild(f); return f;
+  }
+  function pullOut(el, c) {
+    if (pulled || !c) return;
+    const im = el.querySelector('img'), src = c.image || c.thumb || (im && im.src);
+    const from = el.getBoundingClientRect();
+    openInspect(c);
+    if (calm() || !src) { pulled = { el: el, src: src }; return; }
+    const modal = document.getElementById('i-modal'), box = document.getElementById('flip');
+    box.style.visibility = 'hidden';
+    modal.style.transition = 'none'; modal.style.opacity = '0';
+    const to = box.getBoundingClientRect();
+    const f = flyImg(src, from);
+    el.classList.add('out');
+    pulled = { el: el, src: src };
+    // 1) slide up out of the sleeve
+    requestAnimationFrame(() => { f.style.transition = 'transform .3s ease-out'; f.style.transform = 'translateY(' + (-from.height * 0.6) + 'px)'; });
+    // 2) fly to the front while the details fade in
+    setTimeout(() => {
+      modal.style.transition = 'opacity .4s ease'; modal.style.opacity = '1';
+      f.style.transition = 'transform .55s cubic-bezier(.3,.7,.2,1), border-radius .55s';
+      f.style.borderRadius = '12px';
+      f.style.transform = 'translate(' + (to.left - from.left) + 'px,' + (to.top - from.top) + 'px) scale(' + (to.width / from.width) + ',' + (to.height / from.height) + ')';
+    }, 320);
+    setTimeout(() => { box.style.visibility = ''; f.remove(); }, 900);
+  }
+  function putBack() {
+    const modal = document.getElementById('i-modal'), box = document.getElementById('flip'), p = pulled; pulled = null;
+    const done = () => { modal.classList.add('hidden'); modal.style.opacity = ''; modal.style.transition = ''; box.style.visibility = ''; if (p) p.el.classList.remove('out'); };
+    if (!p || calm() || !p.src) return done();
+    box.classList.remove('ry180');
+    const at = box.getBoundingClientRect(), to = p.el.getBoundingClientRect();
+    const f = flyImg(p.src, at); f.style.borderRadius = '12px';
+    box.style.visibility = 'hidden';
+    modal.style.transition = 'opacity .35s ease'; modal.style.opacity = '0';
+    // 1) fly back to just above its pocket
+    requestAnimationFrame(() => {
+      f.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1), border-radius .5s'; f.style.borderRadius = '5px';
+      f.style.transform = 'translate(' + (to.left - at.left) + 'px,' + (to.top - at.top - to.height * 0.6) + 'px) scale(' + (to.width / at.width) + ',' + (to.height / at.height) + ')';
+    });
+    // 2) slide down into the sleeve
+    setTimeout(() => {
+      f.style.transition = 'transform .28s ease-in';
+      f.style.transform = 'translate(' + (to.left - at.left) + 'px,' + (to.top - at.top) + 'px) scale(' + (to.width / at.width) + ',' + (to.height / at.height) + ')';
+    }, 520);
+    setTimeout(() => { f.remove(); done(); }, 830);
+  }
+  function closeInspect() { if (pulled) putBack(); else document.getElementById('i-modal').classList.add('hidden'); }
   function paintBack(c) {
     const backFace = document.querySelector('#flip .ry180'); if (!backFace) return;
     if (backFace.dataset.orig == null) backFace.dataset.orig = backFace.innerHTML;
