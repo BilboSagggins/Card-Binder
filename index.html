@@ -161,16 +161,13 @@
   #landing.focus #lb-master, #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
   .lb-book { position: relative; flex: none; perspective: 1400px; border-radius: 3px 10px 10px 3px; box-shadow: 0 24px 50px rgba(0,0,0,.65); visibility: hidden; }
   #lb-stage.ready .lb-book { visibility: visible; }
-  .lb-page { position: absolute; inset: 2% 2% 2% 5%; border-radius: 3px 9px 9px 3px; background: #18181b;
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6%; padding: 9% 9% 9% 14%; }
-  .lb-page i { border-radius: 4px; background: #27272a; box-shadow: inset 0 0 0 1px #3f3f46; }
+  .lb-page { position: absolute; inset: 2% 2% 2% 5%; border-radius: 3px 9px 9px 3px; background: #09090b; }
   .lb-cover { position: absolute; inset: 0; border-radius: 3px 10px 10px 3px; overflow: hidden; transform-origin: left center; transition: transform .9s cubic-bezier(.5,.05,.25,1);
     backface-visibility: hidden; -webkit-backface-visibility: hidden; }
   #lb-stage.opening .lb-cover { transform: rotateY(-165deg); transition-duration: 1.3s; }
   /* Opening: the binder grows to fill the screen while the cover swings; its page becomes the app's background */
   .lb-book.zoom { transition: transform 1.4s cubic-bezier(.65,0,.3,1), box-shadow 1.4s, border-radius 1.4s; box-shadow: none; border-radius: 0; }
-  .lb-book.zoom .lb-page { transition: background-color .5s .9s, inset 1.4s cubic-bezier(.65,0,.3,1), border-radius 1.4s; background-color: #09090b; inset: 0; border-radius: 0; }
-  .lb-book.zoom .lb-page i { transition: opacity .35s 1s; opacity: 0; }
+  .lb-book.zoom .lb-page { transition: inset 1.4s cubic-bezier(.65,0,.3,1), border-radius 1.4s; background-color: #09090b; inset: 0; border-radius: 0; }
   #landing.opening { background: #09090b; transition: background-color 1s, opacity .45s ease; }
   .lb-name { font: 700 1.25rem/1.2 Cinzel, Georgia, serif; letter-spacing: .06em; text-align: center; }
   .lb-badge { display: block; margin-top: .35rem; text-align: center; font: 600 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #6ee7b7; }
@@ -2178,7 +2175,7 @@ function pickBinder(el) {
   const W = Math.min(220, innerWidth * .56), Hh = W * H / D;
   book.style.width = W + 'px'; book.style.height = Hh + 'px';
   tint(book, id);
-  book.innerHTML = `<div class="lb-page" aria-hidden="true">${'<i></i>'.repeat(9)}</div><div class="lb-cover"><div class="cv">${coverInner(id)}</div></div>`;
+  book.innerHTML = `<div class="lb-page" aria-hidden="true"></div><div class="lb-cover"><div class="cv">${coverInner(id)}</div></div>`;
   stage.className = ''; stage.hidden = false;
   stage.onclick = e => { if (e.target === stage && !$('landing').classList.contains('opening')) backToShelf(); };
   $('landing').classList.add('focus');
