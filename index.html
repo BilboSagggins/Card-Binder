@@ -155,7 +155,8 @@
   #lb-stage { position: fixed; inset: 0; z-index: 65; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem;
     padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   #lb-stage[hidden], .lb-badge[hidden] { display: none; }
-  #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
+  #lb-master { font-size: .72rem; letter-spacing: .08em; }
+  #landing.focus #lb-master, #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
   .lb-book { position: relative; flex: none; perspective: 1400px; border-radius: 3px 10px 10px 3px; box-shadow: 0 24px 50px rgba(0,0,0,.65); visibility: hidden; }
   #lb-stage.ready .lb-book { visibility: visible; }
   .lb-page { position: absolute; inset: 2% 2% 2% 5%; border-radius: 3px 9px 9px 3px; background: #18181b;
@@ -211,6 +212,7 @@
     <p>Tap your binder</p>
   </div>
   <div id="lb-scene" class="lb-scene"></div>
+  <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()">Master PIN</button>
   <div id="lb-stage" hidden>
     <div id="lb-stage-book" class="lb-book"></div>
     <div class="lb-info">
@@ -2316,11 +2318,77 @@ function setPinSheet(u, onSaved) {
     actions: onSaved ? [cancelAction] : [viewOnlyAction(u), cancelAction]
   });
 }
+let MASTER = null;   // { salt, hash } stored at settings/masterPin
+function watchMaster() { db.ref('settings/masterPin').on('value', v => { MASTER = v.val(); }, () => {}); }
+async function checkMaster(pin) { return !!(MASTER && MASTER.salt && (await pinHash(MASTER.salt, pin)) === MASTER.hash); }
+
 function forgotPin(u) {
-  sheet(`
+  const back = `<button type="button" class="lb-btn quiet" onclick="enterPinSheet('${lbEsc(u)}')">Back</button>`;
+  sheet(MASTER ? `
     <h2 id="lb-sheet-title">Reset ${lbEsc(nameOf(u))}'s PIN</h2>
-    <p class="lb-help">In the Firebase console, open <b>Realtime Database</b> → <b>users</b> → <b>${lbEsc(u)}</b> and delete <b>pin</b>. The next time ${lbEsc(nameOf(u))}'s binder is opened here, it will ask for a new PIN. The cards aren't touched.</p>
-    <div class="lb-row"><button type="button" class="lb-btn primary" onclick="enterPinSheet('${lbEsc(u)}')">Back</button></div>`);
+    <p class="sub">Enter the master PIN to clear ${lbEsc(nameOf(u))}'s PIN. Their cards aren't touched, and they can set a new PIN next time they unlock.</p>
+    <div class="lb-row"><button type="button" class="lb-btn primary" onclick="masterResetSheet('${lbEsc(u)}')">Enter master PIN</button>${back}</div>` : `
+    <h2 id="lb-sheet-title">Reset ${lbEsc(nameOf(u))}'s PIN</h2>
+    <p class="lb-help">No master PIN has been set yet. Set one from <b>Master PIN</b> under the shelf, or clear it in the Firebase console: <b>Realtime Database</b> → <b>users</b> → <b>${lbEsc(u)}</b>, then delete <b>pin</b>.</p>
+    <div class="lb-row">${back}</div>`);
+}
+function masterResetSheet(u) {
+  pinPad({
+    title: 'Master PIN',
+    sub: `Clears ${lbEsc(nameOf(u))}'s PIN.`,
+    onPin: async pin => {
+      if (!(await checkMaster(pin))) return 'Wrong master PIN.';
+      try { await db.ref('users/' + u + '/pin').remove(); }
+      catch (e) { return 'Couldn\'t reset it. Check your connection.'; }
+      if (USERS[u]) delete USERS[u].pin;
+      remember(UNLOCK_KEY, recall(UNLOCK_KEY, []).filter(x => x !== u));
+      closeSheet();
+      if (staged === u) { $('lb-go').textContent = '🔒 Unlock'; $('lb-go').onclick = () => unlockStaged(u); $('lb-stage-badge').hidden = true; }
+      toast(`${nameOf(u)}'s PIN is cleared. Tap Unlock to set a new one.`);
+      return true;
+    },
+    actions: [{ label: 'Back', fn: () => forgotPin(u) }]
+  });
+}
+// Set the master PIN (first time: needs a binder unlocked on this phone; later: needs the current master PIN)
+function masterPinSheet() {
+  const setNew = () => setMasterSheet();
+  if (!MASTER) {
+    if (!people().some(p => isUnlocked(p.id))) {
+      sheet(`<h2 id="lb-sheet-title">Master PIN</h2>
+        <p class="sub">Unlock your own binder on this phone first, then come back here to set the master PIN.</p>
+        <div class="lb-row"><button type="button" class="lb-btn primary" onclick="closeSheet()">OK</button></div>`);
+      return;
+    }
+    return setNew();
+  }
+  pinPad({
+    title: 'Change master PIN',
+    sub: 'Enter the current master PIN first.',
+    onPin: async pin => { if (!(await checkMaster(pin))) return 'Wrong master PIN.'; setNew(); return true; },
+    actions: [cancelAction]
+  });
+}
+function setMasterSheet() {
+  pinPad({
+    title: MASTER ? 'New master PIN' : 'Set a master PIN',
+    sub: 'It can clear anyone\'s PIN if they forget it. Keep it to yourself.',
+    onPin: async first => {
+      pinPad({
+        title: 'Enter it again',
+        sub: 'Just to be sure.',
+        onPin: async second => {
+          if (second !== first) { setTimeout(setMasterSheet, 900); return 'Those didn\'t match. Start over.'; }
+          try { await db.ref('settings/masterPin').set(await pinRecord(second)); }
+          catch (e) { return 'Couldn\'t save it. Check your connection.'; }
+          closeSheet(); toast('Master PIN saved'); return true;
+        },
+        actions: [cancelAction]
+      });
+      return true;
+    },
+    actions: [cancelAction]
+  });
 }
 
 function emailSheet(u, onDone) {
@@ -2415,6 +2483,8 @@ window.addEventListener('DOMContentLoaded', () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
   fillSelects();
   watchPeople();
+  watchMaster();
+  if (SIGN_IN_MODE === 'email') $('lb-master').hidden = true;
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
