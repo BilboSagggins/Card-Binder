@@ -6,19 +6,24 @@
         ".write": "auth != null && (!data.child('email').exists() || data.child('email').val() === auth.token.email)"
       }
     },
+    "binderInfo": {
+      "$binder": {
+        ".write": "auth != null && root.child('users/' + newData.child('owner').val() + '/email').val() === auth.token.email && (!data.exists() || data.child('owner').val() === newData.child('owner').val())"
+      }
+    },
     "binders": {
-      "$person": {
-        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      "$binder": {
+        ".write": "auth != null && (root.child('users/' + $binder + '/email').val() === auth.token.email || root.child('users/' + root.child('binderInfo/' + $binder + '/owner').val() + '/email').val() === auth.token.email)"
       }
     },
     "backups": {
-      "$person": {
-        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      "$binder": {
+        ".write": "auth != null && (root.child('users/' + $binder + '/email').val() === auth.token.email || root.child('users/' + root.child('binderInfo/' + $binder + '/owner').val() + '/email').val() === auth.token.email)"
       }
     },
     "backupIndex": {
-      "$person": {
-        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      "$binder": {
+        ".write": "auth != null && (root.child('users/' + $binder + '/email').val() === auth.token.email || root.child('users/' + root.child('binderInfo/' + $binder + '/owner').val() + '/email').val() === auth.token.email)"
       }
     }
   }
