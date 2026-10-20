@@ -559,7 +559,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.14';
+const APP_VERSION = '2026-10-20.15';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1783,7 +1783,9 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     padding: max(16px, calc(50vh - var(--ch) / 2 - 3.4rem)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   #i-modal h3 { height: 2.4rem; margin: 0 0 1rem; display: flex; align-items: flex-end; justify-content: center; text-align: center; }
   #i-modal .persp { width: calc(var(--ch) / 1.4); height: var(--ch); flex: none; }
-  #i-modal #flip { width: 100%; height: 100%; }
+  #i-modal #flip { width: 100%; height: 100%; border-radius: 4.6% / 3.3%; }
+  #i-modal #flip > div { border: 0; border-radius: 4.6% / 3.3%; box-shadow: 0 18px 40px rgba(0,0,0,.6); }
+  #i-modal #flip > div:first-child { background: transparent; }
   #i-modal > div > p { margin: 1rem 0 0; }
   #i-modal > div > .panel { width: 100%; max-width: 22rem; margin-top: .75rem; background: rgba(9,9,11,.92); }
   #i-modal > div > button:first-child { position: fixed; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); z-index: 2; font-size: 1.1rem; }
@@ -2122,7 +2124,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function flyImg(src, r) {
     const f = document.createElement('img'); f.src = src; f.alt = '';
-    f.style.cssText = 'position:fixed;margin:0;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;z-index:60;object-fit:cover;border-radius:5px;box-shadow:0 14px 34px rgba(0,0,0,.65);transform-origin:0 0;pointer-events:none;will-change:transform';
+    f.style.cssText = 'position:fixed;margin:0;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;z-index:60;object-fit:cover;border-radius:4.6% / 3.3%;box-shadow:0 14px 34px rgba(0,0,0,.65);transform-origin:0 0;pointer-events:none;will-change:transform';
     document.body.appendChild(f); return f;
   }
   function pullOut(el, c) {
@@ -2144,8 +2146,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     // 2) fly to the front while the details fade in
     setTimeout(() => {
       modal.style.transition = 'opacity .4s ease'; modal.style.opacity = '1';
-      f.style.transition = 'transform .55s cubic-bezier(.3,.7,.2,1), border-radius .55s';
-      f.style.borderRadius = '12px';
+      f.style.transition = 'transform .55s cubic-bezier(.3,.7,.2,1)';
       f.style.transform = 'translate(' + (to.left - from.left) + 'px,' + (to.top - from.top) + 'px) scale(' + (to.width / from.width) + ',' + (to.height / from.height) + ')';
     }, 320);
     setTimeout(() => { box.style.visibility = ''; f.remove(); }, 900);
@@ -2156,13 +2157,13 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     if (!p || calm() || !p.src) return done();
     box.classList.remove('ry180');
     const at = box.getBoundingClientRect(), to = p.el.getBoundingClientRect();
-    const f = flyImg(p.src, at); f.style.borderRadius = '12px';
+    const f = flyImg(p.src, at);
     box.style.visibility = 'hidden';
     modal.style.transition = 'opacity .35s ease'; modal.style.opacity = '0';
     // 1) fly back to just above its pocket
     void f.offsetWidth;
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      f.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1), border-radius .5s'; f.style.borderRadius = '5px';
+      f.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1)';
       f.style.transform = 'translate(' + (to.left - at.left) + 'px,' + (to.top - at.top - to.height * 0.6) + 'px) scale(' + (to.width / at.width) + ',' + (to.height / at.height) + ')';
     }));
     // 2) slide down into the sleeve
