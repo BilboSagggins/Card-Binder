@@ -2118,13 +2118,13 @@ function tint(el, id) {
   const hex = (COVERS[id] && COVERS[id].color) || '#1e1b4b';
   el.style.setProperty('--lc1', hex); el.style.setProperty('--lc2', mixHex(hex, '#09090b', .6)); el.style.setProperty('--lc3', '#09090b');
 }
-// Same front cover as the exported binder: your image + title, or stitching, emblem and title
+// Front cover: your cover photo + title, or plain leather when there's no photo
 function coverInner(id) {
   const c = COVERS[id] || {}, show = c.showTitle !== false;
   const title = lbEsc(c.title || (nameOf(id) + "'s Card Binder"));
   return c.image
     ? `<img class="coverimg" src="${lbEsc(c.image)}" alt="">${show ? `<div class="covertitle"><h1>${title}</h1></div>` : ''}`
-    : `<div class="stitch"></div><div class="ctitle"><div class="emblem">📖</div>${show ? `<h1>${title}</h1>` : ''}</div>`;
+    : '';   // no cover photo: plain leather
 }
 function binderBox(id) {
   return `<div class="f tp"></div><div class="f cl"><div class="cv"></div></div><div class="f cr"><div class="cv">${coverInner(id)}</div></div>
