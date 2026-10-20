@@ -172,6 +172,7 @@
     padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   #lb-stage[hidden], .lb-badge[hidden] { display: none; }
   #lb-master { font-size: .72rem; letter-spacing: .08em; }
+  .lb-version { margin: 0; font: 500 .62rem/1 Inter, system-ui, sans-serif; letter-spacing: .08em; color: #52525b; font-variant-numeric: tabular-nums; }
   #landing.focus #lb-master, #landing.focus .lb-scene, #landing.focus .lb-head { opacity: .15; filter: blur(3px); pointer-events: none; }
   .lb-book { position: relative; flex: none; perspective: 1400px; border-radius: 3px 10px 10px 3px; box-shadow: 0 24px 50px rgba(0,0,0,.65); visibility: hidden; }
   #lb-stage.ready .lb-book { visibility: visible; }
@@ -235,6 +236,7 @@
   </div>
   <div id="lb-scene" class="lb-scene"></div>
   <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()" hidden>Master PIN</button>
+  <p id="lb-version" class="lb-version"></p>
   <div id="lb-stage" hidden>
     <div id="lb-stage-book" class="lb-book"></div>
   </div>
@@ -557,7 +559,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.13';
+const APP_VERSION = '2026-10-20.14';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2137,7 +2139,8 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     el.classList.add('out');
     pulled = { el: el, src: src };
     // 1) slide up out of the sleeve
-    requestAnimationFrame(() => { f.style.transition = 'transform .3s ease-out'; f.style.transform = 'translateY(' + (-from.height * 0.6) + 'px)'; });
+    void f.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'transform .3s ease-out'; f.style.transform = 'translateY(' + (-from.height * 0.6) + 'px)'; }));
     // 2) fly to the front while the details fade in
     setTimeout(() => {
       modal.style.transition = 'opacity .4s ease'; modal.style.opacity = '1';
@@ -2157,10 +2160,11 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     box.style.visibility = 'hidden';
     modal.style.transition = 'opacity .35s ease'; modal.style.opacity = '0';
     // 1) fly back to just above its pocket
-    requestAnimationFrame(() => {
+    void f.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       f.style.transition = 'transform .5s cubic-bezier(.4,0,.2,1), border-radius .5s'; f.style.borderRadius = '5px';
       f.style.transform = 'translate(' + (to.left - at.left) + 'px,' + (to.top - at.top - to.height * 0.6) + 'px) scale(' + (to.width / at.width) + ',' + (to.height / at.height) + ')';
-    });
+    }));
     // 2) slide down into the sleeve
     setTimeout(() => {
       f.style.transition = 'transform .28s ease-in';
@@ -3100,6 +3104,7 @@ window.addEventListener('DOMContentLoaded', () => {
   watchCardBack();
   paintMasterLink();
   holdForMaster($('lb-heading'));
+  $('lb-version').textContent = 'Version ' + APP_VERSION;
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
