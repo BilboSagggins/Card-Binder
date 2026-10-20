@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.8';
+const APP_VERSION = '2026-10-20.9';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -803,7 +803,9 @@ async function opLoadSets() {
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
 }
-const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!! card' };
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!! Card' };
+// Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
+const opRarLabel = r => !OP_RARITY[r] ? r : r === 'DON!!' ? OP_RARITY[r] : `${OP_RARITY[r]} (${r})`;
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'DON!!'];
 const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
 async function opFillRarities() {
@@ -813,7 +815,7 @@ async function opFillRarities() {
     const found = [...new Set(all.map(r => String(r.rarity || '').trim()).filter(Boolean))]
       .sort((a, b) => ((OP_RANK.indexOf(a) + 1) || 99) - ((OP_RANK.indexOf(b) + 1) || 99) || a.localeCompare(b));
     const keep = dd.value;
-    dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(OP_RARITY[r] ? `${OP_RARITY[r]} (${r})` : r)}</option>`).join('')
+    dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(opRarLabel(r))}</option>`).join('')
       + '<option value="parallel">Parallel / alt art only</option>';
     if (S.game !== 'onepiece') return;
     dd.value = keep; dd.dataset.ready = 'onepiece';
@@ -2584,7 +2586,7 @@ async function cardBackChoices() {
     <p class="sub">Give each rarity its own back, or set one for all. A rarity without its own picture uses the "All One Piece cards" one.</p>
     <div class="cb-list">
       ${cardBackRow(CARD_BACK_PATH.onepiece, 'All One Piece cards', CARD_BACKS.onepiece, 'No picture yet')}
-      ${rars.map(r => cardBackRow(OP_RAR_PATH + '/' + rarKey(r), OP_RARITY[r] ? `${OP_RARITY[r]} (${r})` : r, OP_RAR_BACKS[rarKey(r)], 'Uses the all-cards back')).join('')}
+      ${rars.map(r => cardBackRow(OP_RAR_PATH + '/' + rarKey(r), opRarLabel(r), OP_RAR_BACKS[rarKey(r)], 'Uses the all-cards back')).join('')}
     </div>
     <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Done</button></div>`);
 }
