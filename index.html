@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.5';
+const APP_VERSION = '2026-10-20.6';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -819,10 +819,9 @@ async function opFillRarities() {
   } catch (e) {}
 }
 async function opSearch() {
-  const setVal = $('set').value, box = $('results'), text = $('q').value.trim();
-  if (mode === 'set' && !setVal) return toast('Please choose a set', 'error');
-  const rar = $('op-rarity').value;
-  if (!setVal && !text && !(rar && mode !== 'num')) return toast(mode === 'num' ? 'Type a card ID like OP01-001' : 'Type a card name, or choose a set or rarity', 'error');
+  const setVal = $('set').value, box = $('results'), text = $('q').value.trim(), rar = $('op-rarity').value;
+  // Any one of: words in the box, a set, or a rarity is enough to search
+  if (!setVal && !text && !rar) return toast(mode === 'num' ? 'Type a card ID like OP01-001, or choose a set or rarity' : mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
   box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
   try {
     const all = await opLoadAll();
