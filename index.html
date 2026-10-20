@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.10';
+const APP_VERSION = '2026-10-20.11';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1771,7 +1771,13 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
 
   /* Card slots (same look as the editor) */
   .card, .empty { position: relative; width: var(--cw); height: calc(var(--cw) * 1.4); border: 2px solid #27272a; border-radius: var(--cr); overflow: hidden; background: rgba(9,9,11,.8); }
-  .empty { display: flex; align-items: center; justify-content: center; border-color: rgba(39,39,42,.8); color: #3f3f46; font-size: max(4px, calc(var(--cw) * .067)); font-weight: 600; text-transform: uppercase; }
+  .empty { border-color: rgba(63,63,70,.55); background: linear-gradient(160deg, rgba(39,39,42,.55), rgba(9,9,11,.75)); box-shadow: inset 0 0 calc(var(--cw) * .12) rgba(0,0,0,.6); }
+  /* Clear plastic pocket over every slot: a soft diagonal glare, a faint edge, and the pocket's opening near the top */
+  .card::after, .empty::after { content: ""; position: absolute; inset: 0; z-index: 13; pointer-events: none; border-radius: inherit;
+    background:
+      linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)) 0 7% / 100% 1px no-repeat,
+      linear-gradient(118deg, rgba(255,255,255,0) 16%, rgba(255,255,255,.14) 29%, rgba(255,255,255,.04) 39%, rgba(255,255,255,0) 50%, rgba(255,255,255,0) 68%, rgba(255,255,255,.07) 81%, rgba(255,255,255,0) 92%);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), inset 0 2px 6px rgba(255,255,255,.06); }
   .card { cursor: pointer; }
   .card.owned { border-color: rgba(16,185,129,.8); background: rgba(2,44,34,.2); }
   .card.needed { border-color: rgba(244,63,94,.8); background: rgba(76,5,25,.2); }
@@ -1887,7 +1893,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     const cards = p.cards ? [...p.cards] : [];
     while (cards.length < cap) cards.push(null);
     const grid = cards.slice(0, cap).map((c, i) => {
-      if (!c) return '<div class="empty">Empty</div>';
+      if (!c) return '<div class="empty"></div>';
       const st = c.status === 'needed' ? 'needed' : 'owned';
       return \`<div class="card \${st}" data-p="\${n}" data-i="\${i}"><div class="holo-card">
         <img src="\${esc(c.image || c.thumb)}" alt="\${esc(c.name)}" draggable="false">
