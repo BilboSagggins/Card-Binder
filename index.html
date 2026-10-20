@@ -1740,7 +1740,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   const showTitle = C.showTitle !== false;
   const coverFront = C.image
     ? \`<img class="coverimg" src="\${esc(C.image)}" alt="">\` + (showTitle ? \`<div class="covertitle"><h1>\${coverTitle}</h1></div>\` : '')
-    : \`<div class="stitch"></div><div class="ctitle"><div class="emblem">📖</div>\` + (showTitle ? \`<h1>\${coverTitle}</h1>\` : '') + \`</div>\`;
+    : B.blankCover ? '' : \`<div class="stitch"></div><div class="ctitle"><div class="emblem">📖</div>\` + (showTitle ? \`<h1>\${coverTitle}</h1>\` : '') + \`</div>\`;
   const sheets = [];
   for (let i = 0; i <= L + 1; i++) {
     const el = document.createElement('div');
@@ -2272,7 +2272,7 @@ function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
   let pages; try { pages = normPages(d.pages).map((pg, i) => normPage(pg, i)); } finally { S.layout = keep; }
-  const payload = { user: nameOf(u), layout, pages, cover: d.cover || null, exportedAt: new Date().toISOString() };
+  const payload = { user: nameOf(u), layout, pages, cover: d.cover || null, blankCover: true, exportedAt: new Date().toISOString() };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(nameOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
