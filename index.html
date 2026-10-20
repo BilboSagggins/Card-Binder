@@ -557,7 +557,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.12';
+const APP_VERSION = '2026-10-20.13';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1774,6 +1774,17 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   .empty { border-color: rgba(63,63,70,.55); background: linear-gradient(160deg, rgba(39,39,42,.55), rgba(9,9,11,.75)); box-shadow: inset 0 0 calc(var(--cw) * .12) rgba(0,0,0,.6); }
   /* Clear plastic pocket over every slot: a soft diagonal glare, a faint edge, and the pocket's opening near the top */
   .card.out img, .card.out .ov, .card.out .badge, .card.out .holo-card { visibility: hidden; }
+  /* Card details: the card sits dead center on the screen, its name just above, details below */
+  #i-modal > div { position: fixed; inset: 0; width: auto; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0; overflow-y: auto;
+    --ch: min(calc(64vw * 1.4), 56vh);
+    padding: max(16px, calc(50vh - var(--ch) / 2 - 3.4rem)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  #i-modal h3 { height: 2.4rem; margin: 0 0 1rem; display: flex; align-items: flex-end; justify-content: center; text-align: center; }
+  #i-modal .persp { width: calc(var(--ch) / 1.4); height: var(--ch); flex: none; }
+  #i-modal #flip { width: 100%; height: 100%; }
+  #i-modal > div > p { margin: 1rem 0 0; }
+  #i-modal > div > .panel { width: 100%; max-width: 22rem; margin-top: .75rem; background: rgba(9,9,11,.92); }
+  #i-modal > div > button:first-child { position: fixed; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); z-index: 2; font-size: 1.1rem; }
   .card.out { border-color: rgba(63,63,70,.55); background: linear-gradient(160deg, rgba(39,39,42,.55), rgba(9,9,11,.75)); }
   .card::after, .empty::after { content: ""; position: absolute; inset: 0; z-index: 13; pointer-events: none; border-radius: inherit;
     background:
