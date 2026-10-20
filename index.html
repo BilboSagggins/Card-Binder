@@ -117,7 +117,7 @@
   .bk .spine { width: var(--T); height: var(--H); margin: calc(var(--H) / -2) 0 0 calc(var(--T) / -2); transform: translateZ(calc(var(--D) / 2)); border-radius: 16px / 12px;
     background: linear-gradient(90deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 10%, rgba(0,0,0,.08) 24%, rgba(255,255,255,.14) 40%, rgba(255,255,255,.06) 55%, rgba(0,0,0,.12) 72%, rgba(0,0,0,.45) 88%, rgba(0,0,0,.78) 100%),
       linear-gradient(180deg, rgba(255,255,255,.08), transparent 8%, transparent 92%, rgba(0,0,0,.35)),
-      repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 4px), linear-gradient(180deg, var(--lc1), var(--lc2) 60%, var(--lc3));
+      repeating-linear-gradient(45deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px), linear-gradient(180deg, var(--spine1, #2a2a2e), var(--spine2, #141416) 60%, var(--spine3, #09090b));
     box-shadow: inset 0 0 0 1.5px rgba(39,39,42,.9), inset 0 6px 8px -4px rgba(255,255,255,.12), inset 0 -8px 10px -4px rgba(0,0,0,.5); }
   .bk .spine::before { content: ""; position: absolute; inset: 7px 6px; border: 1.5px dashed rgba(165,180,252,.22); border-radius: 12px / 9px; pointer-events: none; }
   .bk .nm { position: absolute; left: 0; right: 0; top: 9%; bottom: 24%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -130,7 +130,7 @@
   .bk .cr { transform: rotateY(90deg) translateZ(calc(var(--T) / 2)); }
   .bk .cl { transform: rotateY(-90deg) translateZ(calc(var(--T) / 2)); }
   .bk .tp { width: var(--T); height: var(--D); margin: calc(var(--D) / -2) 0 0 calc(var(--T) / -2); transform: rotateX(90deg) translateZ(calc(var(--H) / 2 - 3px)); border-radius: 14px 14px 4px 4px / 10px 10px 4px 4px;
-    background: linear-gradient(90deg, rgba(0,0,0,.6), rgba(0,0,0,.35) 18%, #2a2a2e 20%, #3f3f46 50%, #2a2a2e 80%, rgba(0,0,0,.35) 82%, rgba(0,0,0,.6)), var(--lc2); }
+    background: linear-gradient(90deg, rgba(0,0,0,.6), rgba(0,0,0,.35) 18%, #2a2a2e 20%, #3f3f46 50%, #2a2a2e 80%, rgba(0,0,0,.35) 82%, rgba(0,0,0,.6)), var(--spine2, #141416); }
   .bk .ok { position: absolute; left: 50%; top: 5.5%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
   .bk-add { flex: none; width: var(--T); height: var(--H); transform: translateZ(calc(var(--D) / 2)); appearance: none; padding: 0; margin: 0 0 0 4px; cursor: pointer;
     border: 2px dashed #52525b; border-radius: 16px / 12px; background: rgba(24,24,27,.5); color: #a1a1aa; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
