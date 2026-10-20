@@ -452,8 +452,7 @@
     </div>
     <p class="text-xs text-zinc-400">🔄 Tap the card to flip it</p>
     <div id="cb-controls" class="flex items-center gap-2 -mt-2">
-      <button type="button" onclick="$('cb-file').click()" class="btn !py-1 !text-[11px]" id="cb-pick">🖼️ Set card back picture</button>
-      <button type="button" onclick="removeCardBack()" class="btn !py-1 !text-[11px] hidden" id="cb-remove">Remove</button>
+      <button type="button" onclick="cardBackSheet()" class="btn !py-1 !text-[11px]" id="cb-pick">🔒 Card back</button>
       <input type="file" id="cb-file" accept="image/*" class="hidden" onchange="saveCardBack(this)">
     </div>
     
@@ -2286,10 +2285,35 @@ function paintCardBack() {
   const im = $('i-back-img'), em = $('i-back-emoji'); if (!im) return;
   if (CARD_BACK) { im.src = CARD_BACK; im.classList.remove('hidden'); em.classList.add('hidden'); }
   else { im.removeAttribute('src'); im.classList.add('hidden'); em.classList.remove('hidden'); }
-  $('cb-pick').textContent = CARD_BACK ? '🖼️ Change card back' : '🖼️ Set card back picture';
-  $('cb-remove').classList.toggle('hidden', !CARD_BACK);
+}
+// Only someone with the master PIN can change the card back
+function cardBackSheet() {
+  if (!MASTER) {
+    sheet(`<h2 id="lb-sheet-title">Card back</h2>
+      <p class="sub">Set a master PIN first. Go back to the shelf and tap <b>Master PIN</b> under it. Then only someone with that PIN can change the card back.</p>
+      <div class="lb-row"><button type="button" class="lb-btn primary" onclick="closeSheet()">OK</button></div>`);
+    return;
+  }
+  pinPad({
+    title: 'Card back',
+    sub: 'Enter the master PIN to change the picture on the back of every card.',
+    onPin: async pin => {
+      if (!(await checkMaster(pin))) return 'Wrong master PIN.';
+      // A real tap on "Choose picture" opens the photo picker (phones block it otherwise)
+      sheet(`<h2 id="lb-sheet-title">Card back</h2>
+        <p class="sub">This picture shows on the back of every card, for everyone.</p>
+        <div class="lb-row">
+          <label for="cb-file" class="lb-btn primary" onclick="setTimeout(closeSheet, 300)">${CARD_BACK ? 'Choose a new picture' : 'Choose picture'}</label>
+          ${CARD_BACK ? '<button type="button" class="lb-btn" onclick="removeCardBack(); closeSheet()">Remove</button>' : ''}
+          <button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button>
+        </div>`);
+      return true;
+    },
+    actions: [{ label: 'Cancel', fn: closeSheet }]
+  });
 }
 function saveCardBack(input) {
+  closeSheet();
   const f = input.files && input.files[0]; input.value = '';
   if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);
