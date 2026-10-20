@@ -547,6 +547,10 @@
    ======================================================== */
 const SIGN_IN_MODE = 'pin';
 
+/* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
+   notice the change on launch and reload the new one. */
+const APP_VERSION = '2026-10-20.2';
+
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
    ======================================================== */
@@ -2222,7 +2226,7 @@ const ownerOf = id => binderMeta(id).owner, titleOf = id => binderMeta(id).title
 function binderCoverTitle(id) { const m = binderMeta(id); return m.id === m.owner && !(BINFO[id] && BINFO[id].title) ? nameOf(m.owner) + "'s Card Binder" : m.title; }
 function watchBinderInfo() {
   db.ref('binderInfo').on('value', v => {
-    BINFO = v.val() || {};
+    BINFO = v.val() || {}; binfoLoaded = true; saveShelfCache();
     updateWho();
     if (currentUser && !peerUser && gameOf(currentUser) !== S.game) { S.game = gameOf(currentUser); applyGameUI(); paintCardBack(); }
     if (!$('landing').hidden && !staged && !$('landing').classList.contains('opening')) renderShelf();
@@ -2259,15 +2263,31 @@ function fillSelects() {
   $('user-select').innerHTML = opts; $('user-select').value = currentUser;
   $('peer-select').innerHTML = '<option value=""></option>' + opts; $('peer-select').value = '';
 }
+let peopleLoaded = false, binfoLoaded = false;
+const SHELF_KEY = 'cardBinder.shelf';
+// Save what the shelf needs (names, binders, cover colors; no PINs or photos) so it draws instantly next time
+function saveShelfCache() {
+  const users = {}, covers = {};
+  Object.entries(USERS).forEach(([id, u]) => { users[id] = { name: u && u.name, order: u && u.order }; });
+  Object.entries(COVERS).forEach(([id, c]) => { if (c) covers[id] = { color: c.color || '', hasImage: !!c.image, title: c.title || '', showTitle: c.showTitle }; });
+  remember(SHELF_KEY, { users, binfo: BINFO, covers });
+}
+function loadShelfCache() {
+  const c = recall(SHELF_KEY, null); if (!c) return;
+  if (c.users && Object.keys(c.users).length) USERS = c.users;
+  if (c.binfo) BINFO = c.binfo;
+  if (c.covers) Object.entries(c.covers).forEach(([id, v]) => { if (!(id in COVERS)) COVERS[id] = v; });
+}
 function watchPeople() {
   db.ref('users').on('value', s => {
     const v = s.val();
+    peopleLoaded = true;
     if (v) USERS = v;
     else {
       USERS = { ...DEFAULT_USERS };
       if (SIGN_IN_MODE === 'pin') db.ref('users').set(DEFAULT_USERS).catch(() => {});
     }
-    fillSelects(); updateWho();
+    fillSelects(); updateWho(); saveShelfCache();
     if (!$('landing').hidden && !staged && !$('landing').classList.contains('opening')) renderShelf();
   }, () => {});
 }
@@ -2294,7 +2314,7 @@ function mixHex(a, b, t) {
 function tint(el, id) {
   let hex = COVERS[id] && COVERS[id].color;
   if (hex && hex.toLowerCase() === '#1e1b4b') hex = '';   // the cover editor's untouched default counts as no color
-  if (COVERS[id] && COVERS[id].image) hex = '';            // a cover photo gets a black spine
+  if (COVERS[id] && (COVERS[id].image || COVERS[id].hasImage)) hex = '';   // a cover photo gets a black spine
   const [a, b] = hex ? [hex, mixHex(hex, '#09090b', .6)] : ['#2a2a2e', '#141416'];
   el.style.setProperty('--lc1', a); el.style.setProperty('--lc2', b); el.style.setProperty('--lc3', '#09090b');
 }
@@ -2318,6 +2338,12 @@ function paintBinder(id) {
     el.innerHTML = binderBox(id);
   });
 }
+const coverRefs = {};
+function watchCover(id) {
+  if (coverRefs[id]) return;
+  coverRefs[id] = db.ref('binders/' + id + '/cover');
+  coverRefs[id].on('value', s => { COVERS[id] = s.val() || null; saveShelfCache(); if (!staged || staged !== id) paintBinder(id); }, () => {});
+}
 function renderShelf() {
   const sc = $('lb-scene'); if (!sc) return;
   const T = 50, gap = 7, room = Math.min(sc.clientWidth || innerWidth, 640) - 48;
@@ -2332,7 +2358,7 @@ function renderShelf() {
       <div class="lb-plank" aria-hidden="true"><i></i><b></b></div></div>`).join('');
   list.forEach(b => {
     paintBinder(b.id);
-    db.ref('binders/' + b.id + '/cover').once('value').then(s => { COVERS[b.id] = s.val() || null; paintBinder(b.id); }).catch(() => {});
+    watchCover(b.id);
   });
 }
 function showLanding() {
@@ -2357,6 +2383,7 @@ function flyPlace(cx, cy, k, depth) {
 }
 function pickBinder(el) {
   if (staged || $('landing').classList.contains('opening')) return;
+  if (!peopleLoaded || !binfoLoaded) return toast('Still loading binders. Try again in a second.');
   const id = el.dataset.user; staged = id;
   const T = 50, H = 216, D = 158;
   // Lay out the stage first so we know where the binder should land
@@ -2862,9 +2889,23 @@ function startEmailAuth() {
   });
 }
 
+/* If GitHub handed this phone an older saved copy of the app, switch to the newest one */
+function checkForNewVersion() {
+  fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
+    const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
+    if (!v || v === APP_VERSION) return;
+    let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
+    if (tried === v) return;   // already tried once this visit; don't loop
+    try { sessionStorage.setItem('cardBinder.reloadedFor', v); } catch (e) {}
+    location.replace(location.pathname + '?v=' + encodeURIComponent(v));
+  }).catch(() => {});
+}
+
 /* Application Initialization */
 window.addEventListener('DOMContentLoaded', () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
+  loadShelfCache();
+  checkForNewVersion();
   fillSelects();
   watchPeople();
   watchBinderInfo();
