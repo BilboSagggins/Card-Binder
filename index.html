@@ -226,7 +226,7 @@
     <p>Tap your binder</p>
   </div>
   <div id="lb-scene" class="lb-scene"></div>
-  <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()">Master PIN</button>
+  <button type="button" id="lb-master" class="lb-btn quiet" onclick="masterPinSheet()" hidden>Master PIN</button>
   <div id="lb-stage" hidden>
     <div id="lb-stage-book" class="lb-book"></div>
   </div>
@@ -549,7 +549,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.2';
+const APP_VERSION = '2026-10-20.3';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2640,8 +2640,26 @@ function setPinSheet(u, onSaved, bid = u) {
   });
 }
 let MASTER = null;   // { salt, hash } stored at settings/masterPin
-function watchMaster() { db.ref('settings/masterPin').on('value', v => { MASTER = v.val(); }, () => {}); }
-async function checkMaster(pin) { return !!(MASTER && MASTER.salt && (await pinHash(MASTER.salt, pin)) === MASTER.hash); }
+const MASTER_HERE_KEY = 'cardBinder.masterHere';   // set on phones where the master PIN was set or entered
+function watchMaster() { db.ref('settings/masterPin').on('value', v => { MASTER = v.val(); paintMasterLink(); }, () => {}); }
+// Show "Master PIN" only before one exists, or on a phone that knows it. Elsewhere, press and hold the heading.
+function paintMasterLink() {
+  const el = $('lb-master'); if (!el) return;
+  el.hidden = SIGN_IN_MODE === 'email' || (!!MASTER && !recall(MASTER_HERE_KEY, false));
+}
+async function checkMaster(pin) {
+  const ok = !!(MASTER && MASTER.salt && (await pinHash(MASTER.salt, pin)) === MASTER.hash);
+  if (ok) { remember(MASTER_HERE_KEY, true); paintMasterLink(); }
+  return ok;
+}
+function holdForMaster(el) {
+  let t = null;
+  const start = () => { clearTimeout(t); t = setTimeout(() => { if (SIGN_IN_MODE === 'pin' && !staged) masterPinSheet(); }, 900); };
+  const stop = () => clearTimeout(t);
+  el.addEventListener('pointerdown', start); ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => el.addEventListener(ev, stop));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  el.style.webkitUserSelect = el.style.userSelect = 'none'; el.style.webkitTouchCallout = 'none';
+}
 
 function forgotPin(u, bid = u) {
   const back = `<button type="button" class="lb-btn quiet" onclick="enterPinSheet('${lbEsc(u)}', '${lbEsc(bid)}')">Back</button>`;
@@ -2702,6 +2720,7 @@ function setMasterSheet() {
           if (second !== first) { setTimeout(setMasterSheet, 900); return 'Those didn\'t match. Start over.'; }
           try { await db.ref('settings/masterPin').set(await pinRecord(second)); }
           catch (e) { return 'Couldn\'t save it. Check your connection.'; }
+          remember(MASTER_HERE_KEY, true); paintMasterLink();
           closeSheet(); toast('Master PIN saved'); return true;
         },
         actions: [cancelAction]
@@ -2911,7 +2930,8 @@ window.addEventListener('DOMContentLoaded', () => {
   watchBinderInfo();
   watchMaster();
   watchCardBack();
-  if (SIGN_IN_MODE === 'email') $('lb-master').hidden = true;
+  paintMasterLink();
+  holdForMaster($('lb-heading'));
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
