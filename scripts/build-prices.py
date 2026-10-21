@@ -11,7 +11,7 @@ needs into prices/<game>.json on the site (pokemon, pokemon-jp, onepiece):
 
 Only single cards (products with a card Number) are kept.
 """
-import json, os, sys, time, urllib.request
+import json, os, re, sys, time, urllib.request
 
 BASE = os.environ.get("TCGCSV_BASE", "https://tcgcsv.com/tcgplayer")
 GAMES = {"pokemon": [3], "pokemon-jp": [85], "onepiece": [68]}   # 85 = Pokemon Japan (its own file, loaded only for Japanese cards)
@@ -85,11 +85,69 @@ def add_category(game, cat, out):
         time.sleep(0.15)  # be gentle with a free service
 
 
+# --- Chinese Pokémon from CardTrader (TCGplayer has none). Needs the CARDTRADER_TOKEN secret; skipped without it.
+#     prices/pokemon-zh.json: same shape, but keys are CardTrader card ids, prices are the lowest current
+#     Chinese-language listing in USD, and each entry adds a picture path: [price, name, number, setId, rarity, image]
+CT = "https://api.cardtrader.com/api/v2"
+CT_IMG = "/uploads/blueprints/image/"
+
+
+def ct_get(path, token, tries=4):
+    for n in range(tries):
+        try:
+            req = urllib.request.Request(f"{CT}/{path}", headers={"Authorization": f"Bearer {token}", "User-Agent": "card-binder-price-sync"})
+            with urllib.request.urlopen(req, timeout=90) as r:
+                return json.load(r)
+        except Exception as e:
+            code = getattr(e, "code", None)
+            if code in (401, 403, 404):
+                print(f"  CardTrader {path.split('?')[0]}: HTTP {code}", file=sys.stderr); return None
+            time.sleep(3 + 4 * n)
+    print(f"  CardTrader {path.split('?')[0]}: gave up", file=sys.stderr)
+    return None
+
+
+def is_chinese_set(e):
+    code, name = (e.get("code") or "").lower(), e.get("name") or ""
+    return (e.get("id") or 0) >= 3900 and (re.match(r"(m-)?c[sb]", code) or re.search(r"chinese", name, re.I))
+
+
+def build_cardtrader():
+    token = os.environ.get("CARDTRADER_TOKEN", "").strip()
+    if not token:
+        print("  no CARDTRADER_TOKEN; skipping Chinese cards", flush=True); return None
+    exps = [e for e in (ct_get("expansions", token) or []) if e.get("game_id") == 5 and is_chinese_set(e)]
+    out = {"updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "source": "cardtrader", "currency": "USD", "groups": {}, "sets": [], "p": {}}
+    for e in sorted(exps, key=lambda e: e["id"]):
+        eid = e["id"]
+        bps = [b for b in (ct_get(f"blueprints/export?expansion_id={eid}", token) or []) if b.get("category_id") == 73]
+        if not bps:
+            continue
+        time.sleep(1.1)  # the marketplace endpoint allows about one call a second
+        prods = ct_get(f"marketplace/products?expansion_id={eid}", token) or {}
+        for b in bps:
+            fp = b.get("fixed_properties") or {}
+            listings = [x for x in prods.get(str(b["id"]), []) if str((x.get("properties_hash") or {}).get("pokemon_language") or "").startswith("zh") and not x.get("graded")]
+            nm = [x for x in listings if (x.get("properties_hash") or {}).get("condition") in ("Mint", "Near Mint")] or listings
+            cents = min(((x.get("price") or {}).get("cents") or x.get("price_cents") or 0 for x in nm), default=0)
+            ver = [v.strip() for v in str(b.get("version") or "").split("|")]
+            number = ver[-1] if len(ver) > 1 and "/" in ver[-1] else str(fp.get("collector_number") or "")
+            img = ((b.get("image") or {}).get("url") or "").replace(CT_IMG, "")
+            out["p"][str(b["id"])] = [round(cents / 100, 2) if cents else None, b.get("name") or "", number, eid, fp.get("pokemon_rarity") or "", img]
+        out["groups"][str(eid)] = e.get("name") or ""
+        out["sets"].append([eid, e.get("name") or "", "", e.get("code") or "", len(bps)])
+        print(f"  {e.get('name')}: {len(bps)} cards", flush=True)
+    return out
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    for game, cats in GAMES.items():
-        print(f"Building {game} (categories {cats})…", flush=True)
-        data = build(game, cats)
+    jobs = [(g, (lambda g=g, c=c: build(g, c))) for g, c in GAMES.items()] + [("pokemon-zh", build_cardtrader)]
+    for game, make in jobs:
+        print(f"Building {game}…", flush=True)
+        data = make()
+        if data is None:
+            continue
         n = len(data["p"])
         if n < 100:  # something went wrong upstream: keep yesterday's file rather than shipping an empty one
             print(f"  only {n} cards for {game}; keeping the existing file", file=sys.stderr)

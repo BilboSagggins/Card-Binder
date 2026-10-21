@@ -279,6 +279,7 @@
   .pick b { font: 600 .62rem/1.2 Inter, system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pick span { font: 500 .6rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .jp-tag { position: absolute; top: 2px; left: 2px; z-index: 10; background: #be123c; color: #fff; font: 800 clamp(5px, 1.6vw, 9px)/1 Inter, system-ui, sans-serif; letter-spacing: .04em; padding: 2px 3px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .jp-tag.cn { background: #c2410c; }
   .jp-tag.jp-inline { position: static; font-size: 8px; padding: 1px 3px; vertical-align: 1px; box-shadow: none; }
   .lb-btn.lb-danger { background: #4c0519; border-color: #9f1239; color: #fecdd3; }
   .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
@@ -484,6 +485,7 @@
         <div id="pk-lang" class="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800" role="group" aria-label="Card language">
           <button type="button" onclick="setPkLang('en')" id="pl-en" class="px-3 py-1 text-xs font-semibold rounded-md">English</button>
           <button type="button" onclick="setPkLang('ja')" id="pl-ja" class="px-3 py-1 text-xs font-semibold rounded-md">🇯🇵 Japanese</button>
+          <button type="button" onclick="setPkLang('zh')" id="pl-zh" class="px-3 py-1 text-xs font-semibold rounded-md">🇨🇳 Chinese</button>
         </div>
         <select id="lang" class="field !py-1.5 !text-xs hidden">
           <option value="en" selected>English</option>
@@ -664,7 +666,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.3';
+const APP_VERSION = '2026-10-21.4';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -843,6 +845,7 @@ async function ptcgLookup(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
+  if (card.ctId) { const c = cardFromCT(card.ctId, await zhList()); return c && c.price != null ? { price: c.price, url: card.url || c.url } : null; }
   const pid = card.tcgPid || pidInUrl(card.url);
   if (pid) {
     const c = await tcgCardByPid(pid, card.game === 'onepiece' ? 'onepiece' : 'pokemon');
@@ -968,21 +971,24 @@ async function opLookup(card) {
 }
 /* --- Japanese Pokémon: searched in TCGplayer's Japanese catalog (prices/pokemon-jp.json, English card names) --- */
 const PK_LANG_KEY = 'cardBinder.pkLang';
-let pkLang = recall(PK_LANG_KEY, 'en') === 'ja' ? 'ja' : 'en';
+const PK_LANGS = { en: 'English', ja: 'Japanese', zh: 'Chinese' };
+let pkLang = PK_LANGS[recall(PK_LANG_KEY, 'en')] ? recall(PK_LANG_KEY, 'en') : 'en';
+// the little language tag on a card: JP or CN (nothing for English)
+const langTag = (c, cls = '') => c && c.lang === 'ja' ? `<b class="jp-tag ${cls}" title="Japanese card">JP</b>` : c && c.lang === 'zh' ? `<b class="jp-tag cn ${cls}" title="Chinese card">CN</b>` : '';
 async function jpList() { return (await loadTcgList('pokemon-jp')) || (await loadTcgList('pokemon')); }
 function setPkLang(l) {
-  pkLang = l === 'ja' ? 'ja' : 'en'; remember(PK_LANG_KEY, pkLang);
+  pkLang = PK_LANGS[l] ? l : 'en'; remember(PK_LANG_KEY, pkLang);
   paintPkLang();
   const rd = $('op-rarity'); rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; rd.value = '';
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
-  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${pkLang === 'ja' ? 'Japanese' : 'English'} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
+  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
   if (mode !== 'custom' && mode !== 'coll') loadSets();
 }
 function paintPkLang() {
   const box = $('pk-lang'); if (!box) return;
   box.classList.toggle('hidden', S.game !== 'pokemon');
-  ['en', 'ja'].forEach(k => $('pl-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === pkLang ? ON : OFF}`);
+  ['en', 'ja', 'zh'].forEach(k => $('pl-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === pkLang ? ON : OFF}`);
 }
 // A set dropdown from a price list: TCGplayer's own sets, newest first, grouped by release year
 function fillSetDropdown(L, prefix) {
@@ -1044,7 +1050,7 @@ async function jpSearch() {
   $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching Japanese cards…</div>';
   return listSearch(await jpList(), gid, 'ja', text, rar);
 }
-async function listSearch(L, gid, lang, text, rar) {
+async function listSearch(L, gid, lang, text, rar, make) {
   const box = $('results');
   if (!L) { box.innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the card list. Try again in a moment.</div>'; return; }
   const parsed = mode === 'num' ? parseQ(text) : { name: mode === 'set' ? '' : text, number: '' };
@@ -1057,8 +1063,8 @@ async function listSearch(L, gid, lang, text, rar) {
     return true;
   }).sort((a, b) => (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : b[1][3] - a[1][3])
     || String(a[1][2]).localeCompare(String(b[1][2]), undefined, { numeric: true }));   // a set reads in card-number order, its subset after it
-  if (!items.length) { box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching ${lang === 'ja' ? 'Japanese ' : ''}cards found.</div>`; return; }
-  pending = { items, shown: 0, make: async ([pid]) => { const c = cardFromTcg(pid, 'pokemon', L); c.lang = lang; return c; } };
+  if (!items.length) { box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching ${lang !== 'en' ? PK_LANGS[lang] + ' ' : ''}cards found.</div>`; return; }
+  pending = { items, shown: 0, make: async ([pid]) => { if (make) return make(pid); const c = cardFromTcg(pid, 'pokemon', L); c.lang = lang; return c; } };
   await loadBatch(false);
 }
 // Collectr's "(JP)" entries: find the Japanese printing by name (picker when several)
@@ -1070,6 +1076,58 @@ async function matchPokemonJP(card) {
   if (cands.length === 1) { const c = mk(cands[0]); return { found: c, foundKey: 'tcg:' + c.tcgPid }; }
   if (cands.length > 1) return { choices: cands.slice(0, 30).map(mk), more: cands.length > 30 };
   return null;
+}
+
+/* --- Chinese Pokémon: CardTrader's Chinese sets (prices/pokemon-zh.json, built daily by the price job; English card names).
+   Prices are the lowest current Chinese-language listing on CardTrader (Near Mint when there is one), in US dollars. */
+const CT_IMG = 'https://cardtrader.com/uploads/blueprints/image/';
+const zhList = () => loadTcgList('pokemon-zh');
+function cardFromCT(id, L) {
+  const e = L && L.p && L.p[String(id)]; if (!e) return null;
+  const img = e[5] ? CT_IMG + e[5] : '', show = e[5] ? CT_IMG + e[5].replace(/([^/]+)$/, 'show_$1') : '';
+  return { id: 'ct-' + id, ctId: +id, name: e[1], set: (L.groups && L.groups[e[3]]) || '', number: e[2] || '—', rarity: e[4] || '—', price: e[0] ?? null,
+    url: `https://www.cardtrader.com/cards/${id}`, thumb: show || img, image: img || show, alts: [show, img].filter(Boolean), game: 'pokemon', lang: 'zh', source: 'cardtrader' };
+}
+// CardTrader's Chinese sets in sections, newest first; the Poké Ball / Master Ball reverse sets fold into their main set
+function zhSections(L) {
+  const sets = (L.sets || []).map(([gid, name, , code, n]) => ({ gid: String(gid), name, code, n, ids: [String(gid)] }));
+  const head = n => (String(n).match(/^(CSV|CSM|CS)\s*[\d.]+[a-z]?/i) || [''])[0].toLowerCase();
+  const main = sets.filter(x => !/reverse/i.test(x.name));
+  sets.filter(x => /reverse/i.test(x.name)).forEach(x => { const m = main.find(y => head(y.name) && head(y.name) === head(x.name)); m ? (m.ids.push(x.gid), m.n += x.n) : main.push(x); });
+  const section = n => /promo/i.test(n) ? 'Promos'
+    : /products|celebration|return of the dragon/i.test(n) ? 'Other sets'
+    : /deck|gift box|box set|support box|modification pack|reward pack|happy (set|pack|combination)|battle party|collection sheet|special pack|transformation/i.test(n) ? 'Decks, gift boxes & special packs'
+    : /^CSV\d/i.test(n) ? 'Scarlet & Violet' : /^CSM\d/i.test(n) ? 'Sun & Moon' : /^CS\d/i.test(n) ? 'Sword & Shield' : /gem pack/i.test(n) ? 'Gem Packs' : 'Other sets';
+  const key = n => { const m = String(n).match(/^(?:CSV|CSM|CS|Gem Pack Vol\.)\s*(\d+)(?:\.(\d+))?([a-z])?/i); return m ? +m[1] + (m[2] ? +m[2] / 10 : 0) + (m[3] ? (m[3].toLowerCase().charCodeAt(0) - 96) / 100 : 0) : -1; };
+  const ORDER = ['Scarlet & Violet', 'Gem Packs', 'Sword & Shield', 'Sun & Moon', 'Other sets', 'Promos', 'Decks, gift boxes & special packs'];
+  return ORDER.map(h => ({ head: h, items: main.filter(x => section(x.name) === h).sort((a, b) => key(b.name) - key(a.name) || b.gid - a.gid) })).filter(x => x.items.length);
+}
+async function zhLoadSets() {
+  const dd = $('set');
+  dd.innerHTML = '<option value="">Loading sets…</option>';
+  const L = await zhList();
+  if (pkLang !== 'zh') return;
+  if (!L) { dd.innerHTML = '<option value="">Chinese sets unavailable — tap to retry</option>'; return; }
+  const keep = dd.value;
+  dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + zhSections(L).map(x =>
+    `<optgroup label="${esc(x.head)}">${x.items.map(it => `<option value="zh:${it.ids.join(',')}">${esc(it.name)} (${it.n})</option>`).join('')}</optgroup>`).join('');
+  dd.value = keep;
+}
+async function zhFillRarities() {
+  const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'pokemon-zh') return;
+  const L = await zhList(); if (!L || pkLang !== 'zh' || S.game !== 'pokemon') return;
+  const found = [...new Set(Object.values(L.p).map(e => String(e[4] || '').trim()).filter(Boolean))].sort();
+  const keep = dd.value;
+  dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  dd.value = keep; dd.dataset.ready = 'pokemon-zh';
+}
+async function zhSearch() {
+  const setVal = $('set').value, text = $('q').value.trim(), rar = $('op-rarity').value;
+  const gid = setVal.startsWith('zh:') ? setVal.slice(3) : '';
+  if (!gid && !text && !rar) return toast(mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
+  $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching Chinese cards…</div>';
+  const L = await zhList();
+  return listSearch(L, gid, 'zh', text, rar, id => cardFromCT(id, L));
 }
 
 // Switch the search window between Pokémon and One Piece
@@ -1305,7 +1363,7 @@ function splitCollName(raw) {
    { updated, groups: { groupId: set name }, p: { productId: [marketPrice, name, number, groupId, rarity] } } */
 const TCG_LISTS = {}, tcgListP = {};
 function loadTcgList(game) {
-  if (!['pokemon', 'pokemon-jp', 'onepiece'].includes(game)) return Promise.resolve(null);
+  if (!['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece'].includes(game)) return Promise.resolve(null);
   if (TCG_LISTS[game]) return Promise.resolve(TCG_LISTS[game]);
   if (!tcgListP[game]) tcgListP[game] = (async () => {
     // the repo copy is current the moment the daily job finishes; the site's own copy is the backup
@@ -1683,6 +1741,7 @@ function setMode(m) {
 async function loadSets() {
   if (S.game === 'onepiece') { opFillRarities(); return opLoadSets(); }
   if (pkLang === 'ja') { jpFillRarities(); return jpLoadSets(); }
+  if (pkLang === 'zh') { zhFillRarities(); return zhLoadSets(); }
   pkFillRarities();
   const L = await loadTcgList('pokemon');
   if (L && S.game === 'pokemon' && pkLang === 'en') return fillGuideSets(L);   // TCGplayer's sets in guide order; the old list below is the fallback
@@ -1715,7 +1774,7 @@ async function pkFillRarities() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'pokemon') return;
   let list = PK_RARITIES;
   try { const l = await fetchJSON(`${API}en/rarities`, 8000); if (Array.isArray(l) && l.length) list = l.filter(r => r && typeof r === 'string' && r !== 'None'); } catch (e) {}
-  if (S.game !== 'pokemon' || pkLang === 'ja') return;
+  if (S.game !== 'pokemon' || pkLang !== 'en') return;
   const keep = dd.value;
   dd.innerHTML = '<option value="">Any rarity</option>' + list.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
   dd.value = keep; dd.dataset.ready = 'pokemon';
@@ -1731,6 +1790,7 @@ async function pkCardsOfRarity(lang, rar) {
 async function search() {
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
+  if (pkLang === 'zh') return zhSearch();
   if ($('set').value.startsWith('tcg:')) {   // a TCGplayer set: its exact cards and prices
     const text = $('q').value.trim(), rar = $('op-rarity').value;
     $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
@@ -1796,7 +1856,7 @@ function renderResults(cards, append) {
     el.className = 'panel p-2.5 flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer group';
     el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden bg-zinc-900 mb-2">${imgTag(card.thumb, card.alts, card.name, 'w-full h-full object-cover group-hover:scale-105 transition duration-300')}</div>
       <h4 class="font-bold text-xs truncate">${esc(card.name)}</h4>
-      <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${card.lang === 'ja' ? '<b class="jp-tag jp-inline">JP</b> ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
+      <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${langTag(card, 'jp-inline')}${card.lang && card.lang !== 'en' ? ' ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
     el.onclick = () => { 
       card.status = addStatus; 
@@ -2204,7 +2264,7 @@ function render() {
     el.onclick = e => { if (suppressClick || e.target.closest('.act')) return; c ? openInspect(S.cur, i) : (!peerUser && openSearch(S.cur, i)); };
     
     el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(c.image, c.alts, c.name, 'w-full h-full object-cover rounded-xl')}
-        ${c.lang === 'ja' ? '<span class="jp-tag" title="Japanese card">JP</span>' : ''}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
+        ${langTag(c)}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
           <div class="flex justify-between"><div class="flex gap-1">
             ${!peerUser ? `<button onclick="toggleStatus(${S.cur},${i},event)" class="act btn !p-1.5">${c.status === 'needed' ? '⏳' : '✓'}</button>` : ''}
@@ -2432,11 +2492,11 @@ function openInspect(p, s) {
   const pages = getPagesArray();
   const c = pages[p].cards[s]; if (!c) return; insp = { p, s };
   const im = $('i-img'); im.dataset.alts = (c.alts || []).join('|'); im.alt = c.name; im.src = c.image;
-  $('i-title').textContent = c.name; $('i-set').textContent = c.set + (c.lang === 'ja' ? ' (Japanese)' : ''); $('i-num').textContent = c.number; $('i-rar').textContent = c.rarity;
+  $('i-title').textContent = c.name; $('i-set').textContent = c.set + (c.lang === 'ja' ? ' (Japanese)' : c.lang === 'zh' ? ' (Chinese)' : ''); $('i-num').textContent = c.number; $('i-rar').textContent = c.rarity;
   $('i-price').textContent = fmt(c.price);$('i-link').href = cardLink(c);
   const isCustomCard = c.source === 'custom';
-  $('i-price-label').textContent = isCustomCard ? 'Your Value:' : 'TCGplayer Market:';
-  $('i-link').textContent = isCustomCard ? '🔍 Search on TCGplayer' : '🔗 View on TCGplayer';
+  $('i-price-label').textContent = isCustomCard ? 'Your Value:' : c.ctId ? 'CardTrader lowest:' : 'TCGplayer Market:';
+  $('i-link').textContent = isCustomCard ? '🔍 Search on TCGplayer' : c.ctId ? '🔗 View on CardTrader' : '🔗 View on TCGplayer';
   
   if (peerUser) {
     $('i-status-panel').classList.add('hidden');$('i-del-btn').classList.add('hidden');
@@ -2601,6 +2661,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
   .badge { position: absolute; top: calc(var(--cw) * .027); right: calc(var(--cw) * .027); z-index: 11; color: #fff; font-weight: 700; text-transform: uppercase; border-radius: 3px; font-size: max(3.5px, calc(var(--cw) * .053)); padding: calc(var(--cw) * .013) calc(var(--cw) * .04); }
   .badge.owned { background: #059669; } .badge.needed { background: #e11d48; }
   .jpb { position: absolute; top: calc(var(--cw) * .027); left: calc(var(--cw) * .027); z-index: 11; color: #fff; background: #be123c; font-weight: 800; border-radius: 3px; font-size: max(3.5px, calc(var(--cw) * .053)); padding: calc(var(--cw) * .013) calc(var(--cw) * .04); }
+  .jpb.cn { background: #c2410c; }
   .ov { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: calc(var(--cw) * .053); background: linear-gradient(to top, rgba(0,0,0,.8), transparent 50%, transparent); pointer-events: none; }
   .nm { margin: 0; font-weight: 700; font-size: max(4px, calc(var(--cw) * .073)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row { display: flex; justify-content: space-between; gap: 4px; font-size: max(3.5px, calc(var(--cw) * .067)); }
@@ -2673,7 +2734,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
       <div class="flex justify-between border-b border-zinc-800 pb-1.5"><span class="text-zinc-400">Set:</span><b id="i-set"></b></div>
       <div class="flex justify-between border-b border-zinc-800 pb-1.5"><span class="text-zinc-400">Number:</span><b id="i-num"></b></div>
       <div class="flex justify-between border-b border-zinc-800 pb-1.5"><span class="text-zinc-400">Rarity:</span><b id="i-rar" class="text-indigo-400"></b></div>
-      <div class="flex justify-between"><span class="text-zinc-400">TCGplayer Market:</span><b id="i-price" class="text-emerald-400 text-sm"></b></div>
+      <div class="flex justify-between"><span id="i-plabel" class="text-zinc-400">TCGplayer Market:</span><b id="i-price" class="text-emerald-400 text-sm"></b></div>
       <a id="i-link" href="#" target="_blank" rel="noopener noreferrer" class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition mt-3">🔗 View on TCGplayer</a>
     </div>
   </div>
@@ -2713,7 +2774,7 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
       const st = c.status === 'needed' ? 'needed' : 'owned';
       return \`<div class="card \${st}" data-p="\${n}" data-i="\${i}"><div class="holo-card">
         <img src="\${esc(c.image || c.thumb)}" alt="\${esc(c.name)}" draggable="false">
-        <span class="badge \${st}">\${st === 'needed' ? 'need' : 'owned'}</span>\${c.lang === 'ja' ? '<span class="jpb">JP</span>' : ''}
+        <span class="badge \${st}">\${st === 'needed' ? 'need' : 'owned'}</span>\${c.lang === 'ja' ? '<span class="jpb">JP</span>' : c.lang === 'zh' ? '<span class="jpb cn">CN</span>' : ''}
         <div class="ov"><p class="nm">\${esc(c.name)}</p>
           <div class="row"><span>\${esc(c.number)}</span><b>\${fmt(c.price)}</b></div></div>
       </div></div>\`;
@@ -2913,6 +2974,8 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     document.getElementById('i-num').textContent = c.number || '—';
     document.getElementById('i-rar').textContent = c.rarity || '—';
     document.getElementById('i-price').textContent = fmt(c.price);
+    document.getElementById('i-plabel').textContent = c.ctId ? 'CardTrader lowest:' : 'TCGplayer Market:';
+    document.getElementById('i-link').textContent = c.ctId ? '🔗 View on CardTrader' : '🔗 View on TCGplayer';
     document.getElementById('i-link').href = c.url || ('https://www.tcgplayer.com/search/pokemon/product?q=' + encodeURIComponent(c.name + ' ' + (c.number || '')));
     document.getElementById('flip').classList.remove('ry180');
     document.getElementById('i-modal').classList.remove('hidden');
