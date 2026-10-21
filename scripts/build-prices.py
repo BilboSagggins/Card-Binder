@@ -133,7 +133,8 @@ def build_cardtrader():
             ver = [v.strip() for v in str(b.get("version") or "").split("|")]
             number = ver[-1] if len(ver) > 1 and "/" in ver[-1] else str(fp.get("collector_number") or "")
             img = ((b.get("image") or {}).get("url") or "").replace(CT_IMG, "")
-            out["p"][str(b["id"])] = [round(cents / 100, 2) if cents else None, b.get("name") or "", number, eid, fp.get("pokemon_rarity") or "", img]
+            rarity = {"Special Illustration": "Special Illustration Rare"}.get(fp.get("pokemon_rarity") or "", fp.get("pokemon_rarity") or "")
+            out["p"][str(b["id"])] = [round(cents / 100, 2) if cents else None, b.get("name") or "", number, eid, rarity, img]
         out["groups"][str(eid)] = e.get("name") or ""
         out["sets"].append([eid, e.get("name") or "", "", e.get("code") or "", len(bps)])
         print(f"  {e.get('name')}: {len(bps)} cards", flush=True)
