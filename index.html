@@ -82,6 +82,13 @@
   .slot, .slot * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .slot img { -webkit-user-drag: none; pointer-events: none; }
   body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
+  /* Drop a dragged binder card here to take it out */
+  #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
+    padding: .8rem 1.4rem; border-radius: 999px; background: rgba(24,24,27,.95); border: 2px dashed #f43f5e; color: #fecdd3; font: 700 .8rem Inter, system-ui, sans-serif;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6); transition: transform .2s ease, background .15s, color .15s; pointer-events: none; }
+  body.card-dragging #drag-trash { transform: translate(-50%, 0); pointer-events: auto; }
+  body.tray-open #drag-trash { bottom: 222px; }
+  #drag-trash.drag-over { background: #e11d48; color: #fff; border-style: solid; transform: translate(-50%, 0) scale(1.12); }
 
   /* Grid Layout Presets */
   .grid-layout-2x2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 40rem; margin: 0 auto; }
@@ -614,7 +621,8 @@
 </div>
 
 <!-- Notification Toasts Container -->
-<div id="toasts" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+<div id="drag-trash" aria-hidden="true"><span style="font-size:1.1rem">🗑️</span><span>Drop here to remove</span></div>
+<div id="toasts" class="fixed bottom-4 right-4 flex flex-col gap-2 pointer-events-none" style="z-index:95"></div>
 
 <div id="db-banner" onclick="this.classList.add('hidden')" class="hidden fixed top-0 inset-x-0 z-[60] bg-rose-700 text-white text-xs font-semibold text-center py-2 px-3"></div>
 
@@ -673,7 +681,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.6';
+const APP_VERSION = '2026-10-21.7';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2497,7 +2505,7 @@ function beginDrag() {
   g.innerHTML = imgTag(dragSt.card.image || dragSt.card.thumb, dragSt.card.alts, dragSt.card.name, 'w-full h-full object-cover');
   document.body.appendChild(g);
   dragSt.ghost = g;
-  document.body.classList.add('is-dragging');
+  document.body.classList.add('is-dragging', 'card-dragging');
   markSource(); moveGhost(); updateHover();
   if (navigator.vibrate) navigator.vibrate(12);
   dragSt.raf = requestAnimationFrame(dragTick);
@@ -2523,6 +2531,8 @@ function dragMove(e) {
 
 function updateHover() {
   const { hit, slot } = slotUnder(dragSt.cx, dragSt.cy);
+  const trash = !!(hit && hit.closest('#drag-trash'));
+  if (trash !== !!dragSt.trash) { dragSt.trash = trash; $('drag-trash').classList.toggle('drag-over', trash); if (trash && navigator.vibrate) navigator.vibrate(8); }
   if (slot !== dragSt.hover) {
     if (dragSt.hover) dragSt.hover.classList.remove('drag-over');
     if (slot) slot.classList.add('drag-over');
@@ -2549,7 +2559,8 @@ function dragTick() {
   if (!dragSt || !dragSt.active) return;
   const top = document.querySelector('header').getBoundingClientRect().bottom + 30;
   const bottom = window.innerHeight - 70, y = dragSt.cy;
-  if (y < top) window.scrollBy(0, -Math.min(16, 3 + (top - y) / 6));
+  if (dragSt.trash) {}   // resting on the remove spot: don't scroll
+  else if (y < top) window.scrollBy(0, -Math.min(16, 3 + (top - y) / 6));
   else if (y > bottom) window.scrollBy(0, Math.min(16, 3 + (y - bottom) / 4));
   updateHover();
   dragSt.raf = requestAnimationFrame(dragTick);
@@ -2558,14 +2569,29 @@ function dragTick() {
 function dragEnd(e) {
   if (!dragSt || e.pointerId !== dragSt.id) return;
   const st = dragSt;
-  let to = null;
+  let to = null, trash = false;
   if (st.active) {
-    const { slot } = slotUnder(e.clientX, e.clientY);
-    if (slot) to = { p: S.cur, s: +slot.dataset.slot };
+    const { hit, slot } = slotUnder(e.clientX, e.clientY);
+    trash = !!(hit && hit.closest('#drag-trash'));
+    if (slot && !trash) to = { p: S.cur, s: +slot.dataset.slot };
     suppressClick = true; setTimeout(() => { suppressClick = false; }, 120);
   }
   dragCleanup();
-  if (to) moveCard({ p: st.p, s: st.s }, to);
+  if (trash) dropToTrash(st.p, st.s);
+  else if (to) moveCard({ p: st.p, s: st.s }, to);
+}
+// Remove a card dropped on the remove spot, with a few seconds to undo
+function dropToTrash(p, s) {
+  if (peerUser) return;
+  const pages = getPagesArray(), gone = pages[p] && pages[p].cards[s]; if (!gone) return;
+  pages[p].cards[s] = null; saveActivePages(pages); render();
+  const binder = currentUser;
+  toastUndo(`Removed ${gone.name}`, () => {
+    if (currentUser !== binder) return;
+    const pg = getPagesArray();
+    if (pg[p] && pg[p].cards[s]) return toast('That slot has been filled since, so the card wasn\'t put back.', 'error');
+    pg[p].cards[s] = gone; saveActivePages(pg); render(); toast(`Put back ${gone.name}`);
+  });
 }
 
 function dragAbort() { dragCleanup(); }
@@ -2575,7 +2601,7 @@ function dragCleanup() {
   clearTimeout(dragSt.timer); clearTimeout(dragSt.navTimer); cancelAnimationFrame(dragSt.raf);
   if (dragSt.ghost) dragSt.ghost.remove();
   document.querySelectorAll('.drag-over, #grid .dragging').forEach(n => n.classList.remove('drag-over', 'dragging'));
-  document.body.classList.remove('is-dragging');
+  document.body.classList.remove('is-dragging', 'card-dragging');
   document.removeEventListener('pointermove', dragMove);
   document.removeEventListener('pointerup', dragEnd);
   document.removeEventListener('pointercancel', dragAbort);
@@ -3285,6 +3311,14 @@ function importData(e) {
   r.readAsText(f);
 }
 
+function toastUndo(msg, undo) {
+  const t = document.createElement('div');
+  t.className = 'bg-zinc-900/95 border-indigo-500/60 text-xs pl-4 pr-1.5 py-1.5 rounded-xl border shadow-xl flex items-center gap-3 pointer-events-auto';
+  const m = document.createElement('span'); m.textContent = msg;
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Undo'; b.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold';
+  b.onclick = () => { t.remove(); undo(); };
+  t.append(m, b); $('toasts').appendChild(t); setTimeout(() => t.remove(), 6000);
+}
 function toast(msg, type = 'info') {
   const t = document.createElement('div');
   t.className = `${type === 'error' ? 'bg-rose-900/90 border-rose-700' : 'bg-zinc-900/90 border-indigo-500/60'} text-xs px-4 py-2.5 rounded-xl border shadow-xl transition-all duration-300`;
