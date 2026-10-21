@@ -1,0 +1,4 @@
+FAIL HTTP Error 403: Forbidden | referer: True
+FAIL HTTP Error 403: Forbidden | referer: False
+FAIL HTTP Error 403: Forbidden | referer: True
+FAIL HTTP Error 403: Forbidden | referer: False
