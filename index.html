@@ -593,6 +593,7 @@
       <div class="flex justify-between"><span id="i-price-label" class="text-zinc-400">TCGplayer Market:</span><b id="i-price" class="text-emerald-400 text-sm"></b></div>
       <a id="i-link" href="#" target="_blank" rel="noopener noreferrer" class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition mt-3">🔗 View on TCGplayer</a>
     </div>
+    <button id="i-tcg-btn" type="button" onclick="linkTcgSheet()" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700">🔗 Link TCGplayer page <span class="text-zinc-500 font-normal">· wrong card or no price?</span></button>
     <button id="i-del-btn" onclick="delInspect()" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/80">🗑️ Delete Card</button>
   </div>
 </div>
@@ -657,7 +658,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.25';
+const APP_VERSION = '2026-10-20.26';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1282,15 +1283,106 @@ function pickPrinting(card, owner, r) {
       <div class="pick-grid">${cs.map((c, i) => `<button type="button" class="pick" data-i="${i}">${c.thumb ? `<img alt="" src="${lbEsc(c.thumb)}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<div class="ph">🎴</div>'}
         <b>${lbEsc(c.set || '')}</b><span>${lbEsc(c.number || '')} · ${fmt(c.price)}</span></button>`).join('')}</div>
       ${card.image ? `<p class="sub" style="margin:0">Yours looks like this: <img alt="" src="${lbEsc(card.image)}" style="height:56px;vertical-align:middle;border-radius:3px"></p>` : ''}
-      <div class="lb-row"><button type="button" class="lb-btn quiet" id="pick-none">None of these</button></div>`);
+      <div class="lb-row"><button type="button" class="lb-btn" id="pick-link">Paste TCGplayer link</button><button type="button" class="lb-btn quiet" id="pick-none">None of these</button></div>`);
     document.querySelectorAll('#lb-sheet .pick').forEach(b => b.onclick = () => {
       const c = cs[+b.dataset.i]; closeSheet();
       if (card.collId) rememberMatch(card, owner, card.game === 'onepiece' ? c._key : c.id);
       const { _key, ...clean } = c; resolve(clean);
     });
     $('pick-none').onclick = () => { closeSheet(); resolve(null); };
+    $('pick-link').onclick = () => { closeSheet(); resolve(null); setTimeout(() => linkTcgFor(card), 350); };
     $('lb-sheet').onclick = e => { if (e.target === $('lb-sheet')) { closeSheet(); resolve(null); } };
   });
+}
+
+/* --- Link a card to its TCGplayer page: the product number identifies it exactly --- */
+function parseTcgLink(raw) {
+  const t = String(raw || '').trim();
+  if (/^\d{3,8}$/.test(t)) return { pid: +t, slug: '' };
+  const m = t.match(/tcgplayer\.com\/product\/(\d+)(?:\/([^?#\s]*))?/i);
+  return m ? { pid: +m[1], slug: decodeURIComponent(m[2] || '').toLowerCase() } : null;
+}
+// Pokémon: try the card's own name, then names read from the link's address, and keep the printing with this product number
+async function pkByPid(pid, names) {
+  for (const nm of names) {
+    const base = String(nm || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); if (!base) continue;
+    const word = base.split(' ').filter(w => !/['’]/.test(w)).sort((a, b) => b.length - a.length)[0] || base;
+    let l; try { l = await fetchJSON(`${API}en/cards?name=${encodeURIComponent(word)}`, 12000); } catch (e) { continue; }
+    const cands = (Array.isArray(l) ? l : []).filter(c => !isPocket(c) && norm(c.name) === norm(base))
+      .map((c, i) => ({ c, i })).sort((a, b) => seriesRank(a.c.id) - seriesRank(b.c.id) || b.i - a.i).map(x => x.c).slice(0, 200);
+    let hit = null, i = 0;
+    const worker = async () => { while (!hit && i < cands.length) { const c = cands[i++]; try { if ((await pkVariants(c.id)).includes(pid)) hit = c; } catch (e) {} } };
+    await Promise.all(Array.from({ length: 8 }, worker));
+    if (hit) return fetchCard(hit, 'en', null);
+  }
+  return null;
+}
+// Names hidden in a TCGplayer address like "pokemon-sv-scarlet-and-violet-151-squirtle-170-165": the last few words before the number
+function slugNames(slug) {
+  const words = String(slug || '').split('-').filter(Boolean);
+  let cut = words.length; while (cut > 0 && /^\d+$/.test(words[cut - 1])) cut--;   // the card number is the run of numbers at the end
+  const head = words.slice(0, cut).filter(w => !/^(pokemon|one|piece|card|game)$/.test(w));
+  const out = []; for (let n = Math.min(4, head.length); n >= 1; n--) out.push(head.slice(-n).join(' '));
+  return out;
+}
+// One Piece: the address carries the card number, set and "parallel"/"alternate art"
+async function opByLink(card, link) {
+  const all = await opLoadAll(), slug = link.slug, want = opParse(card.name);
+  const id = (slug.match(/\b((?:op|st|eb|prb)\d{2})-(\d{3})\b/) || []);
+  const nums = [...slug.matchAll(/(?:^|-)(\d{3})(?=-|$)/g)].map(x => x[1]);   // the card number is the last 3-digit part (set names can contain numbers)
+  const num = id[2] || nums[nums.length - 1] || want.num;
+  const parallel = /parallel|alternate-art|alt-art/.test(slug) || want.parallel;
+  const sl = slug.replace(/-/g, ' ');
+  let cands = all.filter(r => {
+    const cid = String(r.card_set_id || '').toLowerCase();
+    if (id[1]) return cid === (id[1] + '-' + id[2]);
+    return num && cid.endsWith('-' + num) && (opParse(r.card_name).base === want.base || sl.includes(opParse(r.card_name).base.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()));
+  });
+  const narrow = test => { const t = cands.filter(test); if (t.length) cands = t; };
+  if (cands.length > 1) narrow(r => sl.includes(lc(r.set_name || '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()));
+  if (cands.length > 1) narrow(r => opParallel(r) === parallel);
+  return cands.length ? { card: opCard(cands[0]), key: cands[0].card_image_id || cands[0].card_set_id } : null;
+}
+function linkTcgSheet() {
+  const c = getPagesArray()[insp.p].cards[insp.s]; if (!c) return;
+  closeInspect(); setTimeout(() => linkTcgFor(c), 200);
+}
+function linkTcgFor(card) {
+  sheet(`<h2 id="lb-sheet-title">Link TCGplayer page</h2>
+    <p class="sub">Open “${lbEsc(card.name)}” on tcgplayer.com, copy the address (Share → Copy link), and paste it here.</p>
+    <form id="tl-form" class="lb-form">
+      <input id="tl-url" class="lb-field" type="url" inputmode="url" autocomplete="off" placeholder="https://www.tcgplayer.com/product/…">
+      <p class="lb-err" role="alert"></p>
+      <div class="lb-row"><button type="submit" class="lb-btn primary">Link card</button>
+        <a class="lb-btn quiet" target="_blank" rel="noopener" href="${lbEsc(card.game === 'onepiece' ? opLink(card.name, card.number !== '—' ? card.number : '') : `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(String(card.name).replace(/\s*\([^)]*\)/g, ''))}`)}">Find it on TCGplayer</a>
+        <button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>
+    </form>`);
+  $('tl-url').focus();
+  $('tl-form').onsubmit = async e => {
+    e.preventDefault();
+    const err = document.querySelector('#tl-form .lb-err'), btn = document.querySelector('#tl-form [type=submit]');
+    const link = parseTcgLink($('tl-url').value);
+    if (!link) { err.textContent = 'That isn\'t a TCGplayer card link. It should look like tcgplayer.com/product/123456/…'; return; }
+    btn.disabled = true; btn.textContent = 'Looking it up…'; err.textContent = '';
+    const url = `https://www.tcgplayer.com/product/${link.pid}`, owner = ownerOf(currentUser);
+    let m = null, key = '';
+    try {
+      if (card.game === 'onepiece') { const r = await opByLink(card, link); if (r) { m = r.card; key = r.key; } }
+      else { m = await pkByPid(link.pid, [card.name, ...slugNames(link.slug)]); if (m) key = m.id; }
+    } catch (x) { m = null; }
+    // put it in the slot, wherever the card is now
+    const pg = getPagesArray();
+    for (const page of pg) {
+      const i = page.cards.findIndex(c => c && c.id === card.id && (c.collId || '') === (card.collId || ''));
+      if (i < 0) continue;
+      const cur = page.cards[i];
+      page.cards[i] = m ? { ...m, url, status: cur.status, collId: cur.collId } : { ...cur, url, tcgPid: link.pid };
+      saveActivePages(pg); render(); break;
+    }
+    if (card.collId && m) rememberMatch(card, owner, key);
+    closeSheet();
+    toast(m ? `Linked: ${m.name} · ${m.set} ${m.number} · ${fmt(m.price)}` : 'Linked to that TCGplayer page. This card isn\'t in the price database, so its price stays blank.', m ? 'info' : 'error');
+  };
 }
 
 // --- CSV reading ---
@@ -2187,6 +2279,7 @@ function openInspect(p, s) {
   }
   
   $('cb-controls').classList.toggle('hidden', !!peerUser);
+  $('i-tcg-btn').classList.toggle('hidden', !!peerUser || c.source === 'custom');
   paintCardBack(c);
   $('flip').classList.remove('ry180');$('i-modal').classList.remove('hidden');
 }
