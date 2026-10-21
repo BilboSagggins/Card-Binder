@@ -472,8 +472,14 @@
       <h3 id="s-head" class="font-display font-bold">🔍 Search Pokémon TCG</h3>
       <button onclick="closeSearch()" class="text-zinc-400 hover:text-white font-bold px-2">✕</button>
     </div>
-    <!-- Search Filters -->
-    <div class="p-4 border-b border-zinc-800 flex flex-col gap-3">
+    <!-- Search Filters (fold away once results come in; tap the summary bar to change the search) -->
+    <div id="s-sum" class="hidden px-3 py-2 border-b border-zinc-800 flex items-center gap-2 bg-zinc-950/60">
+      <button type="button" onclick="expandSearch()" class="flex-1 min-w-0 flex items-center gap-2 text-left panel px-3 py-2">
+        <span class="text-xs">🔍</span><span id="s-sum-text" class="text-xs text-zinc-200 truncate flex-1 text-left"></span><span class="text-[11px] font-semibold text-indigo-300 whitespace-nowrap">Edit ▾</span>
+      </button>
+      <button type="button" id="s-sum-st" onclick="setStatus(addStatus === 'owned' ? 'needed' : 'owned')" class="px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap"></button>
+    </div>
+    <div id="s-filters" class="p-4 border-b border-zinc-800 flex flex-col gap-3">
       <div class="flex flex-wrap gap-3 items-center justify-between panel p-2.5">
         <div class="flex flex-wrap bg-zinc-900 p-1 rounded-lg border border-zinc-800">
           <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">Card Name</button>
@@ -666,7 +672,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.4';
+const APP_VERSION = '2026-10-21.5';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1722,8 +1728,17 @@ const ptcgCard = c => ({
   thumb: c.images?.small, image: c.images?.large || c.images?.small, alts: [c.images?.small].filter(Boolean), game: 'pokemon', lang: 'en', source: 'ptcg'
 });
 
+// Fold the search options into one summary bar so the results get the room; tap it to bring them back
+function collapseSearch() {
+  if (mode === 'custom' || mode === 'coll') return;
+  const pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; };
+  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), pick('op-rarity'), S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
+  $('s-sum-text').textContent = parts.join(' · ') || 'Search';
+  $('s-filters').classList.add('hidden'); $('s-sum').classList.remove('hidden');
+}
+function expandSearch() { $('s-sum').classList.add('hidden'); $('s-filters').classList.remove('hidden'); }
 function setMode(m) {
-  mode = m;
+  mode = m; expandSearch();
   const isCustom = m === 'custom', isColl = m === 'coll';
   $('search-ui').classList.toggle('hidden', isCustom || isColl);
   $('results').classList.toggle('hidden', isCustom || isColl);
@@ -1850,6 +1865,7 @@ async function showMore(btn) {
 
 function renderResults(cards, append) {
   const box = $('results');
+  if (!append && cards.length) collapseSearch();
   if (append) box.querySelector('#more')?.remove(); else { box.innerHTML = ''; priceEls.clear(); }
   cards.forEach(card => {
     const el = document.createElement('div');
@@ -1887,6 +1903,7 @@ const closeSearch = () => $('s-modal').classList.add('hidden');
 
 function setStatus(st) {
   addStatus = st;
+  const sb = $('s-sum-st'); if (sb) { sb.textContent = st === 'needed' ? '⏳ Need' : '✓ Owned'; sb.className = `px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`; }
   const cs = $('c-status'); if (cs) cs.textContent = (st === 'needed' ? 'need' : st).toUpperCase();
   $('a-owned').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'owned' ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
   $('a-needed').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
