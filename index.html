@@ -240,6 +240,33 @@
   .cb-text span { font-size: .7rem; color: #a1a1aa; }
   .cb-acts { display: flex; gap: .3rem; flex: none; }
   .cb-acts .lb-btn { padding: .5rem .65rem; font-size: .72rem; }
+  .ctray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; flex-direction: column; gap: 6px; background: rgba(9,9,11,.96);
+    border-top: 1px solid #27272a; box-shadow: 0 -14px 32px rgba(0,0,0,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); font-family: Inter, system-ui, sans-serif; }
+  .ctray[hidden] { display: none; }
+  body.tray-open main { padding-bottom: 210px; }
+  .ctray-head { display: flex; align-items: center; gap: 8px; }
+  .ctray-head b { font-size: .8rem; white-space: nowrap; color: #f4f4f5; }
+  .ctray-head input { flex: 1; min-width: 0; background: #18181b; border: 1px solid #3f3f46; border-radius: 10px; padding: .45rem .6rem; color: #f4f4f5; font: 500 .8rem/1.2 Inter, system-ui, sans-serif; }
+  .ctray-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 999px; background: #18181b; border: 1px solid #27272a; flex: none; }
+  .ctray-seg button { appearance: none; border: 0; border-radius: 999px; padding: .35rem .6rem; background: none; color: #a1a1aa; font: 600 .7rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .ctray-seg button[aria-pressed="true"][data-st="owned"] { background: #059669; color: #fff; }
+  .ctray-seg button[aria-pressed="true"][data-st="needed"] { background: #e11d48; color: #fff; }
+  .ctray-x { appearance: none; border: 0; background: #27272a; color: #e4e4e7; width: 30px; height: 30px; border-radius: 50%; flex: none; cursor: pointer; }
+  .ctray-hint { margin: 0; font-size: .68rem; color: #71717a; }
+  .ctray-list { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; padding: 2px 2px 4px; min-height: 118px; scrollbar-width: thin; }
+  .ctray-none { margin: auto; font-size: .78rem; color: #a1a1aa; }
+  .ctray-none label { color: #a5b4fc; text-decoration: underline; cursor: pointer; margin-left: .3rem; }
+  .ctray-item { flex: none; width: 72px; position: relative; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: opacity .15s; }
+  .ctray-item:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; border-radius: 6px; }
+  .ctray-item img, .ctray-item .ph { width: 72px; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; display: flex; align-items: center; justify-content: center; background: #18181b; pointer-events: none; }
+  .ctray-item span { display: block; margin-top: 3px; font-size: .6rem; font-weight: 600; line-height: 1.2; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ctray-item i { position: absolute; top: 3px; font: 700 .58rem/1 Inter, system-ui, sans-serif; padding: 2px 4px; border-radius: 4px; font-style: normal; }
+  .ctray-item .q { right: 3px; background: rgba(0,0,0,.8); color: #fff; }
+  .ctray-item .in { left: 3px; background: #4f46e5; color: #fff; }
+  .ctray-item.lifted { opacity: .3; }
+  .ctray-ghost { position: fixed; z-index: 80; width: 84px; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; pointer-events: none;
+    transform: translate(-50%, -70%) rotate(-4deg); box-shadow: 0 18px 36px rgba(0,0,0,.65); background: #18181b; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
   .lb-btn.lb-danger { background: #4c0519; border-color: #9f1239; color: #fecdd3; }
   .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
   .lb-field { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 12px; padding: .7rem .8rem; color: #f4f4f5; font: 500 1rem/1.2 Inter, system-ui, sans-serif; }
@@ -316,6 +343,7 @@
           <span id="who-name" class="text-xs font-semibold text-zinc-100"></span>
           <button type="button" onclick="showLanding()" class="btn !py-1">Switch</button>
           <button type="button" id="who-view" onclick="openPeerViewer(currentUser, true)" class="btn !py-1" title="Flip through this binder in 3D">👁 View</button>
+          <button type="button" id="who-coll" onclick="toggleTray()" class="btn !py-1" aria-pressed="false" title="Show your collection to drag cards into slots">📦 Collection</button>
           <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
           <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
         </div>
@@ -409,6 +437,18 @@
     <button onclick="delPage()" class="btn px-4 py-2">➖ Delete Page</button>
   </div>
 </main>
+
+<!-- Collection tray: drag cards from your collection onto slots -->
+<div id="ctray" class="ctray" hidden>
+  <div class="ctray-head">
+    <b>📦 Collection</b>
+    <input id="ctray-q" type="search" placeholder="Search" autocomplete="off" oninput="renderTray()" aria-label="Search your collection">
+    <div class="ctray-seg" role="group" aria-label="Add as"><button type="button" data-st="owned" onclick="setStatus('owned'); paintTrayStatus()">Owned</button><button type="button" data-st="needed" onclick="setStatus('needed'); paintTrayStatus()">Need</button></div>
+    <button type="button" class="ctray-x" onclick="closeTray()" aria-label="Close collection">✕</button>
+  </div>
+  <p class="ctray-hint">Drag a card up onto an empty slot, or tap it to fill the next empty slot.</p>
+  <div id="ctray-list" class="ctray-list"></div>
+</div>
 
 <!-- SEARCH MODAL -->
 <div id="s-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
@@ -606,7 +646,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.21';
+const APP_VERSION = '2026-10-20.22';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -924,7 +964,7 @@ const collKey = () => ownerOf(currentUser) + '|' + S.game;
 function watchCollection(owner, game) {
   const k = owner + '|' + game; if (collRefs[k]) return;
   collRefs[k] = db.ref('collections/' + owner + '/' + game);
-  collRefs[k].on('value', v => { COLLECTIONS[k] = v.val() || null; if (mode === 'coll' && collKey() === k) renderCollection(); }, () => {});
+  collRefs[k].on('value', v => { COLLECTIONS[k] = v.val() || null; if (collKey() === k) { if (mode === 'coll') renderCollection(); renderTray(); } }, () => {});
 }
 function collectionItem(card) {
   const owner = ownerOf(currentUser), data = COLLECTIONS[owner + '|' + (card.game || S.game)];
@@ -937,7 +977,7 @@ function openCollection() {
 }
 function renderCollection() {
   const data = COLLECTIONS[collKey()], box = $('coll-results'), info = $('coll-info');
-  const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it }));
+  const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it })).filter(it => !isTotalRow(it.name));
   if (!items.length) {
     info.textContent = '';
     box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-sm leading-relaxed">No ${GAMES[S.game]} collection yet.<br>Tap <b>⬆ Import CSV</b> and choose your export (for example from the Collectr Portfolio Exporter).</div>`;
@@ -959,32 +999,158 @@ function renderCollection() {
       <h4 class="font-bold text-xs line-clamp-2">${esc(it.name)}</h4>
       <div class="text-[10px] text-zinc-400 mt-0.5 truncate">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From your collection')}</div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
-    el.onclick = () => {
-      const card = {
-        id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
-        price: null, url: null, thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
-      };
-      const at = { ...target }, binder = currentUser;
-      const pages = getPagesArray(); pages[at.p].cards[at.s] = card;
-      saveActivePages(pages); render(); closeSearch(); toast('Added ' + card.name + ' · looking up its price…');
-      matchCollectionCard(card).then(m => {
-        if (!m) return toast(`Couldn't match "${card.name}" to a ${GAMES[card.game]} card, so it has no price`, 'error');
-        // Swap in the database card wherever this placed copy is now (it may have been dragged, and a save may still be settling)
-        const swap = tries => {
-          if (currentUser !== binder) return;
-          const pg = getPagesArray();
-          for (const page of pg) {
-            const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
-            if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
-          }
-          if (tries > 0) setTimeout(() => swap(tries - 1), 500);
-        };
-        swap(6);
-      });
-    };
+    el.onclick = () => { const at = { ...target }; closeSearch(); placeCollectionItem(it, at); };
     box.appendChild(el);
   });
   if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the first 300. Search to find the rest.</div>`);
+}
+
+// Put a collection card into a slot, then swap in the matching database card (price, link, refresh)
+function placeCollectionItem(it, at) {
+  const card = {
+    id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
+    price: null, url: null, thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
+  };
+  const binder = currentUser;
+  const pages = getPagesArray(); pages[at.p].cards[at.s] = card;
+  saveActivePages(pages); render(); toast('Added ' + card.name + ' · looking up its price…');
+  if (!$('ctray').hidden) renderTray();
+  matchCollectionCard(card).then(m => {
+    if (!m) return toast(`Couldn't match "${card.name}" to a ${GAMES[card.game]} card, so it has no price`, 'error');
+    // Swap in the database card wherever this placed copy is now (it may have been dragged, and a save may still be settling)
+    const swap = tries => {
+      if (currentUser !== binder) return;
+      const pg = getPagesArray();
+      for (const page of pg) {
+        const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
+        if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
+      }
+      if (tries > 0) setTimeout(() => swap(tries - 1), 500);
+    };
+    swap(6);
+  });
+}
+
+/* --- Collection tray: your collection along the bottom of the edit screen; drag a card onto a slot, or tap to fill the next empty one --- */
+function toggleTray() { $('ctray').hidden ? openTray() : closeTray(); }
+function openTray() {
+  if (peerUser) return;
+  watchCollection(ownerOf(currentUser), S.game);
+  $('ctray').hidden = false; document.body.classList.add('tray-open');
+  $('who-coll').setAttribute('aria-pressed', 'true');
+  paintTrayStatus(); renderTray();
+}
+function closeTray() {
+  const t = $('ctray'); if (!t) return;
+  t.hidden = true; document.body.classList.remove('tray-open');
+  $('who-coll').setAttribute('aria-pressed', 'false');
+  endTrayDrag(false);
+}
+function paintTrayStatus() {
+  document.querySelectorAll('#ctray [data-st]').forEach(b => b.setAttribute('aria-pressed', b.dataset.st === addStatus));
+}
+function trayItems() {
+  const data = COLLECTIONS[collKey()], q = lc($('ctray-q').value.trim());
+  return Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it }))
+    .filter(it => !isTotalRow(it.name) && (!q || lc(it.name).includes(q) || lc(it.set).includes(q) || lc(it.number).includes(q)))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+}
+function renderTray() {
+  const box = $('ctray-list'); if (!box || $('ctray').hidden) return;
+  const data = COLLECTIONS[collKey()];
+  if (!data || !data.items || !Object.keys(data.items).length) {
+    box.innerHTML = `<p class="ctray-none">No ${GAMES[S.game]} collection yet. <label for="coll-file">⬆ Import CSV</label></p>`;
+    return;
+  }
+  const inBinder = new Set(getPagesArray().flatMap(pg => pg.cards).filter(c => c && c.collId).map(c => c.collId));
+  const list = trayItems();
+  box.innerHTML = list.length ? '' : '<p class="ctray-none">No matches.</p>';
+  list.slice(0, 250).forEach(it => {
+    const el = document.createElement('div');
+    el.className = 'ctray-item'; el.setAttribute('role', 'button'); el.tabIndex = 0;
+    el.setAttribute('aria-label', `${it.name}. Drag onto a slot, or press to add to the next empty slot.`);
+    el.innerHTML = `${it.image ? `<img alt="" draggable="false" src="${esc(it.image)}">` : '<div class="ph">🎴</div>'}
+      ${it.qty > 1 ? `<i class="q">×${it.qty}</i>` : ''}${inBinder.has(it.id) ? '<i class="in">✓</i>' : ''}<span>${esc(it.name)}</span>`;
+    el.onpointerdown = e => trayPointerDown(e, it, el);
+    el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); placeInNextEmpty(it); } };
+    box.appendChild(el);
+  });
+}
+function placeInNextEmpty(it) {
+  const pages = getPagesArray(), page = pages[S.cur];
+  const i = page.cards.slice(0, cap()).findIndex(c => !c);
+  if (i < 0) return toast('This page is full. Drag the card onto a slot on another page, or add a page.', 'error');
+  placeCollectionItem(it, { p: S.cur, s: i });
+}
+// Pull a card up out of the tray (or press and hold) to drag it; slide sideways to scroll the tray
+let trayDrag = null;
+function trayPointerDown(e, it, el) {
+  if (e.button > 0 || trayDrag) return;
+  trayDrag = { it, el, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, active: false, gone: false, hover: null };
+  trayDrag.hold = setTimeout(() => { if (trayDrag && !trayDrag.active && !trayDrag.gone) startTrayDrag(); }, 380);
+  addEventListener('pointermove', trayMove, { passive: false });
+  addEventListener('pointerup', trayUp); addEventListener('pointercancel', trayCancel);
+}
+function startTrayDrag() {
+  const d = trayDrag; d.active = true; clearTimeout(d.hold);
+  d.el.classList.add('lifted'); document.body.classList.add('is-dragging');
+  const g = document.createElement(d.it.image ? 'img' : 'div'); g.className = 'ctray-ghost';
+  if (d.it.image) { g.src = d.it.image; g.alt = ''; } else g.textContent = '🎴';
+  document.body.appendChild(g); d.ghost = g; moveTrayGhost();
+  if (navigator.vibrate) try { navigator.vibrate(12); } catch (x) {}
+  const tick = () => {   // scroll the page when the card nears the top, or the tray at the bottom
+    if (!trayDrag || !trayDrag.active) return;
+    const trayTop = $('ctray').getBoundingClientRect().top;
+    if (trayDrag.y < trayTop - 130) trayDrag.armed = true;   // only scroll down after the card has been up in the binder (not on the way out of the tray)
+    if (trayDrag.y < 90) scrollBy(0, -14); else if (trayDrag.armed && trayDrag.y > trayTop - 50) scrollBy(0, 14);
+    trayHover(); trayDrag.raf = requestAnimationFrame(tick);
+  };
+  d.raf = requestAnimationFrame(tick);
+}
+function moveTrayGhost() { const d = trayDrag; if (d && d.ghost) { d.ghost.style.left = d.x + 'px'; d.ghost.style.top = d.y + 'px'; } }
+function trayMove(e) {
+  const d = trayDrag; if (!d || e.pointerId !== d.id) return;
+  d.x = e.clientX; d.y = e.clientY;
+  if (!d.active) {
+    const dx = d.x - d.x0, dy = d.y - d.y0;
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { d.gone = true; clearTimeout(d.hold); return; }   // scrolling the tray
+    if (dy < -10 && Math.abs(dy) > Math.abs(dx) && !d.gone) startTrayDrag(); else return;
+  }
+  e.preventDefault(); moveTrayGhost(); trayHover();
+}
+function emptySlotEl(slot) { return slot && !getPagesArray()[S.cur].cards[+slot.dataset.slot] ? slot : null; }
+function trayHover() {
+  const d = trayDrag; if (!d || !d.active) return;
+  const { hit, slot } = slotUnder(d.x, d.y), target = emptySlotEl(slot);
+  if (target !== d.hover) { if (d.hover) d.hover.classList.remove('drag-over'); if (target) target.classList.add('drag-over'); d.hover = target; }
+  const nav = hit && hit.closest('#prev, #next');   // hold over Previous / Next to turn the page
+  if (nav !== d.nav) {
+    clearTimeout(d.navTimer); d.nav = nav;
+    if (nav) d.navTimer = setTimeout(function flip() { if (!trayDrag || trayDrag.nav !== nav || nav.disabled) return; go(nav.id === 'next' ? 1 : -1); trayDrag.hover = null; trayDrag.navTimer = setTimeout(flip, 800); }, 600);
+  }
+}
+function trayUp(e) {
+  const d = trayDrag; if (!d || e.pointerId !== d.id) return;
+  if (d.active) {
+    const at = d.hover ? { p: S.cur, s: +d.hover.dataset.slot } : null;
+    const over = slotUnder(d.x, d.y).slot;
+    endTrayDrag(true);
+    if (at) placeCollectionItem(d.it, at);
+    else if (over) toast('That slot already has a card. Drop on an empty slot.', 'error');
+  } else {
+    const tap = !d.gone && Math.hypot(d.x - d.x0, d.y - d.y0) < 10;
+    endTrayDrag(true);
+    if (tap) placeInNextEmpty(d.it);
+  }
+}
+function trayCancel(e) { if (trayDrag && e.pointerId === trayDrag.id) endTrayDrag(true); }
+function endTrayDrag() {
+  const d = trayDrag; if (!d) return; trayDrag = null;
+  clearTimeout(d.hold); clearTimeout(d.navTimer); cancelAnimationFrame(d.raf);
+  if (d.hover) d.hover.classList.remove('drag-over');
+  if (d.ghost) d.ghost.remove();
+  d.el.classList.remove('lifted'); document.body.classList.remove('is-dragging');
+  removeEventListener('pointermove', trayMove); removeEventListener('pointerup', trayUp); removeEventListener('pointercancel', trayCancel);
 }
 
 // --- Match a collection entry to a card in the Pokémon / One Piece database (for price, link and refresh) ---
@@ -1034,6 +1200,7 @@ async function matchOnePiece(card) {
 }
 
 // --- CSV reading ---
+const isTotalRow = n => /^((portfolio|grand)\s+)?total\s*:?$/i.test(String(n || '').trim());
 function parseCSV(text) {
   const rows = []; let row = [], cell = '', q = false;
   text = String(text || '').replace(/^﻿/, '');
@@ -1064,7 +1231,7 @@ function readCollectionCSV(text) {
   if (iName < 0) throw new Error('Couldn\'t find a card name column (like "Item Name").');
   const items = {};
   rows.slice(h + 1).forEach(r => {
-    const name = String(r[iName] || '').trim(); if (!name) return;
+    const name = String(r[iName] || '').trim(); if (!name || isTotalRow(name)) return;   // the exporter ends with a "Total:" row
     const image = urlIn(iImgUrl >= 0 ? r[iImgUrl] : '') || urlIn(iImg >= 0 ? r[iImg] : '');
     const it = { name, qty: Math.max(1, parseInt(iQty >= 0 ? r[iQty] : 1, 10) || 1), image,
       set: iSet >= 0 ? String(r[iSet] || '').trim() : '', number: iNum >= 0 ? String(r[iNum] || '').trim() : '', rarity: iRar >= 0 ? String(r[iRar] || '').trim() : '' };
@@ -1099,6 +1266,7 @@ function pickCollectionFile(input) {
       COLLECTIONS[owner + '|' + game] = { importedAt: Date.now(), file: f.name, items };
       toast(`Imported ${n} ${GAMES[game]} cards`);
       if (mode === 'coll') renderCollection();
+      renderTray();
     };
   };
   rd.readAsText(f);
@@ -1606,6 +1774,7 @@ function updatePageTitle(val) {
 }
 
 function render() {
+  queueMicrotask(() => { const t = $('ctray'); if (t && !t.hidden && !trayDrag) renderTray(); });   // keep the tray's ✓ marks current
   syncLayout();
   
   if (peerUser) {
@@ -2669,6 +2838,8 @@ function updateWho() {
   $('who-lock').classList.toggle('hidden', !!peerUser);
   $('who-binders').classList.toggle('hidden', !!peerUser);
   $('who-view').classList.toggle('hidden', !!peerUser);
+  $('who-coll').classList.toggle('hidden', !!peerUser);
+  if (peerUser) closeTray();
 }
 
 /* --- Whose binders the shelf shows: mine (unlocked on this phone), plus people who invited me when toggled on --- */
@@ -2868,7 +3039,7 @@ function renderShelf() {
 }
 function showLanding() {
   const L = $('landing'); if (!L) return;
-  closeSheet();
+  closeSheet(); closeTray();
   closePeerViewer(true);
   staged = null;
   $('lb-stage').hidden = true; $('lb-stage').className = '';
@@ -3416,6 +3587,7 @@ function binderSheet() {
     currentUser = id; peerUser = ''; remember(LAST_USER_KEY, id);
     S.game = game; applyGameUI(); paintCardBack();
     S.cur = 0; setupFirebaseListener(id); updateWho(); window.scrollTo(0, 0);
+    if (!$('ctray').hidden) openTray();
     toast(`Created "${title}" (${GAMES[game]})`);
   };
 }
