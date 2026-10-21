@@ -6,6 +6,7 @@ directly, so this script (run daily by .github/workflows/prices.yml) copies the 
 needs into prices/<game>.json on the site (pokemon, pokemon-jp, onepiece):
 
   { "updated": "...", "groups": { "<groupId>": "<set name>" },
+    "sets": [[groupId, "<set name>", "<release date YYYY-MM-DD>", "<abbreviation>", <card count>], ...],
     "p": { "<productId>": [marketPrice, "name", "number", groupId, "rarity"] } }
 
 Only single cards (products with a card Number) are kept.
@@ -49,7 +50,7 @@ def pick_price(rows):
 
 
 def build(game, cats):
-    out = {"updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "groups": {}, "p": {}}
+    out = {"updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "groups": {}, "sets": [], "p": {}}
     for cat in cats:
         add_category(game, cat, out)
     return out
@@ -78,6 +79,7 @@ def add_category(game, cat, out):
             kept += 1
         if kept:
             out["groups"][str(gid)] = g.get("name") or ""
+            out["sets"].append([gid, g.get("name") or "", (g.get("publishedOn") or "")[:10], g.get("abbreviation") or "", kept])
         if i % 25 == 0:
             print(f"  {game} (category {cat}): {i}/{len(groups)} sets", flush=True)
         time.sleep(0.15)  # be gentle with a free service
