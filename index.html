@@ -646,7 +646,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.22';
+const APP_VERSION = '2026-10-20.23';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1242,29 +1242,65 @@ function readCollectionCSV(text) {
   if (!Object.keys(items).length) throw new Error('No cards found under the header row.');
   return items;
 }
+// Which game a collection entry belongs to (Collectr's file doesn't say)
+const OP_ID_RE = /\b(?:OP|ST|EB|PRB)\d{2}-\d{3}\b|\bP-\d{3}\b/i;
+async function sortByGame(items) {
+  let opNames = null;
+  try { const all = await opLoadAll(); opNames = new Set(all.map(r => lc(String(r.card_name || '').replace(/\s*\((?:parallel|alternate art|alt art|\d{3})\)/ig, '').trim()))); } catch (e) {}
+  const out = {};
+  Object.entries(items).forEach(([id, it]) => {
+    const n = String(it.name || ''), img = lc(it.image), bare = lc(splitCollName(n).name.replace(/\s*\([^)]*\)\s*/g, ' ').trim());
+    let g = '';
+    if (OP_ID_RE.test(n) || OP_ID_RE.test(it.number || '') || /\bDON!!/i.test(n)) g = 'onepiece';
+    else if (/\b\w*\d+[a-z]?\s*\/\s*\w*\d+\b/i.test(n)) g = 'pokemon';                    // Pokémon numbers look like 199/165
+    else if (/one[-_ ]?piece/.test(img)) g = 'onepiece';
+    else if (/pokemon|pok%c3%a9mon/.test(img)) g = 'pokemon';
+    else if (opNames && bare && opNames.has(bare)) g = 'onepiece';
+    else g = 'pokemon';
+    out[id] = g;
+  });
+  return out;
+}
 function pickCollectionFile(input) {
   const f = input.files && input.files[0]; input.value = '';
   if (!f) return;
   const rd = new FileReader();
   rd.onerror = () => toast('Couldn\'t read that file.', 'error');
-  rd.onload = () => {
+  rd.onload = async () => {
     let items;
     try { items = readCollectionCSV(rd.result); } catch (e) { return toast(e.message || 'Couldn\'t read that file.', 'error'); }
-    const n = Object.keys(items).length, total = Object.values(items).reduce((a, it) => a + (it.qty || 1), 0);
     const owner = ownerOf(currentUser);
+    sheet(`<h2 id="lb-sheet-title">Import collection</h2><p class="sub">Sorting ${Object.keys(items).length} cards into Pokémon and One Piece…</p>`);
+    const games = await sortByGame(items);
+    const split = g => Object.fromEntries(Object.entries(items).filter(([id]) => games[id] === g));
+    const count = g => Object.values(games).filter(x => x === g).length;
+    const pk = count('pokemon'), op = count('onepiece');
+    const list = g => Object.entries(items).filter(([id]) => games[id] === g).slice(0, 4).map(([, it]) => lbEsc(it.name)).join(', ') + (count(g) > 4 ? ', …' : '');
     sheet(`<h2 id="lb-sheet-title">Import collection</h2>
-      <p class="sub">${n} card${n === 1 ? '' : 's'} (${total} counting copies) in “${lbEsc(f.name)}”.</p>
-      ${gamePicker('coll-game', S.game)}
-      <p class="lb-help">This replaces ${lbEsc(nameOf(owner))}'s collection for the game you pick. Cards already placed in binders stay where they are.</p>
+      <p class="sub">“${lbEsc(f.name)}” has ${pk + op} card${pk + op === 1 ? '' : 's'}.</p>
+      <div class="lb-label">Where they go<div class="lb-games" id="coll-sort" role="radiogroup" style="flex-direction:column">
+        ${[['auto', `Sort automatically: ${pk} Pokémon, ${op} One Piece`], ['pokemon', 'All Pokémon'], ['onepiece', 'All One Piece']].map(([k, v], i) =>
+          `<button type="button" role="radio" class="lb-btn${i ? '' : ' primary'}" aria-checked="${!i}" data-game="${k}" onclick="this.parentNode.querySelectorAll('[data-game]').forEach(b => { const on = b === this; b.classList.toggle('primary', on); b.setAttribute('aria-checked', on); })">${v}</button>`).join('')}
+      </div></div>
+      ${pk ? `<p class="sub" style="margin:0;text-align:left"><b>Pokémon:</b> ${list('pokemon')}</p>` : ''}
+      ${op ? `<p class="sub" style="margin:0;text-align:left"><b>One Piece:</b> ${list('onepiece')}</p>` : ''}
+      <p class="lb-help">Each game in this file replaces ${lbEsc(nameOf(owner))}'s collection for that game. A game with no cards in the file is left alone. Cards already placed in binders stay where they are.</p>
       <div class="lb-row"><button type="button" class="lb-btn primary" id="coll-go">Import</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`);
     $('coll-go').onclick = async () => {
-      const game = pickedGame('coll-game');
+      const choice = (document.querySelector('#coll-sort [aria-checked="true"]') || {}).dataset?.game || 'auto';
+      const parts = choice === 'auto' ? { pokemon: split('pokemon'), onepiece: split('onepiece') } : { [choice]: items };
+      const now = Date.now(), done = [];
       $('coll-go').disabled = true;
-      try { await db.ref('collections/' + owner + '/' + game).set({ importedAt: Date.now(), file: f.name.slice(0, 80), items }); }
-      catch (e) { $('coll-go').disabled = false; return toast('Couldn\'t save the collection. Check your connection.', 'error'); }
-      closeSheet(); watchCollection(owner, game);
-      COLLECTIONS[owner + '|' + game] = { importedAt: Date.now(), file: f.name, items };
-      toast(`Imported ${n} ${GAMES[game]} cards`);
+      try {
+        for (const [g, its] of Object.entries(parts)) {
+          if (!Object.keys(its).length) continue;
+          await db.ref('collections/' + owner + '/' + g).set({ importedAt: now, file: f.name.slice(0, 80), items: its });
+          COLLECTIONS[owner + '|' + g] = { importedAt: now, file: f.name, items: its }; watchCollection(owner, g);
+          done.push(`${Object.keys(its).length} ${GAMES[g]}`);
+        }
+      } catch (e) { $('coll-go').disabled = false; return toast('Couldn\'t save the collection. Check your connection.', 'error'); }
+      closeSheet();
+      toast(`Imported ${done.join(' and ')} cards`);
       if (mode === 'coll') renderCollection();
       renderTray();
     };
