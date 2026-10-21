@@ -36,5 +36,5 @@ jobs:
           git add prices
           if git diff --cached --quiet; then echo "No price changes"; exit 0; fi
           git commit -m "Update TCGplayer prices"
-          git pull --rebase origin main
+          git pull --rebase origin "${{ github.ref_name }}"
           git push
