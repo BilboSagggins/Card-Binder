@@ -235,6 +235,18 @@
   .lb-keys button.ghost { background: none; font-size: 1.1rem; color: #a1a1aa; }
   .lb-keys .gap { visibility: hidden; }
   .lb-row { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+  .sp-card { width: min(24rem, 100%); padding: 1.1rem 1rem 1rem; }
+  .sp-find { width: 100%; margin: .7rem 0 .5rem; background: #09090b; border: 1px solid #3f3f46; border-radius: 10px; padding: .55rem .7rem; color: #f4f4f5; font: 500 .8rem Inter, system-ui, sans-serif; }
+  .sp-list { max-height: 56vh; overflow-y: auto; margin: 0 -.25rem .7rem; padding: 0 .25rem; }
+  .sp-row { width: 100%; display: flex; align-items: center; gap: .6rem; padding: .5rem .55rem; border: 0; background: none; color: #e4e4e7; text-align: left; border-radius: 8px; font: 500 .8rem/1.25 Inter, system-ui, sans-serif; cursor: pointer; }
+  .sp-row:hover { background: #27272a; }
+  .sp-row.era { margin-top: .35rem; font-weight: 800; color: #fff; background: #27272a; position: sticky; top: 0; z-index: 1; }
+  .sp-row .n { margin-left: auto; color: #71717a; font-size: .7rem; font-weight: 600; }
+  .sp-box { flex: none; width: 1.1rem; height: 1.1rem; border-radius: 5px; border: 2px solid #52525b; display: grid; place-items: center; font-size: .7rem; color: #fff; }
+  .sp-row[data-on="all"] .sp-box { background: #4f46e5; border-color: #6366f1; }
+  .sp-row[data-on="all"] .sp-box::after { content: "✓"; }
+  .sp-row[data-on="some"] .sp-box { border-color: #6366f1; }
+  .sp-row[data-on="some"] .sp-box::after { content: "–"; color: #a5b4fc; }
   .lb-btn { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 12px; padding: .6rem .9rem; font: 600 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
   .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
@@ -512,7 +524,8 @@
       </div>
       <div class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">Set:</span>
-        <select id="set" onfocus="if(!setsCache[$('lang').value])loadSets()" class="field !py-1.5 !text-xs w-full">
+        <button type="button" id="set-btn" onclick="openSetPicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="set-btn-text" class="truncate">Any set</span><span class="text-zinc-500">▾</span></button>
+        <select id="set" class="hidden" aria-hidden="true" tabindex="-1">
           <option value="">Any set</option>
         </select>
       </div>
@@ -960,11 +973,11 @@ async function opSearch() {
   try {
     const all = await opLoadAll();
     const idq = text.toUpperCase().replace(/\s+/g, '').replace(/^([A-Z]+)(\d+)(\d{3})$/, '$1$2-$3');   // "op01001" -> "OP01-001"
-    const pre = setVal ? (setVal === 'P' ? 'P-' : opPrefix(setVal) + '-') : '';
+    const pres = setVal ? setVal.split(',').map(v => v === 'P' ? 'P-' : opPrefix(v) + '-') : [], pre = pres.length > 0;
     let items = all.filter(r => {
       const cid = String(r.card_set_id || '').toUpperCase();
       // DON!! cards have no card number; they belong to a set by its id (OP-14)
-      if (pre && !cid.startsWith(pre) && !(r.set_id && opPrefix(r.set_id) + '-' === pre)) return false;
+      if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x))) return false;
       if (rar && (rar === 'parallel' ? !opParallel(r) : String(r.rarity || '').trim() !== rar)) return false;
       if (!text) return true;
       if (mode === 'num') return cid === idq || cid.startsWith(idq);
@@ -1020,15 +1033,89 @@ function fillSetDropdown(L, prefix) {
   });
   if (decks.length) byYear.set('Decks & kits', decks);
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + [...byYear].map(([y, xs]) =>
-    `<optgroup label="${esc(y)}">${eraOption(prefix, xs.map(x => x.gid), /^\d{4}$/.test(y) ? y + ' sets' : y, xs.reduce((a, x) => a + (x.n || 0), 0), xs.length)}${xs.map(x => `<option value="${prefix}${esc(x.gid)}">${esc(x.name)}${x.n ? ` (${x.n})` : ''}</option>`).join('')}</optgroup>`).join('');
+    `<optgroup label="${esc(y)}">${xs.map(x => `<option value="${prefix}${esc(x.gid)}">${esc(x.name)}${x.n ? ` (${x.n})` : ''}</option>`).join('')}</optgroup>`).join('');
   dd.value = keep;
 }
+/* --- Set picker: tick any number of sets; tapping an era name ticks every set in it.
+   The choice is kept in the hidden #set list as one entry ("prefix:id,id,…"), which every search already understands. --- */
+function setGroups() {
+  const dd = $('set'), groups = [];
+  const add = (head, opts) => { const items = [...opts].filter(o => o.value && !o.dataset.pick).map(o => {
+    const m = o.value.match(/^([a-z]+:)(.*)$/); return { value: o.value, prefix: m ? m[1] : '', ids: (m ? m[2] : o.value).split(','), label: o.textContent.replace(/\s*\((\d+|[A-Z0-9-]+)\)$/, ''), n: (o.textContent.match(/\((\d+)\)$/) || [])[1] || '' };
+  }); if (items.length) groups.push({ head, items }); };
+  add('', [...dd.children].filter(x => x.tagName === 'OPTION'));
+  [...dd.querySelectorAll('optgroup')].forEach(g => add(g.label, g.children));
+  return groups;
+}
+const multiSets = groups => S.game === 'onepiece' || groups.some(g => g.items.some(it => it.prefix));
+function paintSetBtn() {
+  const dd = $('set'), t = $('set-btn-text'); if (!t || !dd) return;
+  const o = dd.options[dd.selectedIndex];
+  t.textContent = o && o.value ? o.textContent.replace(/\s*\((\d+)\)$/, '') : (dd.options[0] ? dd.options[0].textContent : 'Any set');
+  t.classList.toggle('text-zinc-400', !(o && o.value));
+}
+async function openSetPicker() {
+  const dd = $('set');
+  if (!setGroups().length) { $('set-btn-text').textContent = 'Loading sets…'; await loadSets(); paintSetBtn(); }
+  const groups = setGroups(); if (!groups.length) return toast('Sets couldn\'t load. Try again in a moment.', 'error');
+  const multi = multiSets(groups);
+  const cur = dd.value ? new Set((dd.value.match(/^[a-z]+:(.*)$/) || [, dd.value])[1].split(',')) : new Set();
+  const on = new Set(groups.flatMap(g => g.items).filter(it => it.ids.every(i => cur.has(i))).map(it => it.value));
+  sheet(`<h2 id="lb-sheet-title">${multi ? 'Choose sets' : 'Choose a set'}</h2>
+    <p class="sub" style="margin:.35rem 0 0">${multi ? 'Tick as many as you like. Tap an era to tick all of its sets.' : ''}</p>
+    <input type="search" class="sp-find" id="sp-find" placeholder="Find a set" autocomplete="off">
+    <div class="sp-list" id="sp-list"></div>
+    <div class="lb-row"><button type="button" class="lb-btn" id="sp-done"></button><button type="button" class="lb-btn quiet" id="sp-clear">Clear</button></div>`);
+  $('lb-sheet').querySelector('.lb-card').classList.add('sp-card');
+  const draw = () => {
+    const q = lc($('sp-find').value.trim());
+    $('sp-list').innerHTML = groups.map((g, gi) => {
+      const items = g.items.filter(it => !q || lc(it.label).includes(q) || lc(g.head).includes(q)); if (!items.length) return '';
+      const k = g.items.filter(it => on.has(it.value)).length, st = k === 0 ? 'none' : k === g.items.length ? 'all' : 'some';
+      return (g.head ? `<button type="button" class="sp-row era" data-g="${gi}" data-on="${multi ? st : 'none'}">${multi ? '<span class="sp-box"></span>' : ''}<span>${esc(g.head)}</span><span class="n">${g.items.length} sets</span></button>` : '')
+        + items.map(it => `<button type="button" class="sp-row" data-v="${esc(it.value)}" data-on="${on.has(it.value) ? 'all' : 'none'}"><span class="sp-box"></span><span>${esc(it.label)}</span>${it.n ? `<span class="n">${it.n}</span>` : ''}</button>`).join('');
+    }).join('') || '<p class="sub">No sets match.</p>';
+    $('sp-done').textContent = on.size ? `Done · ${on.size} set${on.size === 1 ? '' : 's'}` : 'Done · any set';
+  };
+  const finish = () => {
+    closeSheet();
+    const picked = groups.flatMap(g => g.items).filter(it => on.has(it.value));
+    dd.querySelectorAll('option[data-pick]').forEach(o => o.remove());
+    if (!picked.length) dd.value = '';
+    else if (picked.length === 1) dd.value = picked[0].value;
+    else {
+      const pieces = groups.flatMap(g => g.head && g.items.every(it => on.has(it.value)) ? [g.head] : g.items.filter(it => on.has(it.value)).map(it => it.label));
+      const o = document.createElement('option'); o.dataset.pick = '1';
+      o.value = picked[0].prefix + picked.flatMap(it => it.ids).join(',');
+      o.textContent = pieces.length <= 2 ? pieces.join(' + ') : `${pieces[0]} + ${pieces.length - 1} more`;
+      dd.prepend(o); dd.value = o.value;
+    }
+    paintSetBtn();
+    if (dd.value || $('q').value.trim() || $('op-rarity').value) search();
+  };
+  $('sp-list').onclick = e => {
+    const b = e.target.closest('.sp-row'); if (!b) return;
+    if (b.dataset.g != null) {
+      const g = groups[+b.dataset.g];
+      if (!multi) return;
+      const all = g.items.every(it => on.has(it.value));
+      g.items.forEach(it => all ? on.delete(it.value) : on.add(it.value));
+    } else if (!multi) { on.clear(); on.add(b.dataset.v); return finish(); }
+    else on.has(b.dataset.v) ? on.delete(b.dataset.v) : on.add(b.dataset.v);
+    draw();
+  };
+  $('sp-find').oninput = draw;
+  $('sp-done').onclick = finish;
+  $('sp-clear').onclick = () => { on.clear(); draw(); };
+  $('lb-sheet').onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  draw();
+}
+new MutationObserver(() => paintSetBtn()).observe(document.getElementById('set') || document.body, { childList: true, subtree: true });
+
 /* English Pokémon sets laid out like TCGplayer's "Every Pokémon TCG Set in Order" guide: eras newest first, then promotional
    and miscellaneous sets. Each entry lists the exact TCGplayer set(s) it covers (subsets like Trainer Gallery fold into their set).
    [heading, pattern that places brand-new TCGplayer sets in this section, [[name, [TCGplayer set names]], …]] */
 const SET_GUIDE = [["Mega Evolution Series","^(ME\\d*|MEP?)\\s*:",[["Delta Reign",["ME06: Delta Reign"]],["30th Celebration",["ME: 30th Celebration","ME: 30th Celebration Classic Collection"]],["Pitch Black",["ME05: Pitch Black"]],["Chaos Rising",["ME04: Chaos Rising"]],["Perfect Order",["ME03: Perfect Order"]],["Ascended Heroes",["ME: Ascended Heroes"]],["Phantasmal Flames",["ME02: Phantasmal Flames"]],["Mega Evolution",["ME01: Mega Evolution"]]]],["Scarlet & Violet Series","^SV\\d*\\s*:",[["White Flare",["SV: White Flare"]],["Black Bolt",["SV: Black Bolt"]],["Destined Rivals",["SV10: Destined Rivals"]],["Journey Together",["SV09: Journey Together"]],["Prismatic Evolutions",["SV: Prismatic Evolutions"]],["Surging Sparks",["SV08: Surging Sparks"]],["Stellar Crown",["SV07: Stellar Crown"]],["Shrouded Fable",["SV: Shrouded Fable"]],["Twilight Masquerade",["SV06: Twilight Masquerade"]],["Temporal Forces",["SV05: Temporal Forces"]],["Paldean Fates",["SV: Paldean Fates"]],["Paradox Rift",["SV04: Paradox Rift"]],["Scarlet & Violet—151",["SV: Scarlet & Violet 151"]],["Obsidian Flames",["SV03: Obsidian Flames"]],["Paldea Evolved",["SV02: Paldea Evolved"]],["Scarlet & Violet",["SV01: Scarlet & Violet Base Set"]]]],["Sword & Shield Series","^SWSH\\d*\\s*:",[["Crown Zenith",["SWSH: Crown Zenith","SWSH: Crown Zenith: Galarian Gallery"]],["Silver Tempest",["SWSH12: Silver Tempest","SWSH12: Silver Tempest Trainer Gallery"]],["Lost Origin",["SWSH11: Lost Origin","SWSH11: Lost Origin Trainer Gallery"]],["Pokémon GO",["Pokemon GO"]],["Astral Radiance",["SWSH10: Astral Radiance","SWSH10: Astral Radiance Trainer Gallery"]],["Brilliant Stars",["SWSH09: Brilliant Stars","SWSH09: Brilliant Stars Trainer Gallery"]],["Fusion Strike",["SWSH08: Fusion Strike"]],["Celebrations",["Celebrations","Celebrations: Classic Collection"]],["Evolving Skies",["SWSH07: Evolving Skies"]],["Chilling Reign",["SWSH06: Chilling Reign"]],["Battle Styles",["SWSH05: Battle Styles"]],["Shining Fates",["Shining Fates","Shining Fates: Shiny Vault"]],["Vivid Voltage",["SWSH04: Vivid Voltage"]],["Champion's Path",["Champion's Path"]],["Darkness Ablaze",["SWSH03: Darkness Ablaze"]],["Rebel Clash",["SWSH02: Rebel Clash"]],["Sword & Shield",["SWSH01: Sword & Shield Base Set"]]]],["Sun & Moon Series","^SM\\b\\s*[-:]",[["Cosmic Eclipse",["SM - Cosmic Eclipse"]],["Hidden Fates",["Hidden Fates","Hidden Fates: Shiny Vault"]],["Unified Minds",["SM - Unified Minds"]],["Unbroken Bonds",["SM - Unbroken Bonds"]],["Detective Pikachu",["Detective Pikachu"]],["Team Up",["SM - Team Up"]],["Lost Thunder",["SM - Lost Thunder"]],["Dragon Majesty",["Dragon Majesty"]],["Celestial Storm",["SM - Celestial Storm"]],["Forbidden Light",["SM - Forbidden Light"]],["Ultra Prism",["SM - Ultra Prism"]],["Crimson Invasion",["SM - Crimson Invasion"]],["Shining Legends",["Shining Legends"]],["Burning Shadows",["SM - Burning Shadows"]],["Guardians Rising",["SM - Guardians Rising"]],["Sun & Moon",["SM Base Set"]]]],["XY Series","^XY\\b\\s*[-:]",[["Evolutions",["XY - Evolutions"]],["Steam Siege",["XY - Steam Siege"]],["Fates Collide",["XY - Fates Collide"]],["Generations",["Generations","Generations: Radiant Collection"]],["BREAKpoint",["XY - BREAKpoint"]],["BREAKthrough",["XY - BREAKthrough"]],["Ancient Origins",["XY - Ancient Origins"]],["Roaring Skies",["XY - Roaring Skies"]],["Double Crisis",["Double Crisis"]],["Primal Clash",["XY - Primal Clash"]],["Phantom Forces",["XY - Phantom Forces"]],["Furious Fists",["XY - Furious Fists"]],["Flashfire",["XY - Flashfire"]],["XY",["XY Base Set"]],["Kalos Starter Set",["Kalos Starter Set"]]]],["Black & White Series",null,[["Legendary Treasures",["Legendary Treasures","Legendary Treasures: Radiant Collection"]],["Plasma Blast",["Plasma Blast"]],["Plasma Freeze",["Plasma Freeze"]],["Plasma Storm",["Plasma Storm"]],["Boundaries Crossed",["Boundaries Crossed"]],["Dragon Vault",["Dragon Vault"]],["Dragons Exalted",["Dragons Exalted"]],["Dark Explorers",["Dark Explorers"]],["Next Destinies",["Next Destinies"]],["Noble Victories",["Noble Victories"]],["Emerging Powers",["Emerging Powers"]],["Black & White",["Black and White"]]]],["HeartGold & SoulSilver Series",null,[["Call of Legends",["Call of Legends"]],["Triumphant",["Triumphant"]],["Undaunted",["Undaunted"]],["Unleashed",["Unleashed"]],["HeartGold & SoulSilver",["HeartGold SoulSilver"]]]],["Platinum Series",null,[["Arceus",["Arceus"]],["Supreme Victors",["Supreme Victors"]],["Rising Rivals",["Rising Rivals"]],["Platinum",["Platinum"]]]],["Diamond & Pearl Series",null,[["Stormfront",["Stormfront"]],["Legends Awakened",["Legends Awakened"]],["Majestic Dawn",["Majestic Dawn"]],["Great Encounters",["Great Encounters"]],["Secret Wonders",["Secret Wonders"]],["Mysterious Treasures",["Mysterious Treasures"]],["Diamond & Pearl",["Diamond and Pearl"]]]],["EX Series",null,[["Power Keepers",["EX Power Keepers"]],["Dragon Frontiers",["EX Dragon Frontiers"]],["Crystal Guardians",["EX Crystal Guardians"]],["Holon Phantoms",["EX Holon Phantoms"]],["Legend Maker",["EX Legend Maker"]],["Delta Species",["EX Delta Species"]],["Unseen Forces",["EX Unseen Forces"]],["Emerald",["EX Emerald"]],["Deoxys",["EX Deoxys"]],["Team Rocket Returns",["EX Team Rocket Returns"]],["FireRed & LeafGreen",["EX FireRed & LeafGreen"]],["Hidden Legends",["EX Hidden Legends"]],["Team Magma vs Team Aqua",["EX Team Magma vs Team Aqua"]],["Dragon",["EX Dragon"]],["Sandstorm",["EX Sandstorm"]],["Ruby & Sapphire",["EX Ruby and Sapphire"]]]],["e-Card Series",null,[["Skyridge",["Skyridge"]],["Aquapolis",["Aquapolis"]],["Expedition",["Expedition"]]]],["Legendary Collection Series",null,[["Legendary Collection",["Legendary Collection"]]]],["Neo Series",null,[["Neo Destiny",["Neo Destiny"]],["Neo Revelation",["Neo Revelation"]],["Neo Discovery",["Neo Discovery"]],["Neo Genesis",["Neo Genesis"]]]],["Original Series",null,[["Gym Challenge",["Gym Challenge"]],["Gym Heroes",["Gym Heroes"]],["Team Rocket",["Team Rocket"]],["Base Set 2",["Base Set 2"]],["Fossil",["Fossil"]],["Jungle",["Jungle"]],["Base Set",["Base Set"]],["Base Set (Shadowless)",["Base Set (Shadowless)"]]]],["Black Star Promos","promo",[["Mega Evolution Promos",["ME: Mega Evolution Promo"]],["Scarlet & Violet Promos",["SV: Scarlet & Violet Promo Cards"]],["Sword & Shield Promos",["SWSH: Sword & Shield Promo Cards"]],["Sun & Moon Promos",["SM Promos"]],["XY Promos",["XY Promos"]],["Black & White Promos",["Black and White Promos"]],["HeartGold & SoulSilver Promos",["HGSS Promos"]],["Diamond & Pearl Promos",["Diamond and Pearl Promos"]],["Nintendo Promos",["Nintendo Promos"]],["Wizards of the Coast Promos",["WoTC Promo"]]]],["Numbered Energies","energies",[["Mega Evolution Energies",["MEE: Mega Evolution Energies"]],["Scarlet & Violet Energies",["SVE: Scarlet & Violet Energies"]]]],["Trick or Trade","trick or trade",[["Trick or Trade 2024",["Trick or Trade BOOster Bundle 2024"]],["Trick or Trade 2023",["Trick or Trade BOOster Bundle 2023"]],["Trick or Trade 2022",["Trick or Trade BOOster Bundle"]]]],["McDonald's Collection Series","mcdonald",[["McDonald's Dragon Discovery 2024",["McDonald's Promos 2024"]],["McDonald's Match Battle 2023",["McDonald's Promos 2023"]],["McDonald's Match Battle 2022",["McDonald's Promos 2022"]],["McDonald's Collection 2021",["McDonald's 25th Anniversary Promos"]],["McDonald's Collection 2019",["McDonald's Promos 2019"]],["McDonald's Collection 2018",["McDonald's Promos 2018"]],["McDonald's Collection 2017",["McDonald's Promos 2017"]],["McDonald's Collection 2016",["McDonald's Promos 2016"]],["McDonald's Collection 2015",["McDonald's Promos 2015"]],["McDonald's Collection 2014",["McDonald's Promos 2014"]],["McDonald's Collection 2012",["McDonald's Promos 2012"]],["McDonald's Collection 2011",["McDonald's Promos 2011"]]]],["Introductory Sets","battle academy|my first battle",[["Battle Academy 2024",["Battle Academy 2024"]],["Battle Academy 2022",["Battle Academy 2022"]],["My First Battle",["My First Battle"]],["Battle Academy 2020",["Battle Academy"]]]],["Trainer Kits","trainer kit",[["SM Trainer Kit: Alolan Sandslash & Alolan Ninetales",["SM Trainer Kit: Alolan Sandslash & Alolan Ninetales"]],["SM Trainer Kit: Lycanroc & Alolan Raichu",["SM Trainer Kit: Lycanroc & Alolan Raichu"]],["XY Trainer Kit: Pikachu Libre & Suicune",["XY Trainer Kit: Pikachu Libre & Suicune"]],["XY Trainer Kit: Latias & Latios",["XY Trainer Kit: Latias & Latios"]],["XY Trainer Kit: Bisharp & Wigglytuff",["XY Trainer Kit: Bisharp & Wigglytuff"]],["XY Trainer Kit: Sylveon & Noivern",["XY Trainer Kit: Sylveon & Noivern"]],["BW Trainer Kit: Excadrill & Zoroark",["BW Trainer Kit: Excadrill & Zoroark"]],["HGSS Trainer Kit: Gyarados & Raichu",["HGSS Trainer Kit: Gyarados & Raichu"]],["DP Trainer Kit: Manaphy & Lucario",["DP Trainer Kit: Manaphy & Lucario"]],["EX Trainer Kit: Plusle & Minun",["EX Trainer Kit 2: Plusle & Minun"]],["EX Trainer Kit: Latias & Latios",["EX Trainer Kit 1: Latias & Latios"]]]],["POP Series","^pop series",[["POP Series 9",["POP Series 9"]],["POP Series 8",["POP Series 8"]],["POP Series 7",["POP Series 7"]],["POP Series 6",["POP Series 6"]],["POP Series 5",["POP Series 5"]],["POP Series 4",["POP Series 4"]],["POP Series 3",["POP Series 3"]],["POP Series 2",["POP Series 2"]],["POP Series 1",["POP Series 1"]]]],["Other",null,[["Pokémon Trading Card Game Classic",["Trading Card Game Classic"]],["Pokémon Futsal",["Pokemon Futsal"]],["Pikachu World Collection",["Pikachu World Collection Promos"]],["Pokémon Rumble",["Rumble"]],["Southern Islands",["Southern Islands"]],["Prize Pack Series",["Prize Pack Series Cards"]],["Professor Program Promos",["Professor Program Promos"]],["League & Championship Cards",["League & Championship Cards"]],["World Championship Decks",["World Championship Decks"]],["Deck Exclusives",["Deck Exclusives"]],["Blister Exclusives",["Blister Exclusives"]],["Alternate Art Promos",["Alternate Art Promos"]],["Best of Promos",["Best of Promos"]],["Burger King Promos",["Burger King Promos"]],["Countdown Calendar Promos",["Countdown Calendar Promos"]],["Kids WB Promos",["Kids WB Promos"]],["First Partner Pack",["First Partner Pack"]],["EX Battle Stadium",["EX Battle Stadium"]],["Jumbo Cards",["Jumbo Cards"]],["Southeast Asia Exclusives",["Southeast Asia Exclusives"]],["e-Reader Sample Cards",["e-Reader Sample Cards"]],["Miscellaneous Cards & Products",["Miscellaneous Cards & Products"]]]]];
-// "All sets in this era": one option at the top of each section that searches every set in it, newest first
-const eraOption = (prefix, ids, head, n, sets) => sets > 1 ? `<option value="${prefix}${esc(ids.join(','))}">★ All ${esc(head)}${/series|sets|promos|packs|kits|energies|collection|other/i.test(head) ? '' : ' sets'} (${n})</option>` : '';
 function fillGuideSets(L) {
   const dd = $('set'), keep = dd.value, byName = {}, counts = {}, used = new Set();
   Object.entries(L.groups || {}).forEach(([gid, n]) => { byName[n] = gid; });
@@ -1042,8 +1129,7 @@ function fillGuideSets(L) {
   });
   const total = ids => ids.reduce((a, i) => a + (counts[i] || 0), 0);
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + sections.filter(x => x.items.length).map(x => {
-    const all = x.items.flatMap(it => it.ids);
-    return `<optgroup label="${esc(x.head)}">${eraOption('tcg:', all, x.head, total(all), x.items.length)}${x.items.map(it => `<option value="tcg:${it.ids.join(',')}">${esc(it.name)} (${total(it.ids)})</option>`).join('')}</optgroup>`;
+    return `<optgroup label="${esc(x.head)}">${x.items.map(it => `<option value="tcg:${it.ids.join(',')}">${esc(it.name)} (${total(it.ids)})</option>`).join('')}</optgroup>`;
   }).join('');
   dd.value = keep;
 }
@@ -1130,7 +1216,7 @@ async function zhLoadSets() {
   if (!L) { dd.innerHTML = '<option value="">Chinese sets unavailable — tap to retry</option>'; return; }
   const keep = dd.value;
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + zhSections(L).map(x =>
-    `<optgroup label="${esc(x.head)}">${eraOption('zh:', x.items.flatMap(it => it.ids), x.head, x.items.reduce((a, it) => a + it.n, 0), x.items.length)}${x.items.map(it => `<option value="zh:${it.ids.join(',')}">${esc(it.name)} (${it.n})</option>`).join('')}</optgroup>`).join('');
+    `<optgroup label="${esc(x.head)}">${x.items.map(it => `<option value="zh:${it.ids.join(',')}">${esc(it.name)} (${it.n})</option>`).join('')}</optgroup>`).join('');
   dd.value = keep;
 }
 async function zhFillRarities() {
