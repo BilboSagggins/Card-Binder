@@ -3,7 +3,7 @@
 
 TCGCSV republishes TCGplayer's catalog and market prices once a day. Browsers can't read it
 directly, so this script (run daily by .github/workflows/prices.yml) copies the parts the app
-needs into prices/<game>.json on the site:
+needs into prices/<game>.json on the site (pokemon, pokemon-jp, onepiece):
 
   { "updated": "...", "groups": { "<groupId>": "<set name>" },
     "p": { "<productId>": [marketPrice, "name", "number", groupId, "rarity"] } }
@@ -13,7 +13,7 @@ Only single cards (products with a card Number) are kept.
 import json, os, sys, time, urllib.request
 
 BASE = os.environ.get("TCGCSV_BASE", "https://tcgcsv.com/tcgplayer")
-GAMES = {"pokemon": [3, 85], "onepiece": [68]}   # 85 = Pokemon Japan
+GAMES = {"pokemon": [3], "pokemon-jp": [85], "onepiece": [68]}   # 85 = Pokemon Japan (its own file, loaded only for Japanese cards)
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "prices")
 # which price to use when a product has several printings listed
 PREFER = ["Holofoil", "Normal", "Foil", "Reverse Holofoil", "1st Edition Holofoil", "1st Edition", "Unlimited Holofoil", "Unlimited"]
