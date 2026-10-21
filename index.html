@@ -399,11 +399,12 @@
           <button onclick="setLayout('3x3')" id="btn-3x3" class="px-2.5 py-1 text-xs font-semibold rounded-md">3x3</button>
           <button onclick="setLayout('4x3')" id="btn-4x3" class="px-2.5 py-1 text-xs font-semibold rounded-md">4x3</button>
         </div>
+        <button type="button" id="tools-btn" onclick="toggleTools()" aria-expanded="false" aria-controls="tools-row" title="Cover, exports, backups and more" class="btn !py-1.5 !px-2.5 text-xs flex items-center gap-1">🧰<span class="hidden sm:inline"> Tools</span> <span id="tools-caret" class="text-zinc-400">▾</span></button>
       </div>
     </div>
 
-    <!-- Controls Row 2 (Dedicated Export Row Shifted Above Utility Controls) -->
-    <div class="w-full flex items-center justify-center sm:justify-end gap-2 pt-1 border-t border-zinc-800/60 flex-wrap">
+    <!-- Controls Row 2: cover, exports and utilities, folded behind "Tools" so the binder stays in view -->
+    <div id="tools-row" class="hidden w-full flex items-center justify-center sm:justify-end gap-2 flex-wrap pt-2 border-t border-zinc-800/60">
       <div class="flex items-center gap-2">
         <button onclick="openCover()" title="Design your binder cover (used in the export)" class="btn bg-amber-900/30 hover:bg-amber-900/60 text-amber-200 border-amber-500/50 font-bold flex items-center gap-1.5">
           <span>🎨</span> Cover
@@ -694,7 +695,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.8';
+const APP_VERSION = '2026-10-21.9';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2519,6 +2520,14 @@ function removeCard(p, s, e) {
   toast('Card removed'); 
 }
 function go(d) { const pages = getPagesArray(); const n = S.cur + d; if (n >= 0 && n < pages.length) { S.cur = n; render(); } }
+// The Tools row (cover, exports, backups, clear) folds away; the phone remembers if you left it open
+const TOOLS_KEY = 'cardBinder.toolsOpen';
+function paintTools(open) {
+  $('tools-row').classList.toggle('hidden', !open);
+  $('tools-btn').setAttribute('aria-expanded', open); $('tools-caret').textContent = open ? '▴' : '▾';
+}
+function toggleTools() { const open = $('tools-row').classList.contains('hidden'); paintTools(open); try { localStorage.setItem(TOOLS_KEY, open ? '1' : ''); } catch (e) {} }
+try { if (localStorage.getItem(TOOLS_KEY) === '1') queueMicrotask(() => paintTools(true)); } catch (e) {}
 function addPage() { 
   if (peerUser) return;
   const pages = getPagesArray(); 
