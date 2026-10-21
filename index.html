@@ -277,6 +277,7 @@
   .pick:hover, .pick:focus-visible { border-color: #818cf8; outline: none; }
   .pick img, .pick .ph { width: 100%; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; background: #18181b; display: flex; align-items: center; justify-content: center; }
   .pick b { font: 600 .62rem/1.2 Inter, system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #ws-parts [aria-pressed="true"], #ws-need[aria-pressed="true"] { background: #4f46e5 !important; border-color: #6366f1 !important; color: #fff !important; }
   .pick span { font: 500 .6rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .jp-tag { position: absolute; top: 2px; left: 2px; z-index: 10; background: #be123c; color: #fff; font: 800 clamp(5px, 1.6vw, 9px)/1 Inter, system-ui, sans-serif; letter-spacing: .04em; padding: 2px 3px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
   .jp-tag.cn { background: #c2410c; }
@@ -1256,42 +1257,71 @@ function setGroupOf(r) {
 }
 async function addWholeSet(it, at) {
   const game = S.game, data = COLLECTIONS[collKey()];
-  toast('Finding the rest of this set in your collection…');
+  toast('Finding this set…');
   const r = await resolveCollItem(it, game);
   if (!r) return toast(`Couldn't tell which set "${it.name}" is from. Add it on its own first; once it has a price, try again.`, 'error');
   const grp = setGroupOf(r);
+  // what you own from it (one entry per printing, however many copies)
   const all = Object.entries((data && data.items) || {}).map(([id, x]) => ({ id, ...x })).filter(x => !isTotalRow(x.name));
-  const found = (await pool(all, 8, async x => { const m = await resolveCollItem(x, game); return m && m.list === r.list && grp.ids.includes(m.gid) ? { it: x, ...m } : null; })).filter(Boolean);
+  const owned = new Map();
+  (await pool(all, 8, async x => { const m = await resolveCollItem(x, game); return m && m.list === r.list && grp.ids.includes(m.gid) ? [m.card.tcgPid, x.id] : null; }))
+    .filter(Boolean).forEach(([pid, id]) => { if (!owned.has(pid)) owned.set(pid, id); });
+  // what's already in this binder, owned or need: by product number, or by name + number
   const numKey = c => String(c.number || '').split('/')[0];
-  found.sort((a, b) => grp.ids.indexOf(a.gid) - grp.ids.indexOf(b.gid) || numKey(a.card).localeCompare(numKey(b.card), undefined, { numeric: true }));
-  const inBinder = new Set(getPagesArray().flatMap(pg => pg.cards).filter(c => c && c.collId).map(c => c.collId));
-  const fresh = found.filter(f => !inBinder.has(f.it.id)), skipped = found.length - fresh.length;
-  if (!fresh.length) return toast(`All ${found.length} of your ${grp.label} cards are already in this binder.`);
-  const st = addStatus;
-  sheet(`<h2 id="lb-sheet-title">Add ${lbEsc(grp.label)}?</h2>
-    <p class="sub">${fresh.length} card${fresh.length === 1 ? '' : 's'} from your collection, in number order, starting at page ${at.p + 1}, slot ${at.s + 1}. Filled slots are stepped over, and new pages are added if needed.${skipped ? ` ${skipped} already in this binder will be left where they are.` : ''}</p>
-    <div class="pick-grid">${fresh.slice(0, 12).map(f => `<div class="pick"><img alt="" src="${lbEsc(f.card.thumb)}" loading="lazy" onerror="this.style.visibility='hidden'"><b>${lbEsc(f.card.name)}</b><span>${lbEsc(f.card.number)}</span></div>`).join('')}</div>
-    ${fresh.length > 12 ? `<p class="sub" style="margin:0">…and ${fresh.length - 12} more</p>` : ''}
-    <div class="lb-row"><button type="button" class="lb-btn" id="ws-go">Add ${fresh.length} as ${st === 'needed' ? 'Need' : 'Owned'}</button><button type="button" class="lb-btn quiet" id="ws-no">Cancel</button></div>`);
+  const here = getPagesArray().flatMap(pg => pg.cards).filter(Boolean);
+  const herePids = new Set(here.map(c => c.tcgPid || pidInUrl(c.url) || tcgPid(c.image)).filter(Boolean));
+  const hereNames = new Set(here.map(c => norm(c.name) + '|' + lc(c.number)));
+  const inBinder = c => herePids.has(c.tcgPid) || hereNames.has(norm(c.name) + '|' + lc(c.number));
+  // every card in the set (and its subsets), in number order
+  const full = Object.entries(r.L.p).filter(([, e]) => grp.ids.includes(String(e[3])))
+    .map(([pid, e]) => { const c = cardFromTcg(pid, game, r.L); if (r.list === 'pokemon-jp') c.lang = 'ja'; return { card: c, gid: String(e[3]), own: owned.get(+pid) || '' }; })
+    .sort((a, b) => grp.ids.indexOf(a.gid) - grp.ids.indexOf(b.gid) || numKey(a.card).localeCompare(numKey(b.card), undefined, { numeric: true }) || lc(a.card.number).localeCompare(lc(b.card.number), undefined, { numeric: true }));
+  const partName = g => { const n = (r.L.groups[g] || '').replace(/^[A-Z0-9.]+:\s*/, ''); return n.startsWith(grp.label + ': ') && n.length > grp.label.length + 2 ? n.slice(grp.label.length + 2) : n; };
+  let parts = grp.ids.slice(), needs = true;
+  const pick = () => full.filter(f => parts.includes(f.gid) && (f.own || needs) && !inBinder(f.card));
+  const paint = () => {
+    const list = pick(), nOwn = list.filter(f => f.own).length, skipped = full.filter(f => parts.includes(f.gid) && (f.own || needs) && inBinder(f.card)).length;
+    $('ws-sum').innerHTML = list.length
+      ? `${nOwn} owned${needs ? ` · ${list.length - nOwn} need` : ''}, in number order from page ${at.p + 1}, slot ${at.s + 1}. Filled slots are stepped over and pages are added as needed.${skipped ? ` ${skipped} already in this binder won't be added again.` : ''}`
+      : `Everything here is already in this binder.`;
+    $('ws-grid').innerHTML = list.slice(0, 15).map(f => `<div class="pick" style="${f.own ? '' : 'opacity:.45'}"><img alt="" src="${lbEsc(f.card.thumb)}" loading="lazy" onerror="this.style.visibility='hidden'"><b>${lbEsc(f.card.name)}</b><span>${lbEsc(f.card.number)} · ${f.own ? 'owned' : 'need'}</span></div>`).join('')
+      + (list.length > 15 ? `<p class="sub" style="grid-column:1/-1;margin:0">…and ${list.length - 15} more</p>` : '');
+    $('ws-go').textContent = list.length ? `Add ${list.length} card${list.length === 1 ? '' : 's'}` : 'Nothing to add';
+    $('ws-go').disabled = !list.length;
+    document.querySelectorAll('#ws-parts [data-part]').forEach(b => b.setAttribute('aria-pressed', b.dataset.part === parts.join(',')));
+    $('ws-need').setAttribute('aria-pressed', needs);
+  };
+  const chip = 'style="padding:.35rem .6rem;border-radius:8px;border:1px solid #3f3f46;background:#18181b;color:#e4e4e7;font:600 .7rem Inter,system-ui,sans-serif"';
+  sheet(`<h2 id="lb-sheet-title">Add ${lbEsc(grp.label)}</h2>
+    ${grp.ids.length > 1 ? `<div id="ws-parts" class="ws-chips" style="display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin:.2rem 0 .5rem">
+      <button type="button" ${chip} data-part="${grp.ids.join(',')}">Everything</button>${grp.ids.map(g => `<button type="button" ${chip} data-part="${g}">${lbEsc(partName(g))} only</button>`).join('')}</div>` : ''}
+    <div style="display:flex;justify-content:center;margin-bottom:.4rem"><button type="button" ${chip} id="ws-need">Add cards I don't have as Need</button></div>
+    <p class="sub" id="ws-sum"></p>
+    <div class="pick-grid" id="ws-grid"></div>
+    <div class="lb-row"><button type="button" class="lb-btn" id="ws-go"></button><button type="button" class="lb-btn quiet" id="ws-no">Cancel</button></div>`);
+  document.querySelectorAll('#ws-parts [data-part]').forEach(b => b.onclick = () => { parts = b.dataset.part.split(','); paint(); });
+  $('ws-need').onclick = () => { needs = !needs; paint(); };
+  paint();
   $('lb-sheet').onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
   $('ws-no').onclick = closeSheet;
   $('ws-go').onclick = () => {
+    const list = pick(); if (!list.length) return;
     closeSheet();
     const pages = getPagesArray(), n = cap(), before = pages.length;
     let p = at.p, s = at.s;
     const next = () => { if (++s >= n) { s = 0; p++; } };
-    fresh.forEach(f => {
+    list.forEach(f => {
       for (;;) {
         if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
         if (!pages[p].cards[s]) break;
         next();
       }
-      pages[p].cards[s] = { ...f.card, status: st, collId: f.it.id };
+      pages[p].cards[s] = f.own ? { ...f.card, status: 'owned', collId: f.own } : { ...f.card, status: 'needed' };
       next();
     });
     S.cur = at.p; saveActivePages(pages); render();
-    const added = pages.length - before;
-    toast(`Added ${fresh.length} ${grp.label} card${fresh.length === 1 ? '' : 's'}${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
+    const added = pages.length - before, nOwn = list.filter(f => f.own).length;
+    toast(`Added ${nOwn} owned${list.length - nOwn ? ` + ${list.length - nOwn} need` : ''}${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
   };
 }
 
