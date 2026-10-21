@@ -85,8 +85,8 @@
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
     padding: .8rem 1.4rem; border-radius: 999px; background: rgba(24,24,27,.95); border: 2px dashed #f43f5e; color: #fecdd3; font: 700 .8rem Inter, system-ui, sans-serif;
-    box-shadow: 0 10px 30px rgba(0,0,0,.6); transition: transform .2s ease, background .15s, color .15s; pointer-events: none; }
-  body.card-dragging #drag-trash { transform: translate(-50%, 0); pointer-events: auto; }
+    box-shadow: 0 10px 30px rgba(0,0,0,.6); transition: transform .2s ease, opacity .2s, visibility .2s, background .15s, color .15s; pointer-events: none; opacity: 0; visibility: hidden; }
+  body.card-dragging #drag-trash { transform: translate(-50%, 0); pointer-events: auto; opacity: 1; visibility: visible; }
   body.tray-open #drag-trash { bottom: 222px; }
   #drag-trash.drag-over { background: #e11d48; color: #fff; border-style: solid; transform: translate(-50%, 0) scale(1.12); }
 
@@ -695,7 +695,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.10';
+const APP_VERSION = '2026-10-21.12';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
