@@ -672,7 +672,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.5';
+const APP_VERSION = '2026-10-21.6';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1192,8 +1192,10 @@ function renderCollection() {
         ${inBinder.has(it.id) ? '<span class="absolute bottom-1 left-1 bg-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded">In this binder</span>' : ''}</div>
       <h4 class="font-bold text-xs line-clamp-2">${esc(it.name)}</h4>
       <div class="text-[10px] text-zinc-400 mt-0.5 truncate">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From your collection')}</div>
-      <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
+      <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>
+      <button type="button" data-set class="mt-1.5 py-1.5 w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[11px] font-semibold text-zinc-200">📚 Add whole set</button>`;
     el.onclick = () => { const at = { ...target }; closeSearch(); placeCollectionItem(it, at); };
+    el.querySelector('[data-set]').onclick = e => { e.stopPropagation(); const at = { ...target }; closeSearch(); addWholeSet(it, at); };
     box.appendChild(el);
   });
   if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the first 300. Search to find the rest.</div>`);
@@ -1230,6 +1232,67 @@ function placeCollectionItem(it, at) {
     };
     swap(6);
   });
+}
+
+/* --- Add a whole set from your collection: every card you own from the same set, in card-number order --- */
+// Which exact card (and TCGplayer set) a collection entry is, from its picture's product number or a saved match
+async function resolveCollItem(it, game) {
+  const pid = tcgPid(it.image) || (String(it.match || '').startsWith('tcg:') ? +String(it.match).slice(4) : 0);
+  if (!pid) return null;
+  for (const list of game === 'onepiece' ? ['onepiece'] : ['pokemon', 'pokemon-jp']) {
+    const L = await loadTcgList(list), e = L && L.p && L.p[String(pid)];
+    if (e) { const c = cardFromTcg(pid, game, L); if (list === 'pokemon-jp') c.lang = 'ja'; return { card: c, list, gid: String(e[3]), L }; }
+  }
+  return null;
+}
+// The TCGplayer sets that make up one set (English sets fold in their subsets, like Trainer Gallery, as in the set guide)
+function setGroupOf(r) {
+  const name = r.L.groups[r.gid] || '';
+  if (r.list === 'pokemon') {
+    const byName = {}; Object.entries(r.L.groups || {}).forEach(([g, n]) => { byName[n] = g; });
+    for (const [, , sets] of SET_GUIDE) for (const [label, names] of sets) if (names.includes(name)) return { label, ids: names.map(n => byName[n]).filter(Boolean) };
+  }
+  return { label: name.replace(/^[A-Z0-9]+:\s*/, '') || name, ids: [r.gid] };
+}
+async function addWholeSet(it, at) {
+  const game = S.game, data = COLLECTIONS[collKey()];
+  toast('Finding the rest of this set in your collection…');
+  const r = await resolveCollItem(it, game);
+  if (!r) return toast(`Couldn't tell which set "${it.name}" is from. Add it on its own first; once it has a price, try again.`, 'error');
+  const grp = setGroupOf(r);
+  const all = Object.entries((data && data.items) || {}).map(([id, x]) => ({ id, ...x })).filter(x => !isTotalRow(x.name));
+  const found = (await pool(all, 8, async x => { const m = await resolveCollItem(x, game); return m && m.list === r.list && grp.ids.includes(m.gid) ? { it: x, ...m } : null; })).filter(Boolean);
+  const numKey = c => String(c.number || '').split('/')[0];
+  found.sort((a, b) => grp.ids.indexOf(a.gid) - grp.ids.indexOf(b.gid) || numKey(a.card).localeCompare(numKey(b.card), undefined, { numeric: true }));
+  const inBinder = new Set(getPagesArray().flatMap(pg => pg.cards).filter(c => c && c.collId).map(c => c.collId));
+  const fresh = found.filter(f => !inBinder.has(f.it.id)), skipped = found.length - fresh.length;
+  if (!fresh.length) return toast(`All ${found.length} of your ${grp.label} cards are already in this binder.`);
+  const st = addStatus;
+  sheet(`<h2 id="lb-sheet-title">Add ${lbEsc(grp.label)}?</h2>
+    <p class="sub">${fresh.length} card${fresh.length === 1 ? '' : 's'} from your collection, in number order, starting at page ${at.p + 1}, slot ${at.s + 1}. Filled slots are stepped over, and new pages are added if needed.${skipped ? ` ${skipped} already in this binder will be left where they are.` : ''}</p>
+    <div class="pick-grid">${fresh.slice(0, 12).map(f => `<div class="pick"><img alt="" src="${lbEsc(f.card.thumb)}" loading="lazy" onerror="this.style.visibility='hidden'"><b>${lbEsc(f.card.name)}</b><span>${lbEsc(f.card.number)}</span></div>`).join('')}</div>
+    ${fresh.length > 12 ? `<p class="sub" style="margin:0">…and ${fresh.length - 12} more</p>` : ''}
+    <div class="lb-row"><button type="button" class="lb-btn" id="ws-go">Add ${fresh.length} as ${st === 'needed' ? 'Need' : 'Owned'}</button><button type="button" class="lb-btn quiet" id="ws-no">Cancel</button></div>`);
+  $('lb-sheet').onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  $('ws-no').onclick = closeSheet;
+  $('ws-go').onclick = () => {
+    closeSheet();
+    const pages = getPagesArray(), n = cap(), before = pages.length;
+    let p = at.p, s = at.s;
+    const next = () => { if (++s >= n) { s = 0; p++; } };
+    fresh.forEach(f => {
+      for (;;) {
+        if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
+        if (!pages[p].cards[s]) break;
+        next();
+      }
+      pages[p].cards[s] = { ...f.card, status: st, collId: f.it.id };
+      next();
+    });
+    S.cur = at.p; saveActivePages(pages); render();
+    const added = pages.length - before;
+    toast(`Added ${fresh.length} ${grp.label} card${fresh.length === 1 ? '' : 's'}${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
+  };
 }
 
 /* --- Collection tray: your collection along the bottom of the edit screen; drag a card onto a slot, or tap to fill the next empty one --- */
