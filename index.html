@@ -572,7 +572,7 @@
       <div id="flip" class="relative w-full h-full transition-transform duration-700 t3d rounded-xl">
         <!-- Front Side -->
         <div class="absolute inset-0 rounded-xl overflow-hidden bfh border border-zinc-700/50 bg-zinc-950 holo-card">
-          <img id="i-img" alt="" class="w-full h-full object-cover" onerror="imgErr(this)">
+          <img id="i-img" alt="" class="w-full h-full object-cover" referrerpolicy="no-referrer" onerror="imgErr(this)">
         </div>
         <!-- Back Side (your card-back picture when set) -->
         <div class="absolute inset-0 rounded-xl overflow-hidden bfh ry180 border border-zinc-700/50 bg-gradient-to-br from-indigo-900 to-zinc-900 flex items-center justify-center text-6xl"><img id="i-back-img" alt="" class="absolute inset-0 w-full h-full object-cover hidden"><span id="i-back-emoji">🎴</span></div>
@@ -792,7 +792,7 @@ function buildImages(d, lang, pid) {
   return { low: first, high: first, alts };
 }
 
-const imgTag = (src, alts, name, cls) => `<img src="${esc(src)}" data-alts="${esc((alts || []).join('|'))}" alt="${esc(name)}" class="${cls}" onerror="imgErr(this)">`;
+const imgTag = (src, alts, name, cls) => `<img src="${esc(src)}" data-alts="${esc((alts || []).join('|'))}" alt="${esc(name)}" class="${cls}" referrerpolicy="no-referrer" onerror="imgErr(this)">`;
 
 function cardLink(c) {
   if (c.url) return c.url;
