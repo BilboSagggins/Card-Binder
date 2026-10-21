@@ -695,7 +695,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.9';
+const APP_VERSION = '2026-10-21.10';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1886,7 +1886,7 @@ function pickCollectionFile(input) {
       </div></div>
       ${pk ? `<p class="sub" style="margin:0;text-align:left"><b>Pokémon:</b> ${list('pokemon')}</p>` : ''}
       ${op ? `<p class="sub" style="margin:0;text-align:left"><b>One Piece:</b> ${list('onepiece')}</p>` : ''}
-      <p class="lb-help">Each game in this file replaces ${lbEsc(nameOf(owner))}'s collection for that game. A game with no cards in the file is left alone. Cards already placed in binders stay where they are.</p>
+      <p class="lb-help">This is compared with ${lbEsc(nameOf(owner))}'s current collection: new cards are added, cards no longer in the file are taken out, and cards you still have keep their saved printing. A game with no cards in the file is left alone. Cards already placed in binders stay where they are.</p>
       <div class="lb-row"><button type="button" class="lb-btn primary" id="coll-go">Import</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`);
     $('coll-go').onclick = async () => {
       const choice = (document.querySelector('#coll-sort [aria-checked="true"]') || {}).dataset?.game || 'auto';
@@ -1896,13 +1896,27 @@ function pickCollectionFile(input) {
       try {
         for (const [g, its] of Object.entries(parts)) {
           if (!Object.keys(its).length) continue;
-          await db.ref('collections/' + owner + '/' + g).set({ importedAt: now, file: f.name.slice(0, 80), items: its });
-          COLLECTIONS[owner + '|' + g] = { importedAt: now, file: f.name, items: its }; watchCollection(owner, g);
-          done.push(`${Object.keys(its).length} ${GAMES[g]}`);
+          // compare with what's there: only new, changed and removed cards are written
+          const ref = db.ref('collections/' + owner + '/' + g);
+          const old = ((await ref.child('items').once('value')).val()) || {};
+          const up = { importedAt: now, file: f.name.slice(0, 80) };
+          let added = 0, removed = 0, changed = 0;
+          Object.entries(its).forEach(([id, it]) => {
+            const was = old[id];
+            if (!was) { up['items/' + id] = it; added++; return; }
+            let diff = false;
+            ['name', 'qty', 'image', 'set', 'number', 'rarity'].forEach(k => { if ((it[k] ?? '') !== (was[k] ?? '')) { up[`items/${id}/${k}`] = it[k] ?? null; diff = true; } });
+            if (diff) changed++;
+          });
+          Object.keys(old).forEach(id => { if (!its[id]) { up['items/' + id] = null; removed++; } });
+          await ref.update(up);
+          const kept = {}; Object.entries(its).forEach(([id, it]) => { kept[id] = old[id] ? { ...old[id], ...it } : it; });
+          COLLECTIONS[owner + '|' + g] = { importedAt: now, file: f.name, items: kept }; watchCollection(owner, g);
+          done.push(`${GAMES[g]}: ${added} new${removed ? `, ${removed} removed` : ''}${changed ? `, ${changed} updated` : ''}`);
         }
       } catch (e) { $('coll-go').disabled = false; return toast('Couldn\'t save the collection. Check your connection.', 'error'); }
       closeSheet();
-      toast(`Imported ${done.join(' and ')} cards`);
+      toast(`Collection updated · ${done.join(' · ')}`);
       if (mode === 'coll') renderCollection();
       renderTray();
     };
