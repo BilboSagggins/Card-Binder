@@ -658,7 +658,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.26';
+const APP_VERSION = '2026-10-20.27';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -837,6 +837,11 @@ async function ptcgLookup(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
+  const pid = card.tcgPid || pidInUrl(card.url);
+  if (pid) {
+    const L = await loadTcgList(card.game === 'onepiece' ? 'onepiece' : 'pokemon'), e = L && L.p && L.p[String(pid)];
+    if (e && e[0] != null) return { price: e[0], url: card.url || `https://www.tcgplayer.com/product/${pid}` };
+  }
   if (card.source === 'collection') { const r = await matchCollectionCard(card); const m = r && r.found; return m && m.price != null ? { price: m.price, url: m.url || null } : null; }
   if (card.game === 'onepiece') return opLookup(card);
   return (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
@@ -1183,6 +1188,30 @@ function splitCollName(raw) {
   name = name.replace(/\[[^\]]*\]/g, '').replace(/\s*[-–]\s*$/, '').replace(/\s+/g, ' ').trim();
   return { name, num, total, opId, parallel };
 }
+/* --- TCGplayer price list: built daily into prices/<game>.json by .github/workflows/prices.yml (from TCGCSV) ---
+   { updated, groups: { groupId: set name }, p: { productId: [marketPrice, name, number, groupId, rarity] } } */
+const TCG_LISTS = {}, tcgListP = {};
+function loadTcgList(game) {
+  if (game !== 'pokemon' && game !== 'onepiece') return Promise.resolve(null);
+  if (TCG_LISTS[game]) return Promise.resolve(TCG_LISTS[game]);
+  if (!tcgListP[game]) tcgListP[game] = (async () => {
+    // the repo copy is current the moment the daily job finishes; the site's own copy is the backup
+    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/${game}.json`, `prices/${game}.json`]) {
+      try { const d = await fetchJSON(u, 25000); if (d && d.p) return (TCG_LISTS[game] = d); } catch (e) {}
+    }
+    tcgListP[game] = null; return null;   // try again next time
+  })();
+  return tcgListP[game];
+}
+const tcgImg = (pid, small) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${small ? '200w' : 'in_1000x1000'}.jpg`;
+const tcgAlts = pid => [`https://product-images.tcgplayer.com/fit-in/437x610/${pid}.jpg`, tcgImg(pid, true)];
+function cardFromTcg(pid, game, L) {
+  const e = L && L.p && L.p[String(pid)]; if (!e) return null;
+  return { id: 'tcg-' + pid, tcgPid: +pid, name: e[1], set: (L.groups && L.groups[e[3]]) || '', number: e[2] || '—', rarity: e[4] || '—', price: e[0] ?? null,
+    url: `https://www.tcgplayer.com/product/${pid}`, thumb: tcgImg(pid, true), image: tcgImg(pid), alts: tcgAlts(pid), game, lang: 'en', source: 'tcgplayer' };
+}
+const pidInUrl = u => +((String(u || '').match(/tcgplayer\.com\/product\/(\d+)/) || [])[1] || 0);
+
 // Collectr's picture links end in TCGplayer's product number (…/product_502549.jpg). Numbers of 10,000,000+ are Collectr-only items.
 const pidOf = url => { const m = String(url || '').match(/product_(\d+)\./); return m ? +m[1] : 0; };
 const tcgPid = url => { const n = pidOf(url); return n && n < 10000000 ? n : 0; };
@@ -1205,10 +1234,16 @@ async function matchCollectionCard(card, owner) {
   if (matchCache[key]) return matchCache[key];
   let r = {};
   try {
-    if (isJP(card.name)) r = { jp: true };
+    // 1) the exact TCGplayer product (from Collectr's picture link, or a link pasted earlier) in the daily price list
+    const saved = savedMatch(card, owner), pid = tcgPid(card.image) || (/^tcg:\d+$/.test(saved) ? +saved.slice(4) : 0);
+    const exact = pid ? cardFromTcg(pid, card.game, await loadTcgList(card.game)) : null;
+    if (exact) r = { found: exact, foundKey: 'tcg:' + pid };
+    else if (/^tcg:/.test(saved)) r = {};
+    else if (isJP(card.name)) r = { jp: true };
+    // 2) otherwise find it by name in the card database
     else r = card.game === 'onepiece' ? await matchOnePiece(card, owner) : await matchPokemon(card, owner);
   } catch (e) { r = {}; }
-  if (r.found && card.collId) rememberMatch(card, owner, r.found.game === 'onepiece' ? (r.foundKey || r.found.id) : r.found.id);
+  if (r.found && card.collId) rememberMatch(card, owner, r.foundKey || r.found.id);
   if (r.found) matchCache[key] = r;
   return r;
 }
@@ -1365,10 +1400,12 @@ function linkTcgFor(card) {
     if (!link) { err.textContent = 'That isn\'t a TCGplayer card link. It should look like tcgplayer.com/product/123456/…'; return; }
     btn.disabled = true; btn.textContent = 'Looking it up…'; err.textContent = '';
     const url = `https://www.tcgplayer.com/product/${link.pid}`, owner = ownerOf(currentUser);
+    const game = card.game === 'onepiece' ? 'onepiece' : 'pokemon';
     let m = null, key = '';
     try {
-      if (card.game === 'onepiece') { const r = await opByLink(card, link); if (r) { m = r.card; key = r.key; } }
-      else { m = await pkByPid(link.pid, [card.name, ...slugNames(link.slug)]); if (m) key = m.id; }
+      m = cardFromTcg(link.pid, game, await loadTcgList(game)); if (m) key = 'tcg:' + link.pid;   // exact, from the daily price list
+      if (!m && game === 'onepiece') { const r = await opByLink(card, link); if (r) { m = r.card; key = r.key; } }
+      if (!m && game === 'pokemon') { m = await pkByPid(link.pid, [card.name, ...slugNames(link.slug)]); if (m) key = m.id; }
     } catch (x) { m = null; }
     // put it in the slot, wherever the card is now
     const pg = getPagesArray();
@@ -1376,12 +1413,13 @@ function linkTcgFor(card) {
       const i = page.cards.findIndex(c => c && c.id === card.id && (c.collId || '') === (card.collId || ''));
       if (i < 0) continue;
       const cur = page.cards[i];
-      page.cards[i] = m ? { ...m, url, status: cur.status, collId: cur.collId } : { ...cur, url, tcgPid: link.pid };
+      page.cards[i] = m ? { ...m, url, tcgPid: link.pid, status: cur.status, collId: cur.collId }
+        : { ...cur, url, tcgPid: link.pid, image: tcgImg(link.pid), thumb: tcgImg(link.pid, true), alts: [...tcgAlts(link.pid), cur.image].filter(Boolean) };   // at least show TCGplayer's picture
       saveActivePages(pg); render(); break;
     }
-    if (card.collId && m) rememberMatch(card, owner, key);
+    if (card.collId) rememberMatch(card, owner, m ? key : 'tcg:' + link.pid);
     closeSheet();
-    toast(m ? `Linked: ${m.name} · ${m.set} ${m.number} · ${fmt(m.price)}` : 'Linked to that TCGplayer page. This card isn\'t in the price database, so its price stays blank.', m ? 'info' : 'error');
+    toast(m ? `Linked: ${m.name} · ${m.set} ${m.number} · ${fmt(m.price)}` : 'Linked to that TCGplayer page and its picture. Its price isn\'t in today\'s price list yet; Refresh prices after the next daily update.', m ? 'info' : 'error');
   };
 }
 
