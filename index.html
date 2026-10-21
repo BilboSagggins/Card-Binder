@@ -272,6 +272,12 @@
   .who-bar #who-name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   html, body { max-width: 100%; overflow-x: hidden; }
   header, main { max-width: 100vw; }
+  .pick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; max-height: 48vh; overflow-y: auto; }
+  .pick { appearance: none; border: 1px solid #27272a; background: #09090b; border-radius: 10px; padding: .4rem; display: flex; flex-direction: column; gap: .25rem; text-align: left; color: #e4e4e7; cursor: pointer; }
+  .pick:hover, .pick:focus-visible { border-color: #818cf8; outline: none; }
+  .pick img, .pick .ph { width: 100%; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; background: #18181b; display: flex; align-items: center; justify-content: center; }
+  .pick b { font: 600 .62rem/1.2 Inter, system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick span { font: 500 .6rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .lb-btn.lb-danger { background: #4c0519; border-color: #9f1239; color: #fecdd3; }
   .lb-btn:focus-visible, .lb-keys button:focus-visible, .lb-field:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
   .lb-field { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 12px; padding: .7rem .8rem; color: #f4f4f5; font: 500 1rem/1.2 Inter, system-ui, sans-serif; }
@@ -651,7 +657,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-20.24';
+const APP_VERSION = '2026-10-20.25';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -830,7 +836,7 @@ async function ptcgLookup(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
-  if (card.source === 'collection') { const m = await matchCollectionCard(card); return m && m.price != null ? { price: m.price, url: m.url || null } : null; }
+  if (card.source === 'collection') { const r = await matchCollectionCard(card); const m = r && r.found; return m && m.price != null ? { price: m.price, url: m.url || null } : null; }
   if (card.game === 'onepiece') return opLookup(card);
   return (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
 };
@@ -1014,21 +1020,28 @@ function renderCollection() {
 function placeCollectionItem(it, at) {
   const card = {
     id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
-    price: null, url: null, thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
+    price: null, url: tcgPid(it.image) ? `https://www.tcgplayer.com/product/${tcgPid(it.image)}` : null,
+    thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
   };
-  const binder = currentUser;
+  const binder = currentUser, owner = ownerOf(currentUser);
   const pages = getPagesArray(); pages[at.p].cards[at.s] = card;
   saveActivePages(pages); render(); toast('Added ' + card.name + ' · looking up its price…');
   if (!$('ctray').hidden) renderTray();
-  matchCollectionCard(card).then(m => {
-    if (!m) return toast(`Couldn't match "${card.name}" to a ${GAMES[card.game]} card, so it has no price`, 'error');
+  matchCollectionCard(card, owner).then(async r => {
+    let m = r.found || null;
+    if (!m && r.choices && r.choices.length) m = await pickPrinting(card, owner, r);
+    if (!m) {
+      if (r.jp) return toast(`"${card.name}" is a Japanese printing. There's no price for it in the card database.`, 'error');
+      if (r.choices) return toast(`"${card.name}" was left without a price. Refresh prices to pick its printing later.`);
+      return toast(`Couldn't find "${card.name}" in the ${GAMES[card.game]} card database, so it has no price`, 'error');
+    }
     // Swap in the database card wherever this placed copy is now (it may have been dragged, and a save may still be settling)
     const swap = tries => {
       if (currentUser !== binder) return;
       const pg = getPagesArray();
       for (const page of pg) {
         const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
-        if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
+        if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId, url: card.url || m.url }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
       }
       if (tries > 0) setTimeout(() => swap(tries - 1), 500);
     };
@@ -1169,39 +1182,115 @@ function splitCollName(raw) {
   name = name.replace(/\[[^\]]*\]/g, '').replace(/\s*[-–]\s*$/, '').replace(/\s+/g, ' ').trim();
   return { name, num, total, opId, parallel };
 }
+// Collectr's picture links end in TCGplayer's product number (…/product_502549.jpg). Numbers of 10,000,000+ are Collectr-only items.
+const pidOf = url => { const m = String(url || '').match(/product_(\d+)\./); return m ? +m[1] : 0; };
+const tcgPid = url => { const n = pidOf(url); return n && n < 10000000 ? n : 0; };
+const isJP = n => /\((?:JP|Japanese)\)/i.test(String(n || ''));
+// A remembered match for a collection entry, saved on the entry so every phone knows it
+function savedMatch(card, owner) {
+  const it = card.collId && COLLECTIONS[owner + '|' + card.game] && COLLECTIONS[owner + '|' + card.game].items && COLLECTIONS[owner + '|' + card.game].items[card.collId];
+  return it && it.match ? it.match : '';
+}
+function rememberMatch(card, owner, id) {
+  const k = owner + '|' + card.game, data = COLLECTIONS[k];
+  if (data && data.items && data.items[card.collId]) data.items[card.collId].match = id;
+  db.ref(`collections/${owner}/${card.game}/items/${card.collId}/match`).set(id).catch(() => {});
+}
+// Returns { found } (one card), { choices } (several printings to pick from), { jp: true }, or {} (no match)
 const matchCache = {};
-async function matchCollectionCard(card) {
-  const key = card.game + '|' + card.name + '|' + card.set + '|' + card.number;
-  if (key in matchCache) return matchCache[key];
-  let found = null;
-  try { found = card.game === 'onepiece' ? await matchOnePiece(card) : await matchPokemon(card); } catch (e) { found = null; }
-  if (found) matchCache[key] = found;
-  return found;
+async function matchCollectionCard(card, owner) {
+  owner = owner || ownerOf(currentUser);
+  const key = card.game + '|' + card.collId + '|' + card.name;
+  if (matchCache[key]) return matchCache[key];
+  let r = {};
+  try {
+    if (isJP(card.name)) r = { jp: true };
+    else r = card.game === 'onepiece' ? await matchOnePiece(card, owner) : await matchPokemon(card, owner);
+  } catch (e) { r = {}; }
+  if (r.found && card.collId) rememberMatch(card, owner, r.found.game === 'onepiece' ? (r.foundKey || r.found.id) : r.found.id);
+  if (r.found) matchCache[key] = r;
+  return r;
 }
-async function matchPokemon(card) {
-  const p = splitCollName(card.name);
-  const num = p.num || (card.number !== '—' ? String(card.number).split('/')[0] : ''), total = p.total || (String(card.number).split('/')[1] || '');
-  const base = p.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim(); if (!base) return null;
-  const l = await fetchJSON(`${API}en/cards?name=${encodeURIComponent(base)}`, 10000);
-  let cands = (Array.isArray(l) ? l : []).filter(c => !isPocket(c) && lc(c.name) === lc(base));
+// Pokémon: every printing with this name, then the one whose TCGplayer product number matches Collectr's
+const seriesRank = id => { const s = String(id || '').toLowerCase(); return /^me/.test(s) ? 0 : /^sv/.test(s) ? 1 : /^swsh|^cel/.test(s) ? 2 : /^sm/.test(s) ? 3 : /^xy/.test(s) ? 4 : /^bw/.test(s) ? 5 : 6; };
+async function pkVariants(id) {   // all TCGplayer product numbers TCGdex lists for a card
+  const d = await withRetry(() => fetchJSON(`${API}en/cards/${encodeURIComponent(id)}`, 8000));
+  const tp = (d && d.pricing && d.pricing.tcgplayer) || {};
+  return Object.values(tp).filter(v => v && typeof v === 'object' && v.productId).map(v => +v.productId);
+}
+async function matchPokemon(card, owner) {
+  const saved = savedMatch(card, owner);
+  if (saved) return { found: await fetchCard({ id: saved }, 'en', null) };
+  const p = splitCollName(card.name), pid = tcgPid(card.image);
+  const num = p.num || (card.number !== '—' ? String(card.number).split('/')[0] : '');
+  const base = p.name.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim(); if (!base) return {};
+  // search on the longest plain word (avoids apostrophe and spacing differences), then compare whole names
+  const word = base.split(' ').filter(w => !/['’]/.test(w)).sort((a, b) => b.length - a.length)[0] || base;
+  const l = await fetchJSON(`${API}en/cards?name=${encodeURIComponent(word)}`, 12000);
+  let cands = (Array.isArray(l) ? l : []).filter(c => !isPocket(c) && norm(c.name) === norm(base));
   if (num) cands = cands.filter(c => sameNum(c.localId, num));
-  if (!cands.length) return null;
-  const full = await pool(cands.slice(0, 8), 4, c => fetchCard(c, 'en', null));
-  let pick = full;
-  if (total) { const t = full.filter(c => String(c.number).split('/')[1] && sameNum(String(c.number).split('/')[1], total)); if (t.length) pick = t; }
-  if (card.set && card.set !== 'Collection') { const t = pick.filter(c => lc(c.set) === lc(card.set)); if (t.length) pick = t; }
-  if (pick.length !== 1 && !num) return null;   // several prints and nothing to tell them apart
-  return pick.find(c => c.price != null) || pick[0] || null;
+  if (!cands.length) return {};
+  if (cands.length === 1) return { found: await fetchCard(cands[0], 'en', null) };
+  if (pid) {
+    const list = cands.map((c, i) => ({ c, i })).sort((a, b) => seriesRank(a.c.id) - seriesRank(b.c.id) || b.i - a.i).map(x => x.c).slice(0, 160);
+    let hit = null, i = 0;
+    const worker = async () => { while (!hit && i < list.length) { const c = list[i++]; try { if ((await pkVariants(c.id)).includes(pid)) hit = c; } catch (e) {} } };
+    await Promise.all(Array.from({ length: 8 }, worker));
+    if (hit) return { found: await fetchCard(hit, 'en', null) };
+  }
+  // several printings and nothing to tell them apart: let the person pick
+  const newest = cands.map((c, i) => ({ c, i })).sort((a, b) => seriesRank(a.c.id) - seriesRank(b.c.id) || b.i - a.i).map(x => x.c).slice(0, 30);
+  return { choices: await pool(newest, 6, c => fetchCard(c, 'en', null)), more: cands.length > 30 };
 }
-async function matchOnePiece(card) {
-  const p = splitCollName(card.name), all = await opLoadAll();
-  const id = p.opId || (/^[A-Z]{1,3}\d{0,2}-\d{3}$/i.test(card.number) ? card.number.toUpperCase() : '');
-  const bare = n => lc(String(n || '').replace(/\s*\((?:parallel|alternate art|alt art)\)/ig, '').replace(/\s*\(\d{3}\)/g, '').trim());
-  let cands = id ? all.filter(r => String(r.card_set_id || '').toUpperCase() === id) : all.filter(r => bare(r.card_name) === bare(p.name));
-  if (id && p.name) { const t = cands.filter(r => bare(r.card_name) === bare(p.name)); if (t.length) cands = t; }
-  if (cands.length > 1) { const t = cands.filter(r => opParallel(r) === p.parallel); if (t.length) cands = t; }
-  if (cands.length !== 1 && !id) return null;
-  return cands[0] ? opCard(cands[0]) : null;
+// One Piece: Collectr names look like "Nami (053)", "Krieg (OP15-008) (Alternate Art)", "Portgas.D.Ace (119) (SEC)"
+const OP_TAG = /^(?:\d{3}|(?:OP|ST|EB|PRB)\d{2}-\d{3}|P-\d{3}|parallel|alternate art|alt art|full art|jp|japanese|gold|sec|sr|sp|sp card|tr|l|c|uc|r|p|manga|foil)$/i;
+function opParse(name) {
+  const tags = [...String(name || '').matchAll(/\(([^)]*)\)/g)].map(m => m[1].trim());
+  const id = (tags.find(t => /^(?:(?:OP|ST|EB|PRB)\d{2}-\d{3}|P-\d{3})$/i.test(t)) || (String(name).match(OP_ID_RE) || [''])[0]).toUpperCase();
+  return {
+    base: lc(String(name || '').replace(/\(([^)]*)\)/g, (m, t) => OP_TAG.test(t.trim()) ? '' : m).replace(OP_ID_RE, '').replace(/\s+/g, ' ').trim()),
+    id, num: (tags.find(t => /^\d{3}$/.test(t)) || ''), rar: (tags.find(t => /^(?:sec|sr|sp|sp card|tr|l|uc|r|c|p)$/i.test(t)) || '').toUpperCase(),
+    parallel: tags.some(t => /^(?:parallel|alternate art|alt art)$/i.test(t)), gold: tags.some(t => /^gold$/i.test(t))
+  };
+}
+async function matchOnePiece(card, owner) {
+  const all = await opLoadAll(), saved = savedMatch(card, owner);
+  if (saved) { const r = all.find(x => (x.card_image_id || x.card_set_id) === saved); if (r) return { found: opCard(r), foundKey: saved }; }
+  const want = opParse(card.name);
+  const id = want.id || (/^[A-Z]{1,3}\d{0,2}-\d{3}$/i.test(card.number) ? card.number.toUpperCase() : '');
+  let cands = all.filter(r => {
+    const h = opParse(r.card_name), cid = String(r.card_set_id || '').toUpperCase();
+    if (id) return cid === id;
+    return h.base === want.base && (!want.num || cid.endsWith('-' + want.num));
+  });
+  if (id && want.base) { const t = cands.filter(r => opParse(r.card_name).base === want.base); if (t.length) cands = t; }
+  const narrow = test => { const t = cands.filter(test); if (t.length) cands = t; };
+  if (cands.length > 1) narrow(r => opParallel(r) === want.parallel);
+  if (cands.length > 1 && want.rar) narrow(r => String(r.rarity || '').toUpperCase() === want.rar || (want.rar === 'SP' && /SP/i.test(r.rarity)));
+  if (cands.length > 1) narrow(r => /gold/i.test(r.card_name) === want.gold);
+  if (!cands.length) return {};
+  const key = r => r.card_image_id || r.card_set_id;
+  if (cands.length === 1) return { found: opCard(cands[0]), foundKey: key(cands[0]) };
+  return { choices: cands.slice(0, 30).map(r => ({ ...opCard(r), _key: key(r) })) };
+}
+// "Which card is this?" when a name fits more than one printing; the answer is remembered
+function pickPrinting(card, owner, r) {
+  return new Promise(resolve => {
+    const cs = r.choices;
+    sheet(`<h2 id="lb-sheet-title">Which card is this?</h2>
+      <p class="sub">“${lbEsc(card.name)}” matches ${cs.length}${r.more ? '+' : ''} printings. Pick yours to get its price. You'll only be asked once.</p>
+      <div class="pick-grid">${cs.map((c, i) => `<button type="button" class="pick" data-i="${i}">${c.thumb ? `<img alt="" src="${lbEsc(c.thumb)}" loading="lazy" onerror="this.style.visibility='hidden'">` : '<div class="ph">🎴</div>'}
+        <b>${lbEsc(c.set || '')}</b><span>${lbEsc(c.number || '')} · ${fmt(c.price)}</span></button>`).join('')}</div>
+      ${card.image ? `<p class="sub" style="margin:0">Yours looks like this: <img alt="" src="${lbEsc(card.image)}" style="height:56px;vertical-align:middle;border-radius:3px"></p>` : ''}
+      <div class="lb-row"><button type="button" class="lb-btn quiet" id="pick-none">None of these</button></div>`);
+    document.querySelectorAll('#lb-sheet .pick').forEach(b => b.onclick = () => {
+      const c = cs[+b.dataset.i]; closeSheet();
+      if (card.collId) rememberMatch(card, owner, card.game === 'onepiece' ? c._key : c.id);
+      const { _key, ...clean } = c; resolve(clean);
+    });
+    $('pick-none').onclick = () => { closeSheet(); resolve(null); };
+    $('lb-sheet').onclick = e => { if (e.target === $('lb-sheet')) { closeSheet(); resolve(null); } };
+  });
 }
 
 // --- CSV reading ---
