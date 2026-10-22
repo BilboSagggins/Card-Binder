@@ -82,6 +82,30 @@
   .slot, .slot * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .slot img { -webkit-user-drag: none; pointer-events: none; }
   body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
+  /* Need list page */
+  .np { position: fixed; inset: 0; z-index: 60; background: #09090b; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom); }
+  .np[hidden] { display: none; }
+  .np-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: .75rem; padding: max(.8rem, env(safe-area-inset-top)) 1rem .8rem; background: rgba(9,9,11,.94); backdrop-filter: blur(8px); border-bottom: 1px solid #27272a; }
+  .np-x { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; width: 2.2rem; height: 2.2rem; border-radius: 10px; font-weight: 700; flex: none; }
+  .np-titles h2 { margin: 0; font: 700 1.05rem/1.2 Cinzel, Georgia, serif; letter-spacing: .05em; color: #fff; }
+  .np-titles p { margin: .15rem 0 0; font: 500 .72rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .np-titles b { color: #fb7185; }
+  .np-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; padding: .9rem .8rem 2rem; max-width: 64rem; margin: 0 auto; }
+  @media (min-width: 640px) { .np-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; } }
+  .np-card { position: relative; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: .4rem; display: flex; flex-direction: column; gap: .3rem; color: #f4f4f5; user-select: none; -webkit-user-select: none; }
+  .np-img { position: relative; aspect-ratio: 2.5 / 3.5; border-radius: 6px; overflow: hidden; background: #09090b; }
+  .np-img img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .np-rank { position: absolute; top: .3rem; left: .3rem; z-index: 2; min-width: 1.45rem; height: 1.45rem; padding: 0 .3rem; border-radius: 999px; background: #e11d48; color: #fff; font: 800 .7rem/1.45rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .np-name { font: 700 .7rem/1.2 Inter, system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .np-meta { display: flex; justify-content: space-between; gap: .3rem; font: 500 .6rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .np-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .np-meta b { color: #34d399; flex: none; }
+  .np-img .jp-tag { left: auto; right: 3px; top: 3px; }
+  .np-conds { display: grid; grid-template-columns: auto 1fr; gap: 1px .4rem; padding: .3rem .35rem; background: #09090b; border: 1px solid #27272a; border-radius: 6px; font: 500 .58rem/1.35 Inter, system-ui, sans-serif; }
+  .np-conds span { color: #71717a; }
+  .np-conds b { text-align: right; color: #d4d4d8; font-weight: 600; }
+  .np-conds b.nm { color: #34d399; font-weight: 800; }
+  .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
     padding: .8rem 1.4rem; border-radius: 999px; background: rgba(24,24,27,.95); border: 2px dashed #f43f5e; color: #fecdd3; font: 700 .8rem Inter, system-ui, sans-serif;
@@ -412,6 +436,9 @@
         <button onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="btn bg-indigo-900/40 hover:bg-indigo-900/80 text-indigo-200 border-indigo-500/50 font-bold flex items-center gap-1.5">
           <span>📖</span> Export Binder (HTML)
         </button>
+        <button onclick="openNeedPage()" title="Your Need cards on one live page" class="btn bg-rose-600/80 hover:bg-rose-600 text-white border-rose-400/60 font-bold flex items-center gap-1.5">
+          <span>📝</span> Need List
+        </button>
         <button onclick="exportNeededList()" title="Export Need list as HTML visual sheet" class="btn bg-rose-900/30 hover:bg-rose-900/70 text-rose-200 border-rose-500/50 font-bold flex items-center gap-1.5">
           <span>📋</span> Export Need (HTML)
         </button>
@@ -635,6 +662,14 @@
 </div>
 
 <!-- Notification Toasts Container -->
+<!-- Need list: a live page of every card marked Need in this binder -->
+<div id="need-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="np-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
+  </div>
+  <div id="np-grid" class="np-grid"></div>
+</div>
 <div id="drag-trash" aria-hidden="true"><span style="font-size:1.1rem">🗑️</span><span>Drop here to remove</span></div>
 <div id="toasts" class="fixed bottom-4 right-4 flex flex-col gap-2 pointer-events-none" style="z-index:95"></div>
 
@@ -695,7 +730,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-21.12';
+const APP_VERSION = '2026-10-22.1';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2448,6 +2483,7 @@ function updatePageTitle(val) {
 }
 
 function render() {
+  queueMicrotask(renderNeedPage);   // the Need List page follows every change
   queueMicrotask(() => { const t = $('ctray'); if (t && !t.hidden && !trayDrag) renderTray(); });   // keep the tray's ✓ marks current
   syncLayout();
   
@@ -3336,6 +3372,38 @@ function exportBinderHTML() {
   toast(`Exported full binder snapshot (${pages.length} pages)`);
 }
 
+/* --- Need List page: every card marked Need in this binder, live (it redraws whenever the binder changes) --- */
+function needCards() {
+  const out = [];
+  getPagesArray().forEach((pg, p) => pg.cards.slice(0, cap()).forEach((c, s) => { if (c && c.status === 'needed') out.push({ c, p, s }); }));
+  return out;
+}
+// Prices by condition, worked out from the Near Mint market price (the same rates as the Need export)
+const CONDITIONS = [['NM', 1], ['LP', 0.85], ['MP', 0.65], ['HP', 0.45], ['DMG', 0.30]];
+function condRows(price) {
+  const v = Number.isFinite(+price) && price != null ? +price : null;
+  return `<div class="np-conds">${CONDITIONS.map(([k, f], i) => `<span>${k}</span><b${i ? '' : ' class="nm"'}>${v == null ? '—' : '$' + (v * f).toFixed(2)}</b>`).join('')}</div>`;
+}
+function openNeedPage() {
+  if (peerUser) return toast('The Need List is for your own binders.', 'error');
+  $('need-page').hidden = false; document.body.style.overflow = 'hidden';
+  renderNeedPage();
+}
+function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; }
+function renderNeedPage() {
+  const page = $('need-page'); if (!page || page.hidden) return;
+  const list = needCards(), total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
+  $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
+  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated` : 'Nothing marked Need yet';
+  $('np-grid').innerHTML = list.length ? list.map((x, i) => `<div class="np-card" data-p="${x.p}" data-s="${x.s}">
+      <div class="np-img"><span class="np-rank">${i + 1}</span>${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
+      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
+      ${condRows(x.c.price)}
+    </div>`).join('')
+    : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
+}
+
 function exportNeededList() {
   const neededCards = [];
   getPagesArray().forEach(p => p.cards.forEach(c => {
@@ -3752,6 +3820,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
+  closeNeedPage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray();
   closePeerViewer(true);
