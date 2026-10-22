@@ -105,6 +105,9 @@
   .np-conds span { color: #71717a; }
   .np-conds b { text-align: right; color: #d4d4d8; font-weight: 600; }
   .np-conds b.nm { color: #34d399; font-weight: 800; }
+  .np-card { touch-action: pan-y; -webkit-touch-callout: none; }
+  .np-hole { opacity: .25; outline: 2px dashed #f43f5e; outline-offset: 2px; }
+  .np-ghost { position: fixed; z-index: 120; pointer-events: none; transform: scale(1.06) rotate(-2deg); box-shadow: 0 18px 40px rgba(0,0,0,.7); border-color: #f43f5e; opacity: .95; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
@@ -730,7 +733,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.1';
+const APP_VERSION = '2026-10-22.3';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2444,10 +2447,11 @@ function setupFirebaseListener(username) {
       S.layout = data.layout || '4x3';
       S.pages = normPages(data.pages);
       S.cover = data.cover || null;
+      S.needOrder = Array.isArray(data.needOrder) ? data.needOrder : Object.values(data.needOrder || {});
       S.cloud = { layout: S.layout, pages: JSON.parse(JSON.stringify(S.pages)) };
     } else {
       // Nothing stored yet: show an empty binder but do NOT write anything until the user adds a card
-      S.layout = '4x3'; S.cover = null;
+      S.layout = '4x3'; S.cover = null; S.needOrder = [];
       S.pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }];
       S.cloud = { layout: null, pages: [] };
     }
@@ -3373,10 +3377,21 @@ function exportBinderHTML() {
 }
 
 /* --- Need List page: every card marked Need in this binder, live (it redraws whenever the binder changes) --- */
+// Each Need card's key in the saved priority order: its card id (a second copy of the same card gets "#2")
 function needCards() {
-  const out = [];
-  getPagesArray().forEach((pg, p) => pg.cards.slice(0, cap()).forEach((c, s) => { if (c && c.status === 'needed') out.push({ c, p, s }); }));
-  return out;
+  const out = [], seen = {};
+  getPagesArray().forEach((pg, p) => pg.cards.slice(0, cap()).forEach((c, s) => {
+    if (!c || c.status !== 'needed') return;
+    const base = String(c.id || norm(c.name) + '|' + (c.number || '')), n = seen[base] = (seen[base] || 0) + 1;
+    out.push({ c, p, s, key: n > 1 ? base + '#' + n : base, i: out.length });
+  }));
+  // your priority order first; cards not ranked yet follow in binder order
+  const rank = new Map((S.needOrder || []).map((k, i) => [k, i]));
+  return out.sort((a, b) => (rank.has(a.key) ? rank.get(a.key) : 1e9 + a.i) - (rank.has(b.key) ? rank.get(b.key) : 1e9 + b.i));
+}
+function saveNeedOrder(keys) {
+  S.needOrder = keys;
+  db.ref('binders/' + currentUser + '/needOrder').set(keys).catch(() => toast('Couldn\'t save the order. Check your connection.', 'error'));
 }
 // Prices by condition, worked out from the Near Mint market price (the same rates as the Need export)
 const CONDITIONS = [['NM', 1], ['LP', 0.85], ['MP', 0.65], ['HP', 0.45], ['DMG', 0.30]];
@@ -3389,13 +3404,84 @@ function openNeedPage() {
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
   renderNeedPage();
 }
+/* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
+let npDrag = null;
+function npDown(e) {
+  const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag) return;
+  npDrag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', active: false };
+  if (npDrag.touch) npDrag.timer = setTimeout(npBegin, 320);
+  addEventListener('pointermove', npMove, { passive: false }); addEventListener('pointerup', npUp); addEventListener('pointercancel', npCancel);
+}
+function npBegin() {
+  const d = npDrag; if (!d || d.active) return;
+  d.active = true; clearTimeout(d.timer);
+  const r = d.el.getBoundingClientRect();
+  d.dx = d.x - r.left; d.dy = d.y - r.top;
+  const g = d.el.cloneNode(true); g.className = 'np-card np-ghost'; g.style.width = r.width + 'px';
+  document.body.appendChild(g); d.ghost = g; d.el.classList.add('np-hole');
+  npPlace(); if (navigator.vibrate) navigator.vibrate(12);
+  d.raf = requestAnimationFrame(npTick);
+}
+function npPlace() { const d = npDrag; if (d && d.ghost) { d.ghost.style.left = (d.x - d.dx) + 'px'; d.ghost.style.top = (d.y - d.dy) + 'px'; } }
+function npMove(e) {
+  const d = npDrag; if (!d || e.pointerId !== d.id) return;
+  d.x = e.clientX; d.y = e.clientY;
+  if (!d.active) {
+    const dist = Math.hypot(d.x - d.x0, d.y - d.y0);
+    if (d.touch) { if (dist > 10) npCancel(); } else if (dist > 5) npBegin();
+    return;
+  }
+  e.preventDefault(); npPlace(); npShift();
+}
+// Move the held card's spot in the grid to where the finger is: before a card when left of its middle, after it when right
+function npShift() {
+  const d = npDrag, hit = document.elementFromPoint(d.x, d.y), over = hit && hit.closest('#np-grid .np-card');
+  if (!over || over === d.el) return;
+  const r = over.getBoundingClientRect(), after = d.x > r.left + r.width / 2;
+  const ref = after ? over.nextSibling : over;
+  if (ref === d.el || (ref && ref.previousSibling === d.el) && !after) return;
+  $('np-grid').insertBefore(d.el, ref);
+  [...$('np-grid').children].forEach((c, i) => { const b = c.querySelector('.np-rank'); if (b) b.textContent = i + 1; });
+}
+function npTick() {
+  const d = npDrag; if (!d || !d.active) return;
+  const pg = $('need-page'), top = 110, bottom = innerHeight - 80;
+  if (d.y < top) pg.scrollTop -= Math.min(18, 4 + (top - d.y) / 5);
+  else if (d.y > bottom) pg.scrollTop += Math.min(18, 4 + (d.y - bottom) / 5);
+  npShift();
+  d.raf = requestAnimationFrame(npTick);
+}
+function npUp(e) {
+  const d = npDrag; if (!d || e.pointerId !== d.id) return;
+  const moved = d.active;
+  npCleanup();
+  if (moved) {
+    const keys = [...$('np-grid').querySelectorAll('.np-card')].map(c => c.dataset.key);
+    if (keys.join('|') !== needCards().map(x => x.key).join('|')) { saveNeedOrder(keys); toast('Priority saved'); }
+    renderNeedPage();
+  }
+}
+function npCancel() { npCleanup(); }
+function npCleanup() {
+  const d = npDrag; if (!d) return;
+  clearTimeout(d.timer); cancelAnimationFrame(d.raf);
+  if (d.ghost) d.ghost.remove(); d.el.classList.remove('np-hole');
+  removeEventListener('pointermove', npMove); removeEventListener('pointerup', npUp); removeEventListener('pointercancel', npCancel);
+  npDrag = null;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const g = $('np-grid'); if (!g) return;
+  g.addEventListener('pointerdown', npDown);
+  g.addEventListener('contextmenu', e => { if (npDrag) e.preventDefault(); });
+  $('need-page').addEventListener('touchmove', e => { if (npDrag && npDrag.active) e.preventDefault(); }, { passive: false });
+});
 function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; }
 function renderNeedPage() {
-  const page = $('need-page'); if (!page || page.hidden) return;
+  const page = $('need-page'); if (!page || page.hidden || npDrag) return;
   const list = needCards(), total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
-  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated` : 'Nothing marked Need yet';
-  $('np-grid').innerHTML = list.length ? list.map((x, i) => `<div class="np-card" data-p="${x.p}" data-s="${x.s}">
+  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated<br>Hold a card and drag it to set your priority` : 'Nothing marked Need yet';
+  $('np-grid').innerHTML = list.length ? list.map((x, i) => `<div class="np-card" data-p="${x.p}" data-s="${x.s}" data-key="${esc(x.key)}">
       <div class="np-img"><span class="np-rank">${i + 1}</span>${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
