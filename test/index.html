@@ -101,6 +101,10 @@
   .np-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .np-meta b { color: #34d399; flex: none; }
   .np-img .jp-tag { left: auto; right: 3px; top: 3px; }
+  .np-conds { display: grid; grid-template-columns: auto 1fr; gap: 1px .4rem; padding: .3rem .35rem; background: #09090b; border: 1px solid #27272a; border-radius: 6px; font: 500 .58rem/1.35 Inter, system-ui, sans-serif; }
+  .np-conds span { color: #71717a; }
+  .np-conds b { text-align: right; color: #d4d4d8; font-weight: 600; }
+  .np-conds b.nm { color: #34d399; font-weight: 800; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
@@ -330,7 +334,7 @@
   @media (prefers-reduced-motion: reduce) { .bk, .lb-cover, .lb-book, .lb-page, .lb-scene, #landing { transition: none !important; } .lb-dots.shake { animation: none; } }
 </style>
 </head>
-<body data-test="1" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans antialiased flex flex-col">
 <div style="position:fixed;top:max(4px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:200;background:#f59e0b;color:#111;font:800 10px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;padding:4px 8px;border-radius:999px;pointer-events:none">TEST VERSION · real data</div>
 
 <!-- Welcome screen: choose whose binder to open -->
@@ -3375,6 +3379,12 @@ function needCards() {
   getPagesArray().forEach((pg, p) => pg.cards.slice(0, cap()).forEach((c, s) => { if (c && c.status === 'needed') out.push({ c, p, s }); }));
   return out;
 }
+// Prices by condition, worked out from the Near Mint market price (the same rates as the Need export)
+const CONDITIONS = [['NM', 1], ['LP', 0.85], ['MP', 0.65], ['HP', 0.45], ['DMG', 0.30]];
+function condRows(price) {
+  const v = Number.isFinite(+price) && price != null ? +price : null;
+  return `<div class="np-conds">${CONDITIONS.map(([k, f], i) => `<span>${k}</span><b${i ? '' : ' class="nm"'}>${v == null ? '—' : '$' + (v * f).toFixed(2)}</b>`).join('')}</div>`;
+}
 function openNeedPage() {
   if (peerUser) return toast('The Need List is for your own binders.', 'error');
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
@@ -3385,11 +3395,12 @@ function renderNeedPage() {
   const page = $('need-page'); if (!page || page.hidden) return;
   const list = needCards(), total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
-  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market` : 'Nothing marked Need yet';
+  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated` : 'Nothing marked Need yet';
   $('np-grid').innerHTML = list.length ? list.map((x, i) => `<div class="np-card" data-p="${x.p}" data-s="${x.s}">
       <div class="np-img"><span class="np-rank">${i + 1}</span>${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
-      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span><b>${fmt(x.c.price)}</b></div>
+      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
+      ${condRows(x.c.price)}
     </div>`).join('')
     : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
 }
