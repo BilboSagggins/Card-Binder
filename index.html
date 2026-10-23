@@ -183,7 +183,13 @@
   .pc-acts { display: flex; flex-direction: column; gap: .35rem; }
   .pc-acts a, .pc-acts button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; text-align: center; white-space: nowrap; }
   .pc-acts a { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
-  .nw-games button { flex: 0 0 auto; }
+  .nw #nw-games { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; overflow: visible; }
+  .nw #nw-games button { padding: .42rem .2rem; font-size: .66rem; overflow: hidden; text-overflow: ellipsis; }
+  .nw #nw-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .3rem; overflow: visible; }
+  .nw #nw-tabs button { display: flex; flex-direction: column; align-items: center; gap: .18rem; border-radius: 12px; padding: .4rem .1rem .45rem; font-size: .66rem; overflow: hidden; text-overflow: ellipsis; }
+  .nw #nw-tabs button span { position: relative; font-size: 1rem; line-height: 1; }
+  .nw #nw-tabs button span i { position: absolute; top: -.35rem; left: 100%; margin-left: -.1rem; padding: .08rem .25rem; border-radius: 999px; background: #3f3f46; color: #fff; font: 800 .5rem/1 Inter, system-ui, sans-serif; opacity: 1; }
+  .nw #nw-tabs button[aria-selected="true"] span i { background: #312e81; }
   /* a store lottery / drawing is open (or about to open): the News buttons and the Raffles tab light up */
   .has-raffle { position: relative; border-color: #f59e0b !important; box-shadow: 0 0 0 1px #f59e0b, 0 0 14px rgba(245,158,11,.45); animation: raffle-glow 2.4s ease-in-out infinite; }
   @keyframes raffle-glow { 50% { box-shadow: 0 0 0 1px #fbbf24, 0 0 22px rgba(251,191,36,.7); } }
@@ -4149,6 +4155,7 @@ let PC = { tab: 'all', ready: false, open: null }, pcTimer = null;
 /* ===== News: upcoming sets & products, store lotteries / drawings, news and card previews ===== */
 const NW = { data: null, game: 'all', tab: null, loading: null };
 const NW_GAMES = [['all', 'All'], ['pokemon', 'Pokémon'], ['onepiece', 'One Piece'], ['fusionworld', 'Fusion World'], ['dbmasters', 'DB Masters'], ['naruto', 'Naruto'], ['riftbound', 'Riftbound']];
+const nwIsVideo = x => !!x.video;
 const NW_COLORS = { pokemon: '#ca8a04', 'pokemon-jp': '#b45309', onepiece: '#dc2626', fusionworld: '#ea580c', dbmasters: '#2563eb', naruto: '#f97316', riftbound: '#0891b2' };
 const NW_LABELS = { pokemon: 'Pokémon', 'pokemon-jp': 'Pokémon JP', onepiece: 'One Piece', fusionworld: 'Fusion World', dbmasters: 'DB Masters', naruto: 'Naruto', riftbound: 'Riftbound' };
 const NW_EMOJI = { pokemon: '⚡', 'pokemon-jp': '🇯🇵', onepiece: '🏴‍☠️', fusionworld: '🐉', dbmasters: '🐉', naruto: '🍥', riftbound: '⚔️' };
@@ -4252,10 +4259,12 @@ function nwTabsPaint() {
   const open = nwRaffles().filter(r => nwStatus(r).k !== 'closed').length;
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const soon = (d.releases || []).filter(r => nwPick(r.game) && nwDay(r.date) >= today).length;
-  const tabs = [['raffles', `🎟️ Raffles`, open], ['soon', '📅 Coming soon', soon], ['previews', '🃏 Previews', items.filter(x => x.kind === 'preview').length], ['news', '📰 All news', items.length]];
+  const tabs = [['raffles', '🎟️', 'Raffles', open], ['soon', '📅', 'Coming', soon], ['previews', '🃏', 'Previews', items.filter(x => x.kind === 'preview' && !nwIsVideo(x)).length],
+    ['videos', '🎬', 'Reveals', items.filter(nwIsVideo).length]];
+  if (!tabs.some(t => t[0] === NW.tab)) NW.tab = 'soon';
   $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
   const live = nwUnseen().filter(r => nwPick(r.game)).length;
-  $('nw-tabs').innerHTML = tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()">${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
+  $('nw-tabs').innerHTML = tabs.map(([k, ic, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()"><span>${ic}${n ? `<i>${n}</i>` : ''}</span>${l}</button>`).join('');
   paintNewsBadge();
 }
 const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}">${esc(NW_LABELS[g] || g)}</span>`;
@@ -4297,8 +4306,8 @@ function nwPaint() {
           </div></div></div>`;
     }).join('') || '<p class="pc-note">No upcoming releases listed for this game yet.</p>';
   } else {
-    const items = (d.items || []).filter(x => nwPick(x.game) && (NW.tab !== 'previews' || x.kind === 'preview'));
-    const KIND = { preview: '🃏 Preview', release: '📦 Release', raffle: '🎟️ Drawing', news: '' };
+    const items = (d.items || []).filter(x => nwPick(x.game) && (NW.tab === 'videos' ? nwIsVideo(x) : !nwIsVideo(x) && x.kind === 'preview'));
+    const KIND = { preview: '🃏 Preview', video: '🎬 Reveal video', release: '📦 Release', raffle: '🎟️ Drawing', news: '' };
     h += items.slice(0, 150).map(x => {
       const vid = x.video && /^[\w-]{6,20}$/.test(x.video) ? x.video : '';
       const big = vid || (NW.tab === 'previews' && x.imgs && x.imgs.length);
@@ -4312,7 +4321,7 @@ function nwPaint() {
         <div class="nw-links">${nwLink(x.url, vid ? 'Open on YouTube ↗' : 'Read ↗', 'alt')}</div>
         ${big ? '' : '</div></div>'}
       </div>`;
-    }).join('') || `<p class="pc-note">${NW.tab === 'previews' ? 'No card previews for this game in the last few weeks.' : 'No news for this game yet.'}</p>`;
+    }).join('') || `<p class="pc-note">${NW.tab === 'previews' ? 'No card previews for this game in the last few weeks.' : 'No card reveal videos for this game lately. They come from the official YouTube channels.'}</p>`;
   }
   box.innerHTML = h; box.scrollTop = 0;
 }
