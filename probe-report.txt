@@ -1,20 +1,23 @@
-
-=== As of 2026-08-05: Google News, the job's two Riftbound searches (past 30 days) -> 31 items; raffle-type:
-   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
-   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
-
-=== As of 2026-08-13: Google News, the job's two Riftbound searches (past 30 days) -> 33 items; raffle-type:
-   2026-08-12 opens=2026-08-14 closes=- alert=YES | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 (Resell Calendar)
-   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
-   2026-08-13 opens=- closes=- alert=no | Everything you need to know about the T1 Raffle in Riftbound (The Escapist)
-   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
-
-=== As of 2026-08-15: Google News, the job's two Riftbound searches (past 30 days) -> 33 items; raffle-type:
-   2026-08-12 opens=2026-08-14 closes=- alert=YES | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 (Resell Calendar)
-   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
-   2026-08-13 opens=- closes=- alert=no | Everything you need to know about the T1 Raffle in Riftbound (The Escapist)
-   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
-
-=== Riot's T1 article: counts as a drawing: True | opens  closes  | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/']]
-   summary: Announced  on August 3, 2026 : The  T1 2025 Worlds Champion Signature Edition drawing will open on Friday, August.
-errors: []
+#### X
+ERR https://syndication.twitter.com/srv/timeline-profile/screen-name/narutotcg_eng HTTP Error 429: Too Many Requests
+ERR https://x.com/narutotcg_eng HTTP Error 403: Forbidden
+ERR https://nitter.net/narutotcg_eng/rss HTTP Error 410: Gone
+ERR https://rss.app/feeds/narutotcg_eng HTTP Error 400: Bad Request
+ERR https://syndication.twitter.com/srv/timeline-profile/screen-name/ONEPIECE_tcg_EN HTTP Error 429: Too Many Requests
+ERR https://x.com/ONEPIECE_tcg_EN HTTP Error 403: Forbidden
+ERR https://nitter.net/ONEPIECE_tcg_EN/rss HTTP Error 410: Gone
+ERR https://rss.app/feeds/ONEPIECE_tcg_EN HTTP Error 400: Bad Request
+#### official sites -> youtube links
+200 https://en.onepiece-cardgame.com/ youtube: ['https://www.youtube.com/channel/UCT5u6XqA2oaSqxsXKp3zubw'] x: ['https://twitter.com/ONEPIECE_tcg_EN']
+200 https://www.dbs-cardgame.com/fw/en/ youtube: ['https://www.youtube.com/@BANDAICARDGAMES'] x: ['https://twitter.com/dbfw_cardgameen']
+200 https://www.dbs-cardgame.com/us-en/ youtube: [] x: ['https://twitter.com/dbs_cardgame']
+200 https://riftbound.leagueoflegends.com/en-us/ youtube: [] x: []
+200 https://www.narutocardgame.com/ youtube: [] x: []
+ERR https://narutocardgame.com/en/ HTTP Error 404: Not Found
+200 https://www.naruto-cardgame.com/en/ youtube: ['https://www.youtube.com/@NARUTO_TCG_EN'] x: ['https://x.com/narutotcg_eng']
+#### youtube search -> channels
+ONE PIECE CARD GAME official -> [('UCMhxrrst-3oDFY2oWJGd29Q', '【公式】ONE PIECEカードゲーム チャンネル'), ('UCT5u6XqA2oaSqxsXKp3zubw', 'Official Bandai Card Games Channel'), ('UCwz6BWiifRgjPIVE8QdNEHA', 'ONE PIECE Official - ENG'), ('UCefuFOfO8-ZgLNCxNA5ujpQ', 'Play Bandai Card Games'), ('UCXu4_zUCacLrBWA_pv6kcCg', 'One Piece Card Game')] ['/@ONEPIECE-mt6ui', '/@BANDAICARDGAMES', '/@OnePieceOfficialENG', '/@playbandaicardgames', '/@OnePieceCardGame']
+Riftbound League of Legends TCG -> [('UCJhk1l0uxVz0eH6nGj5sJMA', 'RUNEBOYS - Riftbound TCG'), ('UC2XFXxT6roafFSDctppjxMQ', 'Papy TCG Riftbound'), ('UC9wl3hmnC9IQEKk9SL0tyVg', 'Rapsolo - Riftbound TCG'), ('UCjrU2FHeEIQFP3GOcCOiuVw', 'Riftbound'), ('UCzX3pcdcKh-2CYJYL9502zA', 'The Rifty - Riftbound')] ['/@RUNEBOYS-YT', '/@PapyTCGRiftbound', '/@RapsoloRiftbound', '/@riftbound', '/@The_RiftyRB']
+Dragon Ball Super Card Game Fusion World official -> [('UCN59xsRKGm-LFoYZZ-YsyBw', 'Dragon Ball Super Card Game Fusion World - Topic'), ('UC5R-FPE4xWGiV_lEM86iLAg', 'JPhanta S'), ('UCA0JHno3DPKYtjj2O4JUZvw', 'CitgoGods'), ('UCHEu6d8EkIdoOboeyDpru9A', 'FusionWorldTCG'), ('UCm5IRy5nq0JUepNV7A7aymA', 'Saiyans l Dragon Ball Fusion World Card Game ')] ['/@JPhantaS', '/@CitgoGods', '/@FusionWorldTCG', '/@dbfw_cardgame', '/@DBSCGFW_Geneva']
+Dragon Ball Super Card Game official -> [('UCxIcy-6u2LWl9uIwkas_VmA', 'Dragonball Super Card Game OCTGN'), ('UCT5u6XqA2oaSqxsXKp3zubw', 'Official Bandai Card Games Channel'), ('UC7gUEhHqeyhS0V55MSlZvCA', 'Dragon Ball Super Card Game Portugal'), ('UCFE9F-RnbkDBmztFzucS_Vw', 'JirensRevolution'), ('UCN59xsRKGm-LFoYZZ-YsyBw', 'Dragon Ball Super Card Game Fusion World - Topic')] ['/@dragonballsupercardgameoct4119', '/@BANDAICARDGAMES', '/@dragonballsupercardgamepor4131', '/@JirensRevolution', '/@juno_xz']
+NARUTO CARD GAME Bandai official -> [('UCZVYjENKJSXMke-dYUxCLvw', '【OFFICIAL】NARUTO CARD GAME English Version'), ('UCpSXFg3z6bJmmVAHBT3SNVA', 'Naruto Card Game'), ('UC0T5olez4ijreNpG224qGvA', 'Sᴀɴᴅ Dᴇᴍᴏɴ Gᴀᴀʀᴀ TCG'), ('UCXR1mDVhX22JEnDpKnngVAw', 'Shinobi Connor'), ('UCB8fPav64Vt3d4tZpAsq3Gg', 'Grasengan | Naruto TCG FR |')] ['/@NARUTO_TCG_EN', '/@NarutoCardGame', '/@SDGTCG', '/@ShinobiConnor', '/@Grasengan']
