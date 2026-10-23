@@ -199,6 +199,8 @@ def dates_in(s, year_hint=None):
 def window(sentences, year_hint=None):
     """(opens, closes) of a drawing: the date right after open/begin/start/runs and the one right after close/end/until."""
     opens = closes = None
+    # "Announced on August 3" / "Updated 8/12" are post dates, not the entry window
+    sentences = [re.sub(r"\b(announced|updated|posted|published|edited)\b\s*(on)?\s*:?\s*([A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)", " ", x, flags=re.I) for x in sentences]
     blob = " \n ".join(sentences)
     for m in re.finditer(r"\b(opens?|opening|begins?|starts?|starting|goes live|live on|runs?|running|from)\b|\b(clos(?:es|ing|e)|ends?|ending|deadline|until|through)\b", blob, re.I):
         before = blob[max(0, m.start() - 70):m.start()]
@@ -418,6 +420,12 @@ GOOGLE = [
     ("dbmasters", '"Dragon Ball Super Card Game" Masters'),
     ("naruto", '"Naruto Card Game" OR "Naruto TCG"'),
     ("riftbound", 'Riftbound'),
+    # drawings / lotteries get their own searches so they aren't crowded out by other news
+    ("pokemon", '"Pokemon Center" OR "Pokémon TCG" (lottery OR raffle OR drawing)'),
+    ("onepiece", '"One Piece Card Game" OR "One Piece TCG" (lottery OR raffle OR drawing)'),
+    ("fusionworld", '"Fusion World" (lottery OR raffle OR drawing)'),
+    ("naruto", '"Naruto Card Game" (lottery OR raffle OR drawing)'),
+    ("riftbound", 'Riftbound (drawing OR lottery OR raffle)'),
 ]
 DEAL_RE = re.compile(r"\bdeals?\b|\bsave\b|\bprice\b|discount|% off|under market|best-ever|\bon (amazon|walmart|target)\b|\bat (amazon|walmart|target)\b|restock", re.I)
 CARDISH_RE = re.compile(r"card|tcg|booster|deck|\bpack|\bbox\b|promo|riftbound|\bset\b|collection|tournament|championship|prerelease|pre-rift", re.I)

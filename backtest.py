@@ -6,15 +6,20 @@ def p(*a): out.append(" ".join(str(x) for x in a))
 for day in ["2026-08-05", "2026-08-13", "2026-08-15"]:
     now = dt.datetime.fromisoformat(day + "T18:00:00+00:00"); bn.NOW, bn.TODAY = now, now.date()
     a = (now - dt.timedelta(days=30)).date()
-    url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"Riftbound after:{a} before:{now.date() + dt.timedelta(days=1)}", "hl": "en-US", "gl": "US", "ceid": "US:en"})
-    xml = bn.get(url, browser=True)
     items = []
-    for it in bn.rss_items(xml)[:25]:
+    xml = ""
+    for q in [q for g, q in bn.GOOGLE if g == "riftbound"]:
+        url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"{q} after:{a} before:{now.date() + dt.timedelta(days=1)}", "hl": "en-US", "gl": "US", "ceid": "US:en"})
+        xml += "".join("<item>" + x + "</item>" for x in bn.rss_items(bn.get(url, browser=True))[:25])
+    seen = set()
+    for it in bn.rss_items(xml):
+        if bn.tag(it, "title") in seen: continue
+        seen.add(bn.tag(it, "title"))
         full = bn.text(bn.tag(it, "title")); src = bn.text(bn.tag(it, "source"))
         title = full.rsplit(" - ", 1)[0] if src and full.endswith(" - " + src) else full
         if bn.SKIP_SRC.search(src) or bn.DEAL_RE.search(title) or not bn.CARDISH_RE.search(title + " " + src): continue
         items.append({"game": "riftbound", "title": title, "url": "", "date": bn.iso(bn.rss_date(bn.tag(it, "pubDate"))), "src": src, "kind": bn.kind_of(title), "summary": ""})
-    p(f"\n=== As of {day}: Google News 'Riftbound' (job's query, past 30 days) -> {len(items)} items; raffle-type:")
+    p(f"\n=== As of {day}: Google News, the job's two Riftbound searches (past 30 days) -> {len(items)} items; raffle-type:")
     for it in items:
         if it["kind"] == "raffle" and not re.search(r"\bfaq\b", it["title"], re.I):
             posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
