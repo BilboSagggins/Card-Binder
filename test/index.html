@@ -4160,7 +4160,7 @@ async function openNewsPage() {
 }
 // Lotteries / drawings someone can still enter: open now, or opening soon
 function nwLiveRaffles() {
-  return ((NW.data && NW.data.raffles) || []).filter(r => { const k = nwStatus(r).k; return k === 'open' || (k === 'soon' && (r.opens || r.closes)); });
+  return ((NW.data && NW.data.raffles) || []).filter(r => nwStatus(r).k !== 'closed');   // official only, so a fresh announcement without dates counts too
 }
 function paintNewsBadge() {
   const live = nwLiveRaffles(), open = live.filter(r => nwStatus(r).k === 'open').length;
@@ -4217,7 +4217,7 @@ function nwPaint() {
         ${r.event ? `<p class="nw-p"><b>Event / release:</b> ${esc(r.event)}</p>` : ''}
         ${r.summary ? `<p class="nw-sum" id="nw-s${i}">${esc(r.summary)}</p><button type="button" class="nw-more" onclick="const p=$('nw-s${i}');p.classList.toggle('full');this.textContent=p.classList.contains('full')?'Less':'More'">More</button>` : ''}
         <div class="nw-links">${(r.entries || []).map(([l, u]) => nwLink(u, '🎟️ ' + esc(l))).join('')}${nwLink(r.url, 'Full details ↗', 'alt')}</div>
-      </div>`).join('') : '<p class="pc-note">No store lotteries or drawings right now. New ones show up here within a few hours of being announced.</p>';
+      </div>`).join('') : '<p class="pc-note">No official store lotteries or drawings right now. New ones from the publishers and official shops show up here within a few hours of being announced.</p>';
   } else if (NW.tab === 'soon') {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const all = (d.releases || []).filter(r => nwPick(r.game)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
