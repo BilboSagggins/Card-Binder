@@ -184,6 +184,14 @@
   .pc-acts a, .pc-acts button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; text-align: center; white-space: nowrap; }
   .pc-acts a { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
   .nw-games button { flex: 0 0 auto; }
+  /* a store lottery / drawing is open (or about to open): the News buttons and the Raffles tab light up */
+  .has-raffle { position: relative; border-color: #f59e0b !important; box-shadow: 0 0 0 1px #f59e0b, 0 0 14px rgba(245,158,11,.45); animation: raffle-glow 2.4s ease-in-out infinite; }
+  @keyframes raffle-glow { 50% { box-shadow: 0 0 0 1px #fbbf24, 0 0 22px rgba(251,191,36,.7); } }
+  @media (prefers-reduced-motion: reduce) { .has-raffle { animation: none; } }
+  .nw-alert { position: absolute; top: -.5rem; right: -.45rem; z-index: 2; padding: .2rem .38rem; border-radius: 999px; background: #f59e0b; color: #111; font: 900 .6rem/1 Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
+  .tt.has-raffle { overflow: visible; }
+  #nw-tabs button.hot { background: #f59e0b; border-color: #fbbf24; color: #111; }
+  #nw-tabs button.hot[aria-selected="true"] { background: #d97706; color: #fff; }
   .nw-games button[aria-selected="true"] { background: #7c3aed; border-color: #a78bfa; }
   .nw-list { max-width: 44rem; margin: 0 auto; padding: .7rem .7rem 3rem; display: flex; flex-direction: column; gap: .6rem; }
   .nw-h { margin: .6rem .2rem 0; font: 800 .68rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #a1a1aa; }
@@ -657,7 +665,7 @@
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
         <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
-        <button type="button" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
+        <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
 
       <!-- General Utility Buttons -->
@@ -4134,7 +4142,7 @@ function loadNews(force) {
   if (NW.loading) return NW.loading;
   const urls = ['https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/news/news.json?t=' + Math.floor(Date.now() / 600000), 'https://bilbosagggins.github.io/Card-Binder/news/news.json'];
   NW.loading = (async () => {
-    for (const u of urls) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) { NW.data = await r.json(); break; } } catch (e) {} }
+    for (const u of urls) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) { NW.data = await r.json(); NW.at = Date.now(); break; } } catch (e) {} }
     NW.loading = null; return NW.data;
   })();
   return NW.loading;
@@ -4146,8 +4154,22 @@ async function openNewsPage() {
   if (!d) { $('nw-sub').textContent = 'Couldn\u2019t load the news'; $('nw-list').innerHTML = '<p class="pc-note">The news list couldn\u2019t be loaded. Check your connection and try again.</p>'; return; }
   const when = d.updated ? new Date(d.updated) : null;
   $('nw-sub').textContent = when ? `Updated ${when.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · refreshed every few hours` : '';
-  if (!NW.tab) NW.tab = nwRaffles().some(r => nwStatus(r).k !== 'closed') ? 'raffles' : 'soon';
+  if (!NW.tab) NW.tab = nwLiveRaffles().some(r => nwPick(r.game)) ? 'raffles' : 'soon';
   nwPaint();
+}
+// Lotteries / drawings someone can still enter: open now, or opening soon
+function nwLiveRaffles() {
+  return ((NW.data && NW.data.raffles) || []).filter(r => { const k = nwStatus(r).k; return k === 'open' || (k === 'soon' && (r.opens || r.closes)); });
+}
+function paintNewsBadge() {
+  const live = nwLiveRaffles(), open = live.filter(r => nwStatus(r).k === 'open').length;
+  ['who-news', 'tt-news'].forEach(id => {
+    const b = $(id); if (!b) return;
+    b.classList.toggle('has-raffle', live.length > 0);
+    let a = b.querySelector('.nw-alert'); if (live.length && !a) { a = document.createElement('i'); a.className = 'nw-alert'; b.appendChild(a); }
+    if (a) { if (live.length) a.textContent = `🎟️ ${live.length}`; else a.remove(); }
+    b.title = live.length ? `${open ? `${open} store lottery/drawing open now` : 'A store lottery/drawing opens soon'} · upcoming sets and card previews` : 'Upcoming sets, store lotteries and card previews';
+  });
 }
 function closeNewsPage() { const p = $('news-page'); if (p) p.hidden = true; document.body.style.overflow = ''; }
 const nwPick = g => NW.game === 'all' || g === NW.game || (NW.game === 'pokemon' && g === 'pokemon-jp');
@@ -4164,6 +4186,7 @@ function nwStatus(r) {
   if (c && today > c) return { k: 'closed', t: `Closed ${nwShort(c)}` };
   if (o && today < o) return { k: 'soon', t: `Opens ${nwShort(o)}${c && +c !== +o ? ` · closes ${nwShort(c)}` : ''}` };
   if (c) return { k: 'open', t: `Open now · closes ${nwShort(c)}` };
+  if (o) return (today - o) / 86400000 <= 7 ? { k: 'open', t: `Opened ${nwShort(o)} · check closing date` } : { k: 'closed', t: `Opened ${nwShort(o)}` };
   const age = r.posted ? (Date.now() - new Date(r.posted)) / 86400000 : 99;
   return age > 30 ? { k: 'closed', t: `Posted ${nwAgo(r.posted)}` } : { k: 'soon', t: `Announced ${nwAgo(r.posted)} · check dates` };
 }
@@ -4174,7 +4197,9 @@ function nwTabsPaint() {
   const soon = (d.releases || []).filter(r => nwPick(r.game) && nwDay(r.date) >= today).length;
   const tabs = [['raffles', `🎟️ Raffles`, open], ['soon', '📅 Coming soon', soon], ['previews', '🃏 Previews', items.filter(x => x.kind === 'preview').length], ['news', '📰 All news', items.length]];
   $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
-  $('nw-tabs').innerHTML = tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}" onclick="NW.tab='${k}';nwPaint()">${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
+  const live = nwLiveRaffles().filter(r => nwPick(r.game)).length;
+  $('nw-tabs').innerHTML = tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()">${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
+  paintNewsBadge();
 }
 const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}">${esc(NW_LABELS[g] || g)}</span>`;
 const nwLink = (u, label, cls) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${label}</a>`;
@@ -5538,6 +5563,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || Date.now() - lastVersionCheck < 60000) return;
   if (dragSt || npDrag || (typeof trayDrag !== 'undefined' && trayDrag)) return;   // never in the middle of a drag
   lastVersionCheck = Date.now(); checkForNewVersion();
+  if (!NW.at || Date.now() - NW.at > 30 * 60000) loadNews(true).then(paintNewsBadge).catch(() => {});
 });
 function checkForNewVersion() {
   return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -5595,6 +5621,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (SIGN_IN_MODE === 'email') startEmailAuth();
   showLanding();
   revealWhenReady(versionCheck);
+  setTimeout(() => loadNews().then(paintNewsBadge).catch(() => {}), 2500);   // light up News when a lottery is open
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
   db.ref('.info/connected').on('value', s => {
     clearTimeout(offlineTimer);
