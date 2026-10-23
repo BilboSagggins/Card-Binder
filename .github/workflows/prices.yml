@@ -25,10 +25,24 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Install 7-Zip (for the 7-day price archive)
+        run: command -v 7z || (sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full)
+      - name: Bring back the last two weeks of daily prices (for the 7-day spike check)
+        uses: actions/cache/restore@v4
+        with:
+          path: .price-history
+          key: price-history-${{ github.run_id }}
+          restore-keys: price-history-
       - name: Build price lists
         env:
           CARDTRADER_TOKEN: ${{ secrets.CARDTRADER_TOKEN }}
         run: python3 scripts/build-prices.py
+      - name: Keep today's prices for next week
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .price-history
+          key: price-history-${{ github.run_id }}
       - name: Save them to the site
         run: |
           git config user.name "github-actions[bot]"

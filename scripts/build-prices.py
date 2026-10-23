@@ -61,6 +61,7 @@ def build(game, cats):
 
 
 SEALED = {}
+CURRENT = {}   # productId -> today's price (cards and sealed), for the 7-day spike check
 # Details only single cards have
 CARD_FIELDS = ("Rarity", "Card Type", "CardType", "HP", "Stage", "Attack 1", "Card Text", "Weakness", "Resistance", "Retreat Cost", "Cost", "Power", "Counterplus", "Color", "Life")
 # Not sealed product, even though they have no card number
@@ -110,12 +111,14 @@ def add_category(game, cat, out, sealed):
                     continue
                 if name and not NOT_SEALED.search(name):
                     sealed["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, gid, sealed_type(name)]
+                    CURRENT[str(p["productId"])] = sealed["p"][str(p["productId"])][0]
                     kept_sealed += 1
                 continue
             name = p.get("name") or ""
             if name.endswith(" - " + number):
                 name = name[: -len(" - " + number)]
             out["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, number, gid, (ext.get("Rarity") or "").strip()]
+            CURRENT[str(p["productId"])] = out["p"][str(p["productId"])][0]
             kept += 1
         if kept_sealed:
             sealed["groups"][str(gid)] = g.get("name") or ""
@@ -184,6 +187,90 @@ def build_cardtrader():
     return out
 
 
+# --- 7-day price spikes: compare today's prices with TCGCSV's daily archive from a week ago
+#     prices/spikes.json = { updated, from: "YYYY-MM-DD", rise: 0.2, p: { productId: [price then, price now] } }
+SPIKE = 0.20
+
+
+SPIKE_LOG = []
+
+
+def slog(msg):
+    SPIKE_LOG.append(msg); print("  " + msg, flush=True)
+
+
+HIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".price-history")   # kept in the Actions cache, not in the repo
+
+
+def baseline_from_history(today):
+    """Prices from our own daily snapshots, 7 to 9 days back."""
+    import datetime
+    for back in (7, 8, 9):
+        day = (today - datetime.timedelta(days=back)).isoformat()
+        path = os.path.join(HIST, day + ".json")
+        if os.path.exists(path):
+            try:
+                return day, json.load(open(path))
+            except Exception as e:
+                slog(f"history {day}: unreadable ({e})")
+    return None, None
+
+
+def baseline_from_archive(today):
+    """TCGCSV's daily archive from a week ago (may be refused from GitHub's servers)."""
+    import datetime, glob, shutil, subprocess, tempfile
+    tool = shutil.which("7z") or shutil.which("7zz") or shutil.which("7za")
+    if not tool:
+        slog("no 7z tool for the archive"); return None, None
+    cats = sorted({c for cs in GAMES.values() for c in cs})
+    for back in (7, 8):
+        day = (today - datetime.timedelta(days=back)).isoformat()
+        work = tempfile.mkdtemp(); arc = os.path.join(work, "prices.7z")
+        r = subprocess.run(["curl", "-fsSL", "--max-time", "300", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+                            "-o", arc, f"https://tcgcsv.com/archive/tcgplayer/prices-{day}.ppmd.7z"], capture_output=True, text=True)
+        if r.returncode != 0 or not os.path.exists(arc):
+            slog(f"archive {day}: download failed ({r.returncode}: {r.stderr.strip()[-120:]})"); shutil.rmtree(work, ignore_errors=True); continue
+        subprocess.run([tool, "x", "-y", f"-o{work}", arc] + [f"{day}/{c}/*" for c in cats], check=False, capture_output=True)
+        then = {}
+        for path in glob.glob(os.path.join(work, day, "*", "*", "prices")):
+            try:
+                rows = json.load(open(path)).get("results") or []
+            except Exception:
+                continue
+            by = {}
+            for x in rows:
+                by.setdefault(x["productId"], []).append(x)
+            for pid, rs in by.items():
+                then[str(pid)] = pick_price(rs)
+        shutil.rmtree(work, ignore_errors=True)
+        slog(f"archive {day}: {len(then)} prices")
+        if len(then) >= 1000:
+            return day, then
+    return None, None
+
+
+def build_spikes():
+    import datetime
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    # remember today's prices for next week's comparison, and forget snapshots older than two weeks
+    os.makedirs(HIST, exist_ok=True)
+    with open(os.path.join(HIST, today.isoformat() + ".json"), "w") as f:
+        json.dump({k: v for k, v in CURRENT.items() if v is not None}, f, separators=(",", ":"))
+    for name in os.listdir(HIST):
+        if name.endswith(".json") and name[:10] < (today - datetime.timedelta(days=14)).isoformat():
+            os.remove(os.path.join(HIST, name))
+    slog(f"history: {sorted(n[:10] for n in os.listdir(HIST))}")
+    day, then = baseline_from_history(today)
+    if not then:
+        day, then = baseline_from_archive(today)
+    if not then:
+        slog("no prices from a week ago yet; spikes start once a week of history is saved"); return None
+    spikes = {pid: [old, CURRENT[pid]] for pid, old in then.items()
+              if old and old > 0 and CURRENT.get(pid) is not None and CURRENT[pid] >= old * (1 + SPIKE)}
+    slog(f"{len(spikes)} products up {int(SPIKE * 100)}%+ since {day} (of {len(then)} compared, {len(CURRENT)} today)")
+    return {"updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "from": day, "rise": SPIKE, "p": spikes}
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = [(g, (lambda g=g, c=c: build(g, c))) for g, c in GAMES.items()] + [("pokemon-zh", build_cardtrader)]
@@ -209,6 +296,16 @@ def main():
             for e in sealed["p"].values():
                 types[e[3]] = types.get(e[3], 0) + 1
             print(f"  wrote {len(sealed['p'])} {game} sealed products to {os.path.relpath(spath)}: {types}", flush=True)
+    print("Checking 7-day price spikes…", flush=True)
+    try:
+        sp = build_spikes()
+    except Exception as e:
+        sp = None; slog(f"spike check failed: {e!r}")
+    if sp:
+        with open(os.path.join(OUT, "spikes.json"), "w", encoding="utf-8") as f:
+            json.dump(sp, f, separators=(",", ":"))
+    with open(os.path.join(OUT, "spikes-log.txt"), "w", encoding="utf-8") as f:
+        f.write("\n".join(SPIKE_LOG) + "\n")
 
 
 if __name__ == "__main__":
