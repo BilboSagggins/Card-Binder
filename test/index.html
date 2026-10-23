@@ -192,6 +192,13 @@
   .scan-fix input { width: 100%; min-width: 0; box-sizing: border-box; }
   .scan-fix button { grid-column: 1 / -1; }
   .scan-tip { margin: 0; font: 500 .66rem/1.35 Inter, system-ui, sans-serif; color: #71717a; }
+  /* Picking several search results */
+  #results > div.picked { border-color: #10b981 !important; box-shadow: 0 0 0 2px #10b981 inset; }
+  .pick-bar { display: flex; gap: .5rem; padding: .6rem .75rem; border-top: 1px solid #27272a; background: #052e16; }
+  .pick-bar[hidden] { display: none; }
+  .pick-bar button { appearance: none; border: 0; border-radius: 10px; padding: .75rem .9rem; font: 800 .8rem/1 Inter, system-ui, sans-serif; }
+  .pick-bar .pb-clear { background: #27272a; color: #d4d4d8; }
+  .pick-bar .pb-add { flex: 1; background: #10b981; color: #022c22; }
   /* Trade picker */
   .tk { z-index: 62; padding-bottom: 5rem; }
   .pc { z-index: 61; }
@@ -767,6 +774,8 @@
       </div>
     </div>
 
+    <!-- Picked cards: keep searching and picking, then add them all at once -->
+    <div id="pick-bar" class="pick-bar" hidden><button type="button" class="pb-clear" onclick="clearPicks()">Clear</button><button type="button" id="pick-add" class="pb-add" onclick="addPicks()"></button></div>
     <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex justify-between text-xs text-zinc-400">
       <span>Target pocket: <b id="tgt" class="text-indigo-400"></b></span>
       <span>Data: TCGdex · Prices: TCGplayer</span>
@@ -948,7 +957,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.14';
+const APP_VERSION = '2026-10-23.17';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2369,18 +2378,9 @@ function renderResults(cards, append) {
     el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden ${card.sealed ? 'bg-white' : 'bg-zinc-900'} mb-2">${imgTag(card.thumb, card.alts, card.name, `w-full h-full ${card.sealed ? 'object-contain p-1' : 'object-cover'} group-hover:scale-105 transition duration-300`)}</div>
       <h4 class="font-bold text-xs ${card.sealed ? 'sealed-name' : 'truncate'}">${esc(card.name)}</h4>
       <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${langTag(card, 'jp-inline')}${card.lang && card.lang !== 'en' ? ' ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
-      <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
-    el.onclick = () => { 
-      if (tradeSide) { const side = tradeSide; closeSearch(); return addTradeCard(side, card); }
-      if (sealedAdd) { closeSearch(); return addSealedOwned(card); }
-      card.status = addStatus; 
-      const pages = getPagesArray();
-      pages[target.p].cards[target.s] = card; 
-      saveActivePages(pages); 
-      render(); 
-      closeSearch(); 
-      toast('Added ' + card.name); 
-    };
+      <div class="pick-btn mt-2 py-1.5 rounded-lg text-xs font-semibold text-center"></div>`;
+    paintPick(el, card);
+    el.onclick = () => { togglePick(card); paintPick(el, card); };
     box.appendChild(el); priceEls.set(card, el.querySelector('[data-p]'));
   });
   const left = pending ? pending.items.length - pending.shown : 0;
@@ -2390,8 +2390,56 @@ function renderResults(cards, append) {
   }
 }
 
+/* Picking several results: tap to pick (✓), tap again to drop; picks stay while you search again; one button adds them all.
+   Each pick keeps the Owned/Need choice it was picked with. */
+let picks = [];
+const pickKey = c => String(c.id || '') + '|' + (c.tcgPid || c.ctId || '') + '|' + (c.lang || '');
+function togglePick(card) {
+  const k = pickKey(card), i = picks.findIndex(x => x.k === k);
+  if (i >= 0) picks.splice(i, 1); else picks.push({ k, card, status: addStatus });
+  paintPickBar();
+}
+function paintPick(el, card) {
+  const p = picks.find(x => x.k === pickKey(card)), b = el.querySelector('.pick-btn');
+  el.classList.toggle('picked', !!p);
+  b.className = `pick-btn mt-2 py-1.5 rounded-lg text-xs font-semibold text-center ${p ? 'bg-emerald-600 text-white' : 'bg-indigo-600'}`;
+  b.textContent = p ? `✓ Picked${tradeSide || sealedAdd ? '' : ` (${p.status === 'needed' ? 'NEED' : 'OWNED'})`}` : `➕ Pick${tradeSide || sealedAdd ? '' : ` (${addStatus === 'needed' ? 'NEED' : 'OWNED'})`}`;
+}
+function paintPickBar() {
+  const bar = $('pick-bar'); if (!bar) return;
+  bar.hidden = !picks.length;
+  const total = picks.reduce((a, x) => a + (x.card.price != null ? +x.card.price : 0), 0);
+  const where = tradeSide ? (tradeSide === 'give' ? 'You give' : 'You get') : sealedAdd ? 'your sealed' : 'binder';
+  $('pick-add').textContent = `Add ${picks.length} to ${where}${total ? ' · ' + fmt(total) : ''}`;
+  document.querySelectorAll('#results > div.panel').forEach(el => { const b = el.querySelector('.pick-btn'); if (b && !el.classList.contains('picked')) b.textContent = `➕ Pick${tradeSide || sealedAdd ? '' : ` (${addStatus === 'needed' ? 'NEED' : 'OWNED'})`}`; });
+}
+function clearPicks() { picks = []; paintPickBar(); document.querySelectorAll('#results > div.picked').forEach(el => el.classList.remove('picked')); document.querySelectorAll('#results .pick-btn').forEach(b => { b.className = 'pick-btn mt-2 py-1.5 rounded-lg text-xs font-semibold text-center bg-indigo-600'; }); paintPickBar(); }
+function addPicks() {
+  if (!picks.length) return;
+  const list = picks.slice(), side = tradeSide, toSealed = sealedAdd;
+  picks = []; closeSearch();
+  if (side) { TRADE[side] = [...TRADE[side], ...list.map(x => tradeCard(x.card))]; saveTrade(); refreshTradePrices(); return toast(`Added ${list.length} to ${side === 'give' ? 'You give' : 'You get'}`); }
+  if (toSealed) { list.forEach(x => addSealedOwned(x.card)); return; }
+  // into the binder: from the chosen slot onward, stepping over filled slots and adding pages as needed
+  const pages = getPagesArray(), n = cap(), before = pages.length;
+  let p = target.p, s = target.s;
+  list.forEach(x => {
+    for (;;) {
+      if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
+      if (!pages[p].cards[s]) break;
+      if (++s >= n) { s = 0; p++; }
+    }
+    pages[p].cards[s] = { ...x.card, status: x.status };
+    if (++s >= n) { s = 0; p++; }
+  });
+  S.cur = target.p; saveActivePages(pages); render();
+  const added = pages.length - before;
+  toast(list.length === 1 ? 'Added ' + list[0].card.name : `Added ${list.length} cards${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
+}
+
 function openSearch(p, s) {
   if (peerUser) return toast('Cannot add cards in read-only peer mode', 'error');
+  picks = []; paintPickBar();
   target = { p, s }; $('tgt').textContent = `Page ${p + 1}, Slot ${s + 1}`;
   if (mode === 'sealed' && !sealedAllowed()) mode = 'name';
   if (!tradeSide) $('s-modal').style.zIndex = '';
@@ -2399,10 +2447,11 @@ function openSearch(p, s) {
   resetCustom(); $('coll-q').value = ''; paintPkLang(); setMode(mode); setStatus(addStatus); $('s-modal').classList.remove('hidden');
 }
 
-const closeSearch = () => { $('s-modal').classList.add('hidden'); $('s-modal').style.zIndex = ''; tradeSide = null; sealedAdd = false; };
+const closeSearch = () => { $('s-modal').classList.add('hidden'); $('s-modal').style.zIndex = ''; tradeSide = null; sealedAdd = false; picks = []; paintPickBar(); };
 
 function setStatus(st) {
   addStatus = st;
+  queueMicrotask(() => { try { paintPickBar(); } catch (e) {} });
   const sb = $('s-sum-st'); if (sb) { sb.textContent = st === 'needed' ? '⏳ Need' : '✓ Owned'; sb.className = `px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`; }
   const cs = $('c-status'); if (cs) cs.textContent = (st === 'needed' ? 'need' : st).toUpperCase();
   $('a-owned').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'owned' ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
