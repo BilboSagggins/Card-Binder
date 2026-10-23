@@ -468,6 +468,21 @@ def google_news():
     return items
 
 
+OFFICIAL_SRC = re.compile(r"^(Riftbound|League of Legends|Riot Games|Pok[eé]mon(\.com| Center| TCG)?|The Pok[eé]mon Company.*|One Piece Card Game.*|ONE PIECE CARD GAME.*|Bandai.*|BANDAI.*|Dragon Ball Super Card Game.*|DRAGON BALL SUPER CARD GAME.*|Naruto Card Game.*|NARUTO CARD GAME.*)$|\(official\)$|^Bandai Namco Shops$", re.I)
+
+
+def merge_raffles(raffles):
+    """One card per drawing: the same game with the same opening date is the same drawing (keep the most complete one)."""
+    score = lambda r: (bool(r.get("closes")), len([e for e in r.get("entries", []) if e[0] != "Open the drawing page"]),
+                       bool(re.search(r"drawing|lottery|raffle", r["title"], re.I)), len(r.get("summary", "")))
+    best = {}
+    for r in raffles:
+        k = (r["game"], r.get("opens") or norm_title(r["title"]))
+        if k not in best or score(r) > score(best[k]):
+            best[k] = r
+    return list(best.values())
+
+
 def norm_title(t):
     return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()[:70]
 
@@ -494,10 +509,11 @@ def main():
             raffles += [x for x in prev.get("raffles", []) if x.get("via") == "google" and x["game"] in FAILED_GOOGLE]
         except Exception as e:
             errors.append(f"previous news: {e}")
-    # news about a drawing / lottery also goes on the raffle list (linked to the article)
+    # a drawing / lottery posted by the official publisher or store (found through news search) also goes on the raffle
+    # list; drawings reported by other sites stay in the news only
     have = {norm_title(x["title"]) for x in raffles}
     for it in items:
-        if it["kind"] == "raffle" and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
+        if it["kind"] == "raffle" and OFFICIAL_SRC.search(it.get("src", "")) and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
                 dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00")) > NOW - dt.timedelta(days=45):
             posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
             o, c = window([it["title"]] + re.split(r"(?<=[.!?])\s+", it.get("summary", "")), posted.year)
@@ -518,6 +534,7 @@ def main():
     cutoff = iso(NOW - dt.timedelta(days=60))
     uniq = [x for x in uniq if (x.get("date") or "") >= cutoff or x["src"].endswith("(official)")]
     uniq.sort(key=lambda x: x.get("date") or "", reverse=True)
+    raffles = merge_raffles([r for r in raffles if OFFICIAL_SRC.search(r.get("src", ""))])
     raffles.sort(key=lambda x: x.get("posted") or "", reverse=True)
     data["raffles"] = raffles[:40]
     data["items"] = uniq[:250]
