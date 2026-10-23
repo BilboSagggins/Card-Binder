@@ -199,7 +199,7 @@
   .scan-fix button { grid-column: 1 / -1; }
   .scan-tip { margin: 0; font: 500 .66rem/1.35 Inter, system-ui, sans-serif; color: #71717a; }
   /* Picking several search results */
-  #results > div.picked { border-color: #10b981 !important; box-shadow: 0 0 0 2px #10b981 inset; }
+  #results > div.picked, #coll-results > div.picked { border-color: #10b981 !important; box-shadow: 0 0 0 2px #10b981 inset; }
   .pick-bar { display: flex; gap: .5rem; padding: .6rem .75rem; border-top: 1px solid #27272a; background: #052e16; }
   .pick-bar[hidden] { display: none; }
   .pick-bar button { appearance: none; border: 0; border-radius: 10px; padding: .75rem .9rem; font: 800 .8rem/1 Inter, system-ui, sans-serif; }
@@ -450,6 +450,7 @@
     padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); font-family: Inter, system-ui, sans-serif; }
   .ctray[hidden] { display: none; }
   body.tray-open main { padding-bottom: 210px; }
+  body.tray-open.tray-picks main { padding-bottom: 262px; }
   .ctray-head { display: flex; align-items: center; gap: 8px; }
   .ctray-head b { font-size: .8rem; white-space: nowrap; color: #f4f4f5; }
   .ctray-head input { flex: 1; min-width: 0; background: #18181b; border: 1px solid #3f3f46; border-radius: 10px; padding: .45rem .6rem; color: #f4f4f5; font: 500 .8rem/1.2 Inter, system-ui, sans-serif; }
@@ -470,6 +471,12 @@
   .ctray-item .q { right: 3px; background: rgba(0,0,0,.8); color: #fff; }
   .ctray-item .in { left: 3px; background: #4f46e5; color: #fff; }
   .ctray-item.lifted { opacity: .3; }
+  .ctray-item.picked img, .ctray-item.picked .ph { outline: 3px solid #10b981; outline-offset: -3px; }
+  .ctray-item.picked.need img, .ctray-item.picked.need .ph { outline-color: #e11d48; }
+  .ctray-item .pk { left: auto; right: 3px; top: auto; bottom: 20px; background: #10b981; color: #022c22; }
+  .ctray-item.need .pk { background: #e11d48; color: #fff; }
+  .ctray-bar { border-radius: 12px; border: 0; padding: .4rem; }
+  .ctray-bar button { padding: .6rem .8rem; }
   .ctray-ghost { position: fixed; z-index: 80; width: 84px; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; pointer-events: none;
     transform: translate(-50%, -70%) rotate(-4deg); box-shadow: 0 18px 36px rgba(0,0,0,.65); background: #18181b; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
   .who-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4rem .5rem; padding: .45rem .6rem; max-width: 100%; box-sizing: border-box; }
@@ -666,8 +673,9 @@
     <div class="ctray-seg" role="group" aria-label="Add as"><button type="button" data-st="owned" onclick="setStatus('owned'); paintTrayStatus()">Owned</button><button type="button" data-st="needed" onclick="setStatus('needed'); paintTrayStatus()">Need</button></div>
     <button type="button" class="ctray-x" onclick="closeTray()" aria-label="Close collection">✕</button>
   </div>
-  <p class="ctray-hint">Drag a card up onto an empty slot, or tap it to fill the next empty slot.</p>
+  <p class="ctray-hint">Tap cards to pick them, then Add. Or drag one card up onto a slot.</p>
   <div id="ctray-list" class="ctray-list"></div>
+  <div id="ctray-bar" class="pick-bar ctray-bar" hidden><button type="button" class="pb-clear" onclick="clearTrayPicks()">Clear</button><button type="button" id="ctray-add" class="pb-add" onclick="addTrayPicks()"></button></div>
 </div>
 
 <!-- SEARCH MODAL -->
@@ -952,7 +960,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.29';
+const APP_VERSION = '2026-10-23.30';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1572,7 +1580,7 @@ function renderCollection() {
         ${inBinder.has(it.id) ? '<span class="absolute bottom-1 left-1 bg-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded">In this binder</span>' : ''}</div>
       <h4 class="font-bold text-xs line-clamp-2">${esc(it.name)}</h4>
       <div class="text-[10px] text-zinc-400 mt-0.5 truncate">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From your collection')}</div>
-      <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>
+      <div class="pick-btn mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select</div>
       <button type="button" data-set class="mt-1.5 py-1.5 w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[11px] font-semibold text-zinc-200">📚 Add whole set</button>`;
     el.onclick = async () => {
       if (tradeSide) {
@@ -1580,8 +1588,9 @@ function renderCollection() {
         const r = await resolveCollItem(it, S.game).catch(() => null);
         return addTradeCard(side, r ? r.card : { id: 'coll-' + it.id, name: it.name, set: it.set || 'Collection', number: it.number || '', price: null, image: it.image || '', thumb: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection' });
       }
-      const at = { ...target }; closeSearch(); placeCollectionItem(it, at);
+      togglePick(stub, it); paintPick(el, stub);
     };
+    const stub = collCard(it); if (!tradeSide) paintPick(el, stub);
     if (tradeSide) el.querySelector('[data-set]').remove();
     else el.querySelector('[data-set]').onclick = e => { e.stopPropagation(); const at = { ...target }; closeSearch(); addWholeSet(it, at); };
     box.appendChild(el);
@@ -1590,36 +1599,72 @@ function renderCollection() {
 }
 
 // Put a collection card into a slot, then swap in the matching database card (price, link, refresh)
-function placeCollectionItem(it, at) {
-  const card = {
+function collCard(it, status) {
+  return {
     id: 'coll-' + it.id, collId: it.id, name: it.name, set: it.set || 'Collection', number: it.number || '—', rarity: it.rarity || '—',
     price: null, url: tcgPid(it.image) ? `https://www.tcgplayer.com/product/${tcgPid(it.image)}` : null,
-    thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: addStatus
+    thumb: it.image || '', image: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection', status: status || addStatus
   };
-  const binder = currentUser, owner = ownerOf(currentUser);
+}
+function placeCollectionItem(it, at) {
+  const card = collCard(it, addStatus);
   const pages = getPagesArray(); pages[at.p].cards[at.s] = card;
   saveActivePages(pages); render(); toast('Added ' + card.name + ' · looking up its price…');
   if (!$('ctray').hidden) renderTray();
-  matchCollectionCard(card, owner).then(async r => {
+  priceCollCard(card, currentUser, ownerOf(currentUser));
+}
+// Look up a placed collection card in the card database and swap in the priced card. Resolves to true when priced.
+// quiet: no toast per card (used when many cards are added at once)
+function priceCollCard(card, binder, owner, quiet) {
+  return matchCollectionCard(card, owner).then(async r => {
     let m = r.found || null;
     if (!m && r.choices && r.choices.length) m = await pickPrinting(card, owner, r);
     if (!m) {
-      if (r.jp) return toast(`"${card.name}" is a Japanese printing. There's no price for it in the card database.`, 'error');
-      if (r.choices) return toast(`"${card.name}" was left without a price. Refresh prices to pick its printing later.`);
-      return toast(`Couldn't find "${card.name}" in the ${GAMES[card.game]} card database, so it has no price`, 'error');
+      if (quiet) return false;
+      if (r.jp) { toast(`"${card.name}" is a Japanese printing. There's no price for it in the card database.`, 'error'); return false; }
+      if (r.choices) { toast(`"${card.name}" was left without a price. Refresh prices to pick its printing later.`); return false; }
+      toast(`Couldn't find "${card.name}" in the ${GAMES[card.game]} card database, so it has no price`, 'error'); return false;
     }
     // Swap in the database card wherever this placed copy is now (it may have been dragged, and a save may still be settling)
-    const swap = tries => {
-      if (currentUser !== binder) return;
-      const pg = getPagesArray();
-      for (const page of pg) {
-        const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
-        if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId, url: card.url || m.url }; saveActivePages(pg); render(); toast(`${m.name} · ${fmt(m.price)}`); return; }
-      }
-      if (tries > 0) setTimeout(() => swap(tries - 1), 500);
-    };
-    swap(6);
+    return new Promise(done => {
+      const swap = tries => {
+        if (currentUser !== binder) return done(false);
+        const pg = getPagesArray();
+        for (const page of pg) {
+          const i = page.cards.findIndex(c => c && c.source === 'collection' && c.id === card.id);
+          if (i >= 0) { page.cards[i] = { ...m, status: page.cards[i].status, collId: card.collId, url: card.url || m.url }; saveActivePages(pg); render(); if (!quiet) toast(`${m.name} · ${fmt(m.price)}`); return done(true); }
+        }
+        if (tries > 0) setTimeout(() => swap(tries - 1), 500); else done(false);
+      };
+      swap(6);
+    });
+  }).catch(() => false);
+}
+// Put several cards into the binder from a slot onward, stepping over filled slots and adding pages as needed.
+// Collection cards then get their prices looked up one at a time (a "which printing?" question may come up for some).
+function fillBinder(cards, start) {
+  const pages = getPagesArray(), n = cap(), before = pages.length;
+  let p = start.p, s = start.s;
+  cards.forEach(card => {
+    for (;;) {
+      if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
+      if (!pages[p].cards[s]) break;
+      if (++s >= n) { s = 0; p++; }
+    }
+    pages[p].cards[s] = card;
+    if (++s >= n) { s = 0; p++; }
   });
+  S.pages = pages; S.cur = Math.min(start.p, pages.length - 1); saveActivePages(pages); render();
+  if (!$('ctray').hidden) renderTray();
+  const added = pages.length - before;
+  toast(cards.length === 1 ? 'Added ' + cards[0].name : `Added ${cards.length} cards${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
+  const coll = cards.filter(c => c.source === 'collection');
+  if (coll.length) (async () => {
+    const binder = currentUser, owner = ownerOf(currentUser); let ok = 0;
+    if (coll.length > 1) toast(`Looking up prices for ${coll.length} collection cards…`);
+    for (const c of coll) if (await priceCollCard(c, binder, owner, coll.length > 1)) ok++;
+    if (coll.length > 1 && currentUser === binder) toast(ok === coll.length ? `Prices found for all ${ok}` : `Prices found for ${ok} of ${coll.length}. The rest have no price yet.`, ok === coll.length ? undefined : 'error');
+  })();
 }
 
 /* --- Add a whole set from your collection: every card you own from the same set, in card-number order --- */
@@ -1725,6 +1770,7 @@ function closeTray() {
   const t = $('ctray'); if (!t) return;
   t.hidden = true; document.body.classList.remove('tray-open');
   $('who-coll').setAttribute('aria-pressed', 'false');
+  trayPicks.clear(); paintTrayBar();
   endTrayDrag(false);
 }
 function paintTrayStatus() {
@@ -1752,10 +1798,35 @@ function renderTray() {
     el.setAttribute('aria-label', `${it.name}. Drag onto a slot, or press to add to the next empty slot.`);
     el.innerHTML = `${it.image ? `<img alt="" draggable="false" src="${esc(it.image)}">` : '<div class="ph">🎴</div>'}
       ${it.qty > 1 ? `<i class="q">×${it.qty}</i>` : ''}${inBinder.has(it.id) ? '<i class="in">✓</i>' : ''}<span>${esc(it.name)}</span>`;
+    paintTrayPick(el, it.id);
     el.onpointerdown = e => trayPointerDown(e, it, el);
-    el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); placeInNextEmpty(it); } };
+    el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTrayPick(it, el); } };
     box.appendChild(el);
   });
+}
+// Picking several cards in the tray: tap to pick (keeps the Owned/Need choice it was picked with), tap again to drop
+let trayPicks = new Map();
+function toggleTrayPick(it, el) {
+  if (trayPicks.has(it.id)) trayPicks.delete(it.id); else trayPicks.set(it.id, { it, status: addStatus });
+  paintTrayPick(el, it.id); paintTrayBar();
+}
+function paintTrayPick(el, id) {
+  const p = trayPicks.get(id); el.classList.toggle('picked', !!p); el.classList.toggle('need', !!p && p.status === 'needed');
+  let b = el.querySelector('.pk'); if (p && !b) { b = document.createElement('i'); b.className = 'pk'; el.appendChild(b); }
+  if (b) { if (p) b.textContent = p.status === 'needed' ? 'NEED' : '✓'; else b.remove(); }
+  el.setAttribute('aria-pressed', !!p);
+}
+function paintTrayBar() {
+  const bar = $('ctray-bar'); if (!bar) return;
+  bar.hidden = !trayPicks.size;
+  document.body.classList.toggle('tray-picks', trayPicks.size > 0);
+  $('ctray-add').textContent = `Add ${trayPicks.size} to binder`;
+}
+function clearTrayPicks() { trayPicks.clear(); paintTrayBar(); renderTray(); }
+function addTrayPicks() {
+  if (!trayPicks.size || peerUser) return;
+  const list = [...trayPicks.values()]; trayPicks.clear(); paintTrayBar();
+  fillBinder(list.map(x => collCard(x.it, x.status)), { p: S.cur, s: 0 });   // the first empty slots from this page onward
 }
 function placeInNextEmpty(it) {
   const pages = getPagesArray(), page = pages[S.cur];
@@ -1821,7 +1892,7 @@ function trayUp(e) {
   } else {
     const tap = !d.gone && Math.hypot(d.x - d.x0, d.y - d.y0) < 10;
     endTrayDrag(true);
-    if (tap) placeInNextEmpty(d.it);
+    if (tap) toggleTrayPick(d.it, d.el);
   }
 }
 function trayCancel(e) { if (trayDrag && e.pointerId === trayDrag.id) endTrayDrag(true); }
@@ -2387,9 +2458,9 @@ function renderResults(cards, append) {
    Each pick keeps the Owned/Need choice it was picked with. */
 let picks = [];
 const pickKey = c => String(c.id || '') + '|' + (c.tcgPid || c.ctId || '') + '|' + (c.lang || '');
-function togglePick(card) {
+function togglePick(card, coll) {
   const k = pickKey(card), i = picks.findIndex(x => x.k === k);
-  if (i >= 0) picks.splice(i, 1); else picks.push({ k, card, status: addStatus });
+  if (i >= 0) picks.splice(i, 1); else picks.push({ k, card, status: addStatus, coll });
   paintPickBar();
 }
 function paintPick(el, card) {
@@ -2404,9 +2475,9 @@ function paintPickBar() {
   const total = picks.reduce((a, x) => a + (x.card.price != null ? +x.card.price : 0), 0);
   const where = tradeSide ? (tradeSide === 'give' ? 'You give' : 'You get') : sealedAdd ? 'your sealed' : 'binder';
   $('pick-add').textContent = `Add ${picks.length} to ${where}${total ? ' · ' + fmt(total) : ''}`;
-  document.querySelectorAll('#results > div.panel').forEach(el => { const b = el.querySelector('.pick-btn'); if (b && !el.classList.contains('picked')) b.textContent = `➕ Pick${tradeSide || sealedAdd ? '' : ` (${addStatus === 'needed' ? 'NEED' : 'OWNED'})`}`; });
+  document.querySelectorAll('#results > div.panel, #coll-results > div.panel').forEach(el => { const b = el.querySelector('.pick-btn'); if (b && !el.classList.contains('picked')) b.textContent = `➕ Pick${tradeSide || sealedAdd ? '' : ` (${addStatus === 'needed' ? 'NEED' : 'OWNED'})`}`; });
 }
-function clearPicks() { picks = []; paintPickBar(); document.querySelectorAll('#results > div.picked').forEach(el => el.classList.remove('picked')); document.querySelectorAll('#results .pick-btn').forEach(b => { b.className = 'pick-btn mt-2 py-1.5 rounded-lg text-xs font-semibold text-center bg-indigo-600'; }); paintPickBar(); }
+function clearPicks() { picks = []; paintPickBar(); document.querySelectorAll('#results > div.picked, #coll-results > div.picked').forEach(el => el.classList.remove('picked')); document.querySelectorAll('#results .pick-btn, #coll-results .pick-btn').forEach(b => { b.className = 'pick-btn mt-2 py-1.5 rounded-lg text-xs font-semibold text-center bg-indigo-600'; }); paintPickBar(); }
 function addPicks() {
   if (!picks.length) return;
   const list = picks.slice(), side = tradeSide, toSealed = sealedAdd;
@@ -2414,20 +2485,7 @@ function addPicks() {
   if (side) { TRADE[side] = [...TRADE[side], ...list.map(x => tradeCard(x.card))]; saveTrade(); refreshTradePrices(); return toast(`Added ${list.length} to ${side === 'give' ? 'You give' : 'You get'}`); }
   if (toSealed) { list.forEach(x => addSealedOwned(x.card)); return; }
   // into the binder: from the chosen slot onward, stepping over filled slots and adding pages as needed
-  const pages = getPagesArray(), n = cap(), before = pages.length;
-  let p = target.p, s = target.s;
-  list.forEach(x => {
-    for (;;) {
-      if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
-      if (!pages[p].cards[s]) break;
-      if (++s >= n) { s = 0; p++; }
-    }
-    pages[p].cards[s] = { ...x.card, status: x.status };
-    if (++s >= n) { s = 0; p++; }
-  });
-  S.cur = target.p; saveActivePages(pages); render();
-  const added = pages.length - before;
-  toast(list.length === 1 ? 'Added ' + list[0].card.name : `Added ${list.length} cards${added ? ` · ${added} new page${added === 1 ? '' : 's'}` : ''}`);
+  fillBinder(list.map(x => x.coll ? collCard(x.coll, x.status) : { ...x.card, status: x.status }), target);
 }
 
 function openSearch(p, s) {
@@ -5214,7 +5272,7 @@ document.addEventListener('visibilitychange', () => {
 });
 function checkForNewVersion() {
   return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
-    const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
+    const v = (t.match(/const APP_VERSION = '2026-10-23.30']+)'/) || [])[1];
     if (!v || v === APP_VERSION) return 'current';
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
     if (tried === v) return 'current';   // already tried once this visit; don't loop
