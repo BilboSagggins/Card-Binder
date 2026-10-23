@@ -190,6 +190,8 @@
   @media (prefers-reduced-motion: reduce) { .has-raffle { animation: none; } }
   .nw-alert { position: absolute; top: -.5rem; right: -.45rem; z-index: 2; padding: .2rem .38rem; border-radius: 999px; background: #f59e0b; color: #111; font: 900 .6rem/1 Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
   .tt.has-raffle { overflow: visible; }
+  .nw-card.unseen { border-color: #f59e0b; box-shadow: 0 0 0 1px rgba(245,158,11,.5); }
+  .nw-pill.nw-new { background: #f59e0b; color: #111; }
   #nw-tabs button.hot { background: #f59e0b; border-color: #fbbf24; color: #111; }
   #nw-tabs button.hot[aria-selected="true"] { background: #d97706; color: #fff; }
   .nw-games button[aria-selected="true"] { background: #7c3aed; border-color: #a78bfa; }
@@ -4155,15 +4157,27 @@ async function openNewsPage() {
   if (!d) { $('nw-sub').textContent = 'Couldn\u2019t load the news'; $('nw-list').innerHTML = '<p class="pc-note">The news list couldn\u2019t be loaded. Check your connection and try again.</p>'; return; }
   const when = d.updated ? new Date(d.updated) : null;
   $('nw-sub').textContent = when ? `Updated ${when.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · refreshed every few hours` : '';
-  if (!NW.tab) NW.tab = nwLiveRaffles().some(r => nwPick(r.game)) ? 'raffles' : 'soon';
+  if (!NW.tab) NW.tab = nwUnseen().some(r => nwPick(r.game)) ? 'raffles' : nwLiveRaffles().some(r => nwPick(r.game)) ? 'raffles' : 'soon';
   nwPaint();
 }
 // Lotteries / drawings someone can still enter: open now, or opening soon
 function nwLiveRaffles() {
   return ((NW.data && NW.data.raffles) || []).filter(r => nwStatus(r).k !== 'closed');   // official only, so a fresh announcement without dates counts too
 }
+// Raffles you've tapped stop the alert (on this phone). A new drawing, or new dates for one, alerts again.
+const nwKey = r => [r.url || r.title, r.opens || '', r.closes || ''].join('|');
+function nwSeen() { try { return new Set(JSON.parse(localStorage.getItem('cardBinder.rafflesSeen') || '[]')); } catch (e) { return new Set(); } }
+function nwUnseen() { const seen = nwSeen(); return nwLiveRaffles().filter(r => !seen.has(nwKey(r))); }
+function markRaffleSeen(i) {
+  const r = (NW.shown || [])[i]; if (!r) return;
+  const seen = nwSeen(); if (seen.has(nwKey(r))) return;
+  seen.add(nwKey(r));
+  try { localStorage.setItem('cardBinder.rafflesSeen', JSON.stringify([...seen].slice(-200))); } catch (e) {}
+  const card = document.querySelector(`#nw-list [data-raffle="${i}"]`); if (card) { card.classList.remove('unseen'); const n = card.querySelector('.nw-new'); if (n) n.remove(); }
+  nwTabsPaint();
+}
 function paintNewsBadge() {
-  const live = nwLiveRaffles(), open = live.filter(r => nwStatus(r).k === 'open').length;
+  const live = nwUnseen(), open = live.filter(r => nwStatus(r).k === 'open').length;
   ['who-news', 'tt-news'].forEach(id => {
     const b = $(id); if (!b) return;
     b.classList.toggle('has-raffle', live.length > 0);
@@ -4198,7 +4212,7 @@ function nwTabsPaint() {
   const soon = (d.releases || []).filter(r => nwPick(r.game) && nwDay(r.date) >= today).length;
   const tabs = [['raffles', `🎟️ Raffles`, open], ['soon', '📅 Coming soon', soon], ['previews', '🃏 Previews', items.filter(x => x.kind === 'preview').length], ['news', '📰 All news', items.length]];
   $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
-  const live = nwLiveRaffles().filter(r => nwPick(r.game)).length;
+  const live = nwUnseen().filter(r => nwPick(r.game)).length;
   $('nw-tabs').innerHTML = tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()">${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
   paintNewsBadge();
 }
@@ -4210,14 +4224,15 @@ function nwPaint() {
   if (NW.tab === 'raffles') {
     const order = { open: 0, soon: 1, closed: 2 };
     const list = nwRaffles().map(r => ({ r, s: nwStatus(r) })).sort((a, b) => order[a.s.k] - order[b.s.k] || String(b.r.posted).localeCompare(String(a.r.posted)));
-    h = list.length ? list.map(({ r, s }, i) => `<div class="nw-card${s.k === 'closed' ? ' dim' : ''}">
-        <div class="nw-top">${nwBadge(r.game)}<span class="nw-pill ${s.k}">${esc(s.t)}</span><span>${esc(r.src || '')}</span></div>
+    const seen = nwSeen(); NW.shown = list.map(x => x.r);
+    h = list.length ? list.map(({ r, s }, i) => { const isNew = s.k !== 'closed' && !seen.has(nwKey(r)); return `<div class="nw-card${s.k === 'closed' ? ' dim' : ''}${isNew ? ' unseen' : ''}" data-raffle="${i}" onclick="markRaffleSeen(${i})">
+        <div class="nw-top">${nwBadge(r.game)}${isNew ? '<span class="nw-pill nw-new">NEW</span>' : ''}<span class="nw-pill ${s.k}">${esc(s.t)}</span><span>${esc(r.src || '')}</span></div>
         <h3 class="nw-t">${esc(r.title)}</h3>
         ${r.period ? `<p class="nw-p"><b>Entry period:</b> ${esc(r.period)}</p>` : ''}
         ${r.event ? `<p class="nw-p"><b>Event / release:</b> ${esc(r.event)}</p>` : ''}
         ${r.summary ? `<p class="nw-sum" id="nw-s${i}">${esc(r.summary)}</p><button type="button" class="nw-more" onclick="const p=$('nw-s${i}');p.classList.toggle('full');this.textContent=p.classList.contains('full')?'Less':'More'">More</button>` : ''}
         <div class="nw-links">${(r.entries || []).map(([l, u]) => nwLink(u, '🎟️ ' + esc(l))).join('')}${nwLink(r.url, 'Full details ↗', 'alt')}</div>
-      </div>`).join('') : '<p class="pc-note">No official store lotteries or drawings right now. New ones from the publishers and official shops show up here within a few hours of being announced.</p>';
+      </div>`; }).join('') : '<p class="pc-note">No official store lotteries or drawings right now. New ones from the publishers and official shops show up here within a few hours of being announced.</p>';
   } else if (NW.tab === 'soon') {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const all = (d.releases || []).filter(r => nwPick(r.game)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
