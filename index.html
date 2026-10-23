@@ -156,6 +156,30 @@
   .sp-row { display: flex; justify-content: space-between; align-items: center; gap: .3rem; font: 600 .65rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .sp-row b { color: #34d399; font-size: .78rem; }
   .sp-link { font: 700 .6rem/1 Inter, system-ui, sans-serif; color: #c7d2fe; text-decoration: none; }
+  /* Trade picker */
+  .tk { z-index: 62; padding-bottom: 5rem; }
+  .tk-tabs { flex: 0 0 100%; display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .1rem; }
+  .tk-tabs::-webkit-scrollbar { display: none; }
+  .tk-tabs button { appearance: none; flex: 1 1 auto; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 999px; padding: .45rem .55rem; white-space: nowrap; font: 700 .7rem/1 Inter, system-ui, sans-serif; }
+  .tk-tabs button[aria-selected="true"] { background: #4f46e5; border-color: #818cf8; color: #fff; }
+  .tk-tabs button i { font-style: normal; opacity: .7; margin-left: .2rem; }
+  .tk-findrow { flex: 0 0 100%; display: flex; gap: .4rem; }
+  .tk-findrow button { flex: none; appearance: none; border: 1px solid #6366f1; background: #312e81; color: #e0e7ff; border-radius: 10px; padding: 0 .7rem; font: 800 .7rem/1 Inter, system-ui, sans-serif; }
+  .tk-find { flex: 1; min-width: 0; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 10px; padding: .55rem .7rem; color: #f4f4f5; font: 500 .8rem Inter, system-ui, sans-serif; }
+  .tk-grid .np-card { cursor: pointer; transition: border-color .12s, transform .12s; }
+  .tk-grid .np-card:active { transform: scale(.97); }
+  .tk-grid .np-card.on { border-color: #818cf8; box-shadow: 0 0 0 2px #6366f1 inset; }
+  .tk-grid .np-card.on::after { content: "✓"; position: absolute; top: .3rem; right: .3rem; z-index: 4; width: 1.5rem; height: 1.5rem; border-radius: 999px; background: #4f46e5; color: #fff; font: 900 .8rem/1.5rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .tk-grid .np-img.sealed { background: #fff; aspect-ratio: 1; }
+  .tk-grid .np-img.sealed img { object-fit: contain; padding: .25rem; box-sizing: border-box; }
+  .tk-price { font: 800 .7rem/1.2 Inter, system-ui, sans-serif; color: #34d399; }
+  .tk-price.none { color: #71717a; font-weight: 600; }
+  .tk-tag { position: absolute; left: .3rem; bottom: .3rem; z-index: 3; background: rgba(0,0,0,.75); color: #e4e4e7; font: 700 .55rem/1 Inter, system-ui, sans-serif; padding: .2rem .3rem; border-radius: 4px; }
+  .tk-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding: .7rem 1rem max(.7rem, env(safe-area-inset-bottom)); background: rgba(9,9,11,.95); border-top: 1px solid #27272a; }
+  .tk-bar button { width: 100%; appearance: none; border: 0; border-radius: 12px; padding: .85rem; background: #4f46e5; color: #fff; font: 800 .85rem/1 Inter, system-ui, sans-serif; }
+  .tk-bar button:disabled { background: #27272a; color: #71717a; }
+  .tk-search { grid-column: 1 / -1; text-align: center; padding: 2rem 1rem; color: #a1a1aa; font: 500 .8rem/1.5 Inter, system-ui, sans-serif; }
+  .tk-search button { margin-top: .8rem; appearance: none; border: 0; border-radius: 12px; padding: .8rem 1.2rem; background: #4f46e5; color: #fff; font: 800 .8rem/1 Inter, system-ui, sans-serif; }
   /* Trade analyzer */
   .tp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .8rem .7rem 2rem; max-width: 56rem; margin: 0 auto; }
   .tp-side { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: .6rem; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
@@ -742,6 +766,19 @@
 </div>
 
 <!-- Notification Toasts Container -->
+<!-- Trade picker: tap your own cards, collection or sealed to add several at once -->
+<div id="trade-pick" class="np tk" hidden role="dialog" aria-modal="true" aria-labelledby="tk-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeTradePicker()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="tk-title">Add to trade</h2><p id="tk-sub">Tap to pick</p></div>
+    <div class="tk-tabs" id="tk-tabs" role="tablist"></div>
+    <div class="tk-findrow"><input type="search" id="tk-find" class="tk-find" placeholder="Find yours by name or set" autocomplete="off" oninput="renderTradePicker()">
+      <button type="button" onclick="closeTradePicker();openTradeSearch(TK.side)" title="Search every card and sealed product">🔍 Search all</button></div>
+  </div>
+  <div id="tk-grid" class="np-grid tk-grid"></div>
+  <div class="tk-bar"><button type="button" id="tk-add" onclick="addPicked()">Pick items to add</button></div>
+</div>
+
 <!-- Sealed product you own -->
 <div id="sealed-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="sp-title">
   <div class="np-head">
@@ -762,13 +799,13 @@
   </div>
   <div class="tp-cols">
     <section class="tp-side" data-side="give"><h3>You give</h3><div class="tp-list" id="tp-give"></div>
-      <button type="button" class="tp-add" onclick="openTradeSearch('give')">＋ Add card or sealed</button>
+      <button type="button" class="tp-add" onclick="openTradePicker('give')">＋ Add</button>
       <div class="tp-foot"><div><span>Subtotal</span><b id="tp-give-sub">$0.00</b></div>
         <label><span>Multiplier</span><span class="tp-pct"><input id="tp-give-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('give', this.value)">%</span></label>
         <div class="tp-total"><span>Total</span><b id="tp-give-tot">$0.00</b></div></div>
     </section>
     <section class="tp-side" data-side="get"><h3>You get</h3><div class="tp-list" id="tp-get"></div>
-      <button type="button" class="tp-add" onclick="openTradeSearch('get')">＋ Add card or sealed</button>
+      <button type="button" class="tp-add" onclick="openTradePicker('get')">＋ Add</button>
       <div class="tp-foot"><div><span>Subtotal</span><b id="tp-get-sub">$0.00</b></div>
         <label><span>Multiplier</span><span class="tp-pct"><input id="tp-get-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('get', this.value)">%</span></label>
         <div class="tp-total"><span>Total</span><b id="tp-get-tot">$0.00</b></div></div>
@@ -847,7 +884,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.21';
+const APP_VERSION = '2026-10-23.1';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3705,6 +3742,92 @@ function addTradeCard(side, card) {
   toast(`${card.name} added to ${side === 'give' ? 'You give' : 'You get'}${card.price != null ? ' · ' + fmt(card.price) : ''}`);
   if (card.price == null) lookupPrice(card).then(r => { if (!r) return; const c = TRADE[side].find(x => x.id === card.id && x.price == null); if (c) { c.price = r.price; if (r.url) c.url = r.url; saveTrade(); } }).catch(() => {});
 }
+/* Trade picker: your Owned cards and Need cards from all your binders, your collection and your sealed product,
+   tap to pick several, then add them in one go. "Search all" opens the usual search for anything else. */
+let TK = { side: 'give', tab: 'owned', items: {}, picked: new Map(), loading: false };
+const TK_TABS = [['owned', 'My cards'], ['need', 'My Need'], ['coll', 'Collection'], ['sealed', 'Sealed']];
+async function openTradePicker(side) {
+  TK = { side, tab: side === 'give' ? 'owned' : 'need', items: {}, picked: new Map(), loading: true };
+  $('tk-title').textContent = side === 'give' ? 'Add to You give' : 'Add to You get';
+  $('tk-find').value = '';
+  $('trade-pick').hidden = false;
+  renderTradePicker();
+  try { TK.items = await gatherTradeItems(); } catch (e) { TK.items = {}; }
+  TK.loading = false; renderTradePicker();
+}
+function closeTradePicker() { $('trade-pick').hidden = true; }
+async function gatherTradeItems() {
+  const owner = ownerOf(currentUser), out = { owned: [], need: [], coll: [], sealed: [] };
+  // every binder you own (the open one straight from the screen, the rest from the cloud)
+  const mine = binders().filter(b => b.owner === owner);
+  const pagesOf = await Promise.all(mine.map(b => b.id === currentUser ? Promise.resolve(getPagesArray())
+    : db.ref('binders/' + b.id + '/pages').once('value').then(v => normPages(v.val())).catch(() => [])));
+  mine.forEach((b, bi) => (pagesOf[bi] || []).forEach((pg, p) => (pg && pg.cards || []).forEach((c, si) => {
+    if (!c || !c.name) return;
+    const item = { key: `b:${b.id}:${p}:${si}`, card: c, where: b.title };
+    if (c.status === 'owned') out.owned.push(item); else if (c.status === 'needed') out.need.push(item);
+  })));
+  // your collection, both games
+  for (const g of ['pokemon', 'onepiece']) {
+    watchCollection(owner, g);
+    let data = COLLECTIONS[owner + '|' + g];
+    if (!data) data = await db.ref('collections/' + owner + '/' + g).once('value').then(v => v.val()).catch(() => null);
+    const its = Object.entries((data && data.items) || {}).filter(([, it]) => it && !isTotalRow(it.name));
+    const cards = await pool(its, 8, async ([id, it]) => {
+      const r = await resolveCollItem(it, g).catch(() => null);
+      return { key: `c:${g}:${id}`, card: r ? r.card : { id: 'coll-' + id, name: it.name, set: it.set || 'Collection', number: it.number || '', price: null, image: it.image || '', thumb: it.image || '', alts: [], game: g, lang: 'en', source: 'collection' }, where: it.qty > 1 ? `×${it.qty}` : '' };
+    });
+    out.coll.push(...cards);
+  }
+  // your sealed product
+  const sealed = (await db.ref('sealed/' + owner + '/items').once('value').then(v => v.val()).catch(() => null)) || {};
+  Object.entries(sealed).forEach(([id, x]) => out.sealed.push({ key: 's:' + id, where: x.qty > 1 ? `×${x.qty}` : '', card: {
+    id: 'sealed-' + x.pid, tcgPid: x.pid, name: x.name, set: x.set || '', number: '', rarity: x.type || 'Sealed', price: x.price ?? null,
+    image: x.image || tcgImg(x.pid), thumb: tcgImg(x.pid, true), alts: tcgAlts(x.pid), game: x.game || 'pokemon', lang: x.lang || 'en', source: 'tcgplayer', sealed: true } }));
+  return out;
+}
+function renderTradePicker() {
+  if ($('trade-pick').hidden) return;
+  $('tk-tabs').innerHTML = TK_TABS.map(([k, label]) => `<button type="button" role="tab" aria-selected="${k === TK.tab}" onclick="TK.tab='${k}';renderTradePicker()">${label}${TK.items[k] ? `<i>${TK.items[k].length}</i>` : ''}</button>`).join('');
+  tkBar();
+  const g = $('tk-grid');
+  if (TK.loading) { g.innerHTML = '<p class="np-empty">⏳ Loading your cards…</p>'; return; }
+  const q = lc($('tk-find').value.trim()), inTrade = new Set(TRADE[TK.side].map(c => c.id));
+  const list = (TK.items[TK.tab] || []).filter(x => !q || lc(x.card.name + ' ' + (x.card.set || '') + ' ' + (x.card.number || '')).includes(q));
+  const empty = { owned: 'No cards marked Owned in your binders.', need: 'No cards marked Need in your binders.', coll: 'No collection imported yet.', sealed: 'No sealed product yet. Add some from 🧰 → Sealed.' }[TK.tab];
+  g.innerHTML = list.length ? list.slice(0, 400).map(x => `<div class="np-card${TK.picked.has(x.key) ? ' on' : ''}" data-k="${esc(x.key)}">
+      <div class="np-img${x.card.sealed ? ' sealed' : ''}">${imgTag(x.card.thumb || x.card.image, x.card.alts, x.card.name, '')}${langTag(x.card)}${inTrade.has(x.card.id) ? '<span class="tk-tag">In trade</span>' : x.where ? `<span class="tk-tag">${esc(x.where)}</span>` : ''}</div>
+      <div class="np-name${x.card.sealed ? ' sealed-name' : ''}" title="${esc(x.card.name)}">${esc(x.card.name)}</div>
+      <div class="np-meta"><span>${esc([x.card.sealed ? x.card.rarity : '', x.card.set, x.card.number].filter(Boolean).join(' · '))}</span></div>
+      <div class="tk-price${x.card.price == null ? ' none' : ''}">${x.card.price == null ? 'No price' : fmt(x.card.price)}</div>
+    </div>`).join('') + (list.length > 400 ? '<p class="np-empty">Showing the first 400 — type to narrow it down.</p>' : '')
+    : `<p class="np-empty">${q ? 'Nothing matches that.' : empty}</p>`;
+}
+function tkBar() {
+  const total = [...TK.picked.values()].reduce((a, x) => a + (x.card.price != null ? +x.card.price : 0), 0);
+  $('tk-sub').textContent = TK.picked.size ? `${TK.picked.size} picked · ${fmt(total)}` : 'Tap to pick as many as you like';
+  const add = $('tk-add'); add.disabled = !TK.picked.size;
+  add.textContent = TK.picked.size ? `Add ${TK.picked.size} to ${TK.side === 'give' ? 'You give' : 'You get'} · ${fmt(total)}` : 'Pick items to add';
+}
+function addPicked() {
+  if (!TK.picked.size) return;
+  const items = [...TK.picked.values()];
+  TRADE[TK.side] = [...TRADE[TK.side], ...items.map(x => tradeCard(x.card))];
+  saveTrade(); closeTradePicker();
+  toast(`Added ${items.length} to ${TK.side === 'give' ? 'You give' : 'You get'}`);
+  refreshTradePrices();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const g = $('tk-grid'); if (!g) return;
+  g.addEventListener('click', e => {
+    const el = e.target.closest('.np-card[data-k]'); if (!el) return;
+    const k = el.dataset.k, x = (TK.items[TK.tab] || []).find(i => i.key === k); if (!x) return;
+    TK.picked.has(k) ? TK.picked.delete(k) : TK.picked.set(k, x);
+    el.classList.toggle('on', TK.picked.has(k));
+    tkBar();
+  });
+});
+
 // Pick cards with the usual search (or your collection); picking adds to the trade instead of the binder
 function openTradeSearch(side) {
   tradeSide = side;
@@ -4237,7 +4360,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
-  closeNeedPage(); closeTradePage(); closeSealedPage();
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray();
   closePeerViewer(true);
