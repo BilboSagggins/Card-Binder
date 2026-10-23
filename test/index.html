@@ -761,7 +761,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.9';
+const APP_VERSION = '2026-10-22.11';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -938,6 +938,24 @@ async function ptcgLookup(card) {
   } catch (e) { return null; }
 }
 
+// A card with no TCGplayer product number (e.g. added through the TCGdex name search): find it in the daily
+// TCGplayer list by name and card number ("XY123", "046/159"), preferring the plain printing over variants
+async function tcgByNameNumber(card) {
+  const L = await loadTcgList(card.lang === 'ja' ? 'pokemon-jp' : 'pokemon'); if (!L || !card.name || !card.number) return null;
+  const [num, tot] = String(card.number).toUpperCase().split('/').map(x => x.trim().replace(/^([A-Z]*)0+(?=\d)/, '$1'));
+  if (!num || num === '—') return null;
+  const bare = n => norm(String(n).replace(/\s+-\s+[A-Z]*\d+[A-Z]?(\/\w+)?\b.*$/, '').replace(/\s*[([][^)\]]*[)\]]/g, ''));
+  const want = bare(card.name), sw = lc(card.set || '').split(/\W+/).filter(w => w.length > 2);
+  const hits = Object.entries(L.p).filter(([, e]) => {
+    const [n, t] = String(e[2]).toUpperCase().split('/').map(x => x.trim().replace(/^([A-Z]*)0+(?=\d)/, '$1'));
+    return n === num && (!tot || !t || t === tot) && bare(e[1]) === want;
+  });
+  if (!hits.length) return null;
+  const score = ([, e]) => (/[([]|\s-\s/.test(e[1]) ? 0 : 2) + (sw.some(w => lc(L.groups[e[3]] || '').includes(w)) ? 1 : 0) + (e[0] != null ? 0.5 : 0);
+  const [pid, e] = hits.sort((a, b) => score(b) - score(a))[0];
+  return e[0] == null ? null : { price: e[0], url: `https://www.tcgplayer.com/product/${pid}` };
+}
+
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
   if (card.ctId) { const c = cardFromCT(card.ctId, await zhList()); return c && c.price != null ? { price: c.price, url: card.url || c.url } : null; }
@@ -948,13 +966,13 @@ const lookupPrice = async card => {
   }
   if (card.source === 'collection') { const r = await matchCollectionCard(card); const m = r && r.found; return m && m.price != null ? { price: m.price, url: m.url || null } : null; }
   if (card.game === 'onepiece') return opLookup(card);
-  return (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
+  return (await tcgByNameNumber(card)) || (card.source === 'ptcg' ? null : await tcgdexLookup(card)) || (await ptcgLookup(card));
 };
 
 async function fillMissing(cards) {
   if (peerUser) return;
   await pool(cards.filter(c => c.price == null && c.source !== 'ptcg' && c.game !== 'onepiece'), 4, async c => {
-    const r = await ptcgLookup(c); if (!r) return;
+    const r = (await tcgByNameNumber(c)) || (await ptcgLookup(c)); if (!r) return;
     c.price = r.price; if (r.url && !c.url) c.url = r.url;
     const el = priceEls.get(c); if (el) el.textContent = fmt(c.price);
     if (getPagesArray().some(p => p.cards.includes(c))) render();
