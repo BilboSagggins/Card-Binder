@@ -93,6 +93,29 @@ def is_card(p):
     return any(e.get("name") == "Number" for e in p.get("extendedData", []))
 
 
+SEALED_RE = re.compile(r"box|pack|deck|bundle|case|set\b|collection|kit|tin|display|blister|sleeve|binder|portfolio|premium|gift|chest|bag|playmat|vault|starter|elite|trainer|build|battle|ultra|special|tournament|package", re.I)
+
+
+def presale_products(cat, groups, skip):
+    """Pre-order products added to other groups (special collections, tins, premium boxes...), by group."""
+    recent = [g for g in groups if g["groupId"] not in skip and (g.get("modifiedOn") or "")[:10] >= str(TODAY - dt.timedelta(days=30))]
+    recent.sort(key=lambda g: g.get("modifiedOn") or "", reverse=True)
+    found = {}
+    for g in recent[:40]:
+        try:
+            prods = get_json(f"https://tcgcsv.com/tcgplayer/{cat}/{g['groupId']}/products")["results"]
+        except Exception as e:
+            errors.append(f"products {g['groupId']}: {e}")
+            continue
+        for p in prods:
+            pi = p.get("presaleInfo") or {}
+            rel = (pi.get("releasedOn") or "")[:10]
+            if is_card(p) or not rel or rel < str(TODAY - dt.timedelta(days=7)) or not SEALED_RE.search(p["name"]):
+                continue
+            found.setdefault(g["groupId"], (g, []))[1].append([p["productId"], p["name"], rel])
+    return found
+
+
 def build_releases():
     out = []
     for game, (label, cats) in GAMES.items():
@@ -103,6 +126,7 @@ def build_releases():
                 errors.append(f"groups {cat}: {e}")
                 continue
             newest_ids = sorted((g["groupId"] for g in groups), reverse=True)[:30]
+            done = set()
             for g in groups:
                 pub = (g.get("publishedOn") or "")[:10]
                 try:
@@ -119,21 +143,55 @@ def build_releases():
                     prods = []
                 sealed = []
                 for p in prods:
-                    if is_card(p):
+                    if is_card(p) or not SEALED_RE.search(p["name"]):
                         continue
                     rel = ((p.get("presaleInfo") or {}).get("releasedOn") or "")[:10] or pub
                     sealed.append([p["productId"], p["name"], rel])
                 sealed.sort(key=lambda x: (x[2], x[1]))
+                done.add(g["groupId"])
                 out.append({
                     "game": game, "gid": g["groupId"], "set": g["name"], "abbr": g.get("abbreviation") or "",
                     "date": pub, "cards": sum(1 for p in prods if is_card(p)), "products": sealed[:40],
                     "url": "https://www.tcgplayer.com/search/all/product?q=" + urllib.parse.quote(g["name"]),
                 })
+            # special products on pre-order in other groups: one entry per product release date
+            for gid, (g, prods) in presale_products(cat, groups, done).items():
+                by_date = {}
+                for pr in prods:
+                    by_date.setdefault(pr[2], []).append(pr)
+                for day, ps in by_date.items():
+                    ps.sort(key=lambda x: x[1])
+                    out.append({
+                        "game": game, "gid": gid, "set": ps[0][1] if len(ps) == 1 else g["name"], "abbr": g.get("abbreviation") or "",
+                        "date": day, "cards": 0, "products": ps[:40], "special": True,
+                        "url": f"https://www.tcgplayer.com/product/{ps[0][0]}" if len(ps) == 1 else "https://www.tcgplayer.com/search/all/product?q=" + urllib.parse.quote(g["name"]),
+                    })
     out.sort(key=lambda r: (r["date"], r["game"], r["set"]))
     return out
 
 
 # ---------------------------------------------------------------- raffles
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
+def dates_in(s, year_hint=None):
+    """All dates written as 10/16/2026, 10/16 or October 16(, 2026) in a piece of text, in order."""
+    found = []
+    y0 = year_hint or TODAY.year
+    for m in re.finditer(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?", s, re.I):
+        try:
+            if m.group(1):
+                y = int(m.group(3)) if m.group(3) else y0
+                y = y + 2000 if y < 100 else y
+                d = dt.date(y, int(m.group(1)), int(m.group(2)))
+            else:
+                d = dt.date(int(m.group(6)) if m.group(6) else y0, MONTHS[m.group(4).lower()[:3]], int(m.group(5)))
+            found.append(d)
+        except ValueError:
+            pass
+    return found
+
+
 def bandai_shops():
     """Bandai Namco Amusement America shops (One Piece official shops, Cross Store...): lottery posts with entry links."""
     raffles, items = [], []
@@ -174,7 +232,12 @@ def bandai_shops():
                 if label.startswith("http"):
                     label = before.strip(" :📍👉") or "Enter"
                 entries.append([label[:60], url])
+            if re.search(r"\bfaq\b", title, re.I):
+                items.append({"game": game, "title": title, "url": link, "date": iso(when), "src": "Bandai Namco Shops", "kind": "news", "imgs": []})
+                continue
+            pd = dates_in(period, when.year if when else None)
             raffles.append({
+                "opens": str(pd[0]) if pd else "", "closes": str(pd[-1]) if pd else "",
                 "game": game, "title": title, "url": link, "posted": iso(when), "src": "Bandai Namco Shops",
                 "period": period, "event": (ev.group(1) or ev.group(2)).strip() if ev else "", "entries": entries[:20],
                 "summary": plain[:280],
@@ -267,12 +330,37 @@ def riftbound_official():
         except ValueError:
             d = None
         desc = text(desc if isinstance(desc, str) else json.dumps(desc))[:240]
-        if RAFFLE_RE.search(title) and not re.search(r"\bfaq\b", title, re.I):
-            raffles.append({"game": "riftbound", "title": title, "url": url, "posted": iso(d), "src": "Riftbound (official)",
-                            "period": "", "event": "", "entries": [["Open the drawing page", url]], "summary": desc})
+        if RAFFLE_RE.search(title) and not re.search(r"\bfaq\b", title, re.I) and d and d > NOW - dt.timedelta(days=60):
+            raffles.append(riftbound_drawing(title, url, d, desc))
         items.append({"game": "riftbound", "title": title, "url": url, "date": iso(d), "src": "Riftbound (official)",
                       "kind": kind_of(title), "imgs": [img.split("?")[0] + "?w=800"] if img else [], "summary": desc})
     return raffles, items[:20]
+
+
+def riftbound_drawing(title, url, d, desc):
+    """Open a Riftbound drawing article for its dates and entry links."""
+    r = {"game": "riftbound", "title": title, "url": url, "posted": iso(d), "src": "Riftbound (official)",
+         "period": "", "event": "", "entries": [], "summary": desc}
+    try:
+        page = get(url, browser=True)
+        nd = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', page, re.S)
+        strings = re.findall(r'"(?:text|body|description|content|html|value)":"((?:[^"\\]|\\.){20,})"', nd.group(1) if nd else page)
+        body = text(" \n".join(json.loads('"' + x + '"') for x in strings))
+        sents = [x.strip() for x in re.split(r"(?<=[.!?])\s+|\n", body) if re.search(r"draw|enter|entry|regist|sign up|winners?|purchase window", x, re.I)]
+        dated = [x for x in sents if dates_in(x)]
+        r["summary"] = " ".join((dated or sents)[:4])[:600] or desc
+        for a in re.finditer(r'"(https?://[^"\s]+)"', nd.group(1) if nd else page):
+            u = a.group(1).replace("\\u002F", "/").replace("\\/", "/")
+            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and u.rstrip("/") != url.rstrip("/"):
+                if u not in [e[1] for e in r["entries"]]:
+                    r["entries"].append([re.sub(r"^https?://(www\.)?", "", u).split("/")[0], u])
+        ds = sorted(set(dates_in(" ".join(dated), d.year)))
+        if ds:
+            r["opens"], r["closes"] = str(ds[0]), str(ds[-1])
+    except Exception as e:
+        errors.append(f"riftbound drawing {url}: {e}")
+    r["entries"] = r["entries"][:6] or [["Open the drawing page", url]]
+    return r
 
 
 GOOGLE = [
@@ -283,6 +371,8 @@ GOOGLE = [
     ("naruto", '"Naruto Card Game" OR "Naruto TCG"'),
     ("riftbound", 'Riftbound'),
 ]
+DEAL_RE = re.compile(r"\bdeals?\b|\bsave\b|\bprice\b|discount|% off|under market|best-ever|\bon (amazon|walmart|target)\b|\bat (amazon|walmart|target)\b|restock", re.I)
+CARDISH_RE = re.compile(r"card|tcg|booster|deck|\bpack|\bbox\b|promo|riftbound|\bset\b|collection|tournament|championship|prerelease|pre-rift", re.I)
 SKIP_SRC = re.compile(r"reddit|youtube|facebook|instagram|tiktok|ebay|amazon|walmart|press release|einpresswire|globenewswire|prnewswire", re.I)
 
 
@@ -299,7 +389,7 @@ def google_news():
             full = text(tag(it, "title"))
             src = text(tag(it, "source")) or (full.rsplit(" - ", 1)[1] if " - " in full else "")
             title = full.rsplit(" - ", 1)[0] if src and full.endswith(" - " + src) else full
-            if SKIP_SRC.search(src) or "Pocket" in title and game == "pokemon":
+            if SKIP_SRC.search(src) or "Pocket" in title and game == "pokemon" or DEAL_RE.search(title) or not CARDISH_RE.search(title + " " + src):
                 continue
             items.append({"game": game, "title": title, "url": text(tag(it, "link")), "date": iso(rss_date(tag(it, "pubDate"))),
                           "src": src, "kind": kind_of(title), "imgs": []})
@@ -326,7 +416,7 @@ def main():
     # news about a drawing / lottery also goes on the raffle list (linked to the article)
     have = {norm_title(x["title"]) for x in raffles}
     for it in items:
-        if it["kind"] == "raffle" and norm_title(it["title"]) not in have and it.get("date") and \
+        if it["kind"] == "raffle" and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
                 dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00")) > NOW - dt.timedelta(days=45):
             raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"],
                             "period": "", "event": "", "entries": [], "summary": it.get("summary", "")})
