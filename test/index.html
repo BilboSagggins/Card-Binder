@@ -957,7 +957,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.17';
+const APP_VERSION = '2026-10-23.21';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3067,16 +3067,23 @@ function dragCleanup() {
   dragSt = null;
 }
 
+// Drop on an empty slot: the card just moves. Drop on a filled slot: the card goes there and the cards in between
+// slide over one place to make room (across pages too), like reordering a list.
 function moveCard(from, to) {
   if (peerUser || (from.p === to.p && from.s === to.s)) return;
-  const pages = getPagesArray();
-  const src = pages[from.p] && pages[from.p].cards, dst = pages[to.p] && pages[to.p].cards;
-  if (!src || !dst) return;
-  const displaced = dst[to.s];
-  dst[to.s] = src[from.s];
-  src[from.s] = displaced;
+  const pages = getPagesArray(), n = cap();
+  if (!pages[from.p] || !pages[to.p]) return;
+  const card = pages[from.p].cards[from.s]; if (!card) return;
+  if (!pages[to.p].cards[to.s]) {
+    pages[to.p].cards[to.s] = card; pages[from.p].cards[from.s] = null;
+    saveActivePages(pages); render(); return toast('Card moved');
+  }
+  const flat = pages.flatMap(pg => pg.cards.slice(0, n)), a = from.p * n + from.s, b = to.p * n + to.s;
+  flat.splice(a, 1); flat.splice(b, 0, card);
+  pages.forEach((pg, i) => { for (let k = 0; k < n; k++) pg.cards[k] = flat[i * n + k] || null; });
   saveActivePages(pages); render();
-  toast(displaced ? 'Cards swapped' : 'Card moved');
+  const shifted = flat.slice(Math.min(a, b), Math.max(a, b) + 1).filter(x => x && x !== card).length;
+  toast(`Card moved · ${shifted} other${shifted === 1 ? '' : 's'} shifted over`);
 }
 
 // Stop the page from scrolling while a card is being dragged on a touch screen
