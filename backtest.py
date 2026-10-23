@@ -1,37 +1,33 @@
-"""Replay: what would the Raffles list have shown around the Riftbound T1 Signature Edition drawing (Aug 2026)?"""
-import importlib.util, re, urllib.parse, datetime as dt
-spec = importlib.util.spec_from_file_location("bn", "scripts/build-news.py"); bn = importlib.util.module_from_spec(spec); spec.loader.exec_module(bn)
+import urllib.request, urllib.parse, re, json
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 out = []
 def p(*a): out.append(" ".join(str(x) for x in a))
-for day in ["2026-08-05", "2026-08-13", "2026-08-15"]:
-    now = dt.datetime.fromisoformat(day + "T18:00:00+00:00"); bn.NOW, bn.TODAY = now, now.date()
-    a = (now - dt.timedelta(days=30)).date()
-    items = []
-    xml = ""
-    for q in [q for g, q in bn.GOOGLE if g == "riftbound"]:
-        url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"{q} after:{a} before:{now.date() + dt.timedelta(days=1)}", "hl": "en-US", "gl": "US", "ceid": "US:en"})
-        xml += "".join("<item>" + x + "</item>" for x in bn.rss_items(bn.get(url, browser=True))[:25])
-    seen = set()
-    for it in bn.rss_items(xml):
-        if bn.tag(it, "title") in seen: continue
-        seen.add(bn.tag(it, "title"))
-        full = bn.text(bn.tag(it, "title")); src = bn.text(bn.tag(it, "source"))
-        title = full.rsplit(" - ", 1)[0] if src and full.endswith(" - " + src) else full
-        if bn.SKIP_SRC.search(src) or bn.DEAL_RE.search(title) or not bn.CARDISH_RE.search(title + " " + src): continue
-        items.append({"game": "riftbound", "title": title, "url": "", "date": bn.iso(bn.rss_date(bn.tag(it, "pubDate"))), "src": src, "kind": bn.kind_of(title), "summary": ""})
-    p(f"\n=== As of {day}: Google News, the job's two Riftbound searches (past 30 days) -> {len(items)} items; raffle-type:")
-    for it in items:
-        if it["kind"] == "raffle" and not re.search(r"\bfaq\b", it["title"], re.I):
-            posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
-            o, c = bn.window([it["title"]], posted.year)
-            if o and dt.date.fromisoformat(o) < posted.date() - dt.timedelta(days=2): o, c = "", ""
-            live = (c and now.date() <= dt.date.fromisoformat(c)) or (o and not c and (now.date() - dt.date.fromisoformat(o)).days <= 7) or (o and now.date() < dt.date.fromisoformat(o))
-            p(f"   {it['date'][:10]} opens={o or '-'} closes={c or '-'} alert={'YES' if live else 'no'} | {it['title']} ({it['src']})")
-# Riot's own T1 article, read with today's job
-bn.NOW, bn.TODAY = dt.datetime.now(dt.timezone.utc), dt.date.today()
-idx = bn.get("https://riftbound.leagueoflegends.com/en-us/news/", browser=True); banner = set(bn.sentences_of(idx))
-u = "https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/"
-r = bn.riftbound_drawing("The Riftbound x T1 2025 Worlds Champion Collection", u, dt.datetime(2026, 7, 2, tzinfo=dt.timezone.utc), "", banner)
-p("\n=== Riot's T1 article:", "counts as a drawing:", r.get("drawing"), "| opens", r.get("opens"), "closes", r.get("closes"), "| entries", r["entries"][:3]); p("   summary:", r["summary"])
-p("errors:", bn.errors)
+def get(u, h=None):
+    req = urllib.request.Request(u, headers={"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9", **(h or {})})
+    with urllib.request.urlopen(req, timeout=25) as r: return r.status, r.read().decode("utf-8", "replace")
+handles = ["narutotcg_eng", "ONEPIECE_tcg_EN", "dbfw_cardgameEN", "dbs_cardgame", "playriftbound"]
+p("#### X")
+for h in handles[:2]:
+    for u in [f"https://syndication.twitter.com/srv/timeline-profile/screen-name/{h}", f"https://x.com/{h}", f"https://nitter.net/{h}/rss", f"https://rss.app/feeds/{h}"]:
+        try:
+            st, t = get(u); vids = len(re.findall(r'video\.twimg\.com|"video_info"|ext_tw_video', t)); tw = len(re.findall(r'"id_str"|/status/\d+', t))
+            p(st, u, "len", len(t), "videos", vids, "tweets", tw, "|", re.sub(r"\s+", " ", t[:200]))
+        except Exception as e: p("ERR", u, e)
+p("#### official sites -> youtube links")
+for site in ["https://en.onepiece-cardgame.com/", "https://www.dbs-cardgame.com/fw/en/", "https://www.dbs-cardgame.com/us-en/", "https://riftbound.leagueoflegends.com/en-us/", "https://www.narutocardgame.com/", "https://narutocardgame.com/en/", "https://www.naruto-cardgame.com/en/"]:
+    try:
+        st, t = get(site)
+        yt = sorted(set(re.findall(r'https?://(?:www\.)?youtube\.com/(?:@[\w.-]+|channel/[\w-]+|c/[\w-]+|user/[\w-]+)', t)))
+        xs = sorted(set(re.findall(r'https?://(?:www\.)?(?:x|twitter)\.com/[\w]+', t)))
+        p(st, site, "youtube:", yt[:6], "x:", xs[:6])
+    except Exception as e: p("ERR", site, e)
+p("#### youtube search -> channels")
+for q in ["ONE PIECE CARD GAME official", "Riftbound League of Legends TCG", "Dragon Ball Super Card Game Fusion World official", "Dragon Ball Super Card Game official", "NARUTO CARD GAME Bandai official"]:
+    try:
+        st, t = get("https://www.youtube.com/results?search_query=" + urllib.parse.quote(q) + "&sp=EgIQAg%3D%3D")  # channels filter
+        chans = re.findall(r'"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"\}', t)
+        handles2 = re.findall(r'"canonicalBaseUrl":"(/@[^"]+)"', t)
+        subs = re.findall(r'"videoCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"', t)
+        p(q, "->", list(dict.fromkeys(chans))[:5], list(dict.fromkeys(handles2))[:5])
+    except Exception as e: p("ERR yt", q, e)
 open("probe-report.txt", "w").write("\n".join(out))
