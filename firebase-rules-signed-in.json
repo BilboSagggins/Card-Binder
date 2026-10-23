@@ -1,0 +1,56 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "users": {
+      ".write": "auth != null && !data.exists()",
+      "$person": {
+        ".write": "auth != null"
+      }
+    },
+    "binderInfo": {
+      "$binder": {
+        ".write": "auth != null"
+      }
+    },
+    "binders": {
+      "$binder": {
+        ".write": "auth != null"
+      }
+    },
+    "backups": {
+      "$binder": {
+        ".write": "auth != null"
+      }
+    },
+    "backupIndex": {
+      "$binder": {
+        ".write": "auth != null"
+      }
+    },
+    "collections": {
+      "$person": {
+        ".write": "auth != null"
+      }
+    },
+    "invites": {
+      "$code": {
+        ".write": "auth != null"
+      }
+    },
+    "trades": {
+      "$person": {
+        ".write": "auth != null"
+      }
+    },
+    "sealed": {
+      "$person": {
+        ".write": "auth != null"
+      }
+    },
+    "settings": {
+      "$key": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}

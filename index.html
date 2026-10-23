@@ -22,6 +22,7 @@
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -884,7 +885,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.1';
+const APP_VERSION = '2026-10-23.7';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4995,11 +4996,26 @@ function revealWhenReady(versionCheck) {
   });
 }
 
+/* Quiet sign-in: each phone signs in to Firebase anonymously (no account, nothing to type), so the database can refuse
+   anyone who isn't using the app. Remembered on the phone, so it happens once. If anonymous sign-in isn't switched on
+   in Firebase yet, the app carries on exactly as before. */
+async function quietSignIn() {
+  if (SIGN_IN_MODE !== 'pin' || typeof firebase.auth !== 'function') return;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  try {
+    const a = firebase.auth();
+    await Promise.race([new Promise(r => { const off = a.onAuthStateChanged(u => { off(); r(u); }); }), wait(3000)]);   // a saved sign-in comes back
+    if (a.currentUser) return;
+    await Promise.race([a.signInAnonymously(), wait(8000)]);
+  } catch (e) { console.warn('Quiet sign-in skipped:', e && (e.code || e.message)); }
+}
+
 /* Application Initialization */
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
   loadShelfCache();
   const versionCheck = checkForNewVersion();
+  await quietSignIn();   // before anything is read, so locked-down rules let the app in
   paintShelfToggle(); loadInvites(); inviteFromAddress();
   fillSelects();
   watchPeople();
