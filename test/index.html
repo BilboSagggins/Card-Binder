@@ -85,12 +85,12 @@
   /* Need list page */
   .np { position: fixed; inset: 0; z-index: 60; background: #09090b; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom); }
   .np[hidden] { display: none; }
-  .np-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: .75rem; padding: max(.8rem, env(safe-area-inset-top)) 1rem .8rem; background: rgba(9,9,11,.94); backdrop-filter: blur(8px); border-bottom: 1px solid #27272a; }
+  .np-head { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: .75rem; padding: max(.8rem, env(safe-area-inset-top)) 1rem .8rem; background: rgba(9,9,11,.94); backdrop-filter: blur(8px); border-bottom: 1px solid #27272a; }
   .np-x { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; width: 2.2rem; height: 2.2rem; border-radius: 10px; font-weight: 700; flex: none; }
   .np-titles h2 { margin: 0; font: 700 1.05rem/1.2 Cinzel, Georgia, serif; letter-spacing: .05em; color: #fff; }
   .np-titles p { margin: .15rem 0 0; font: 500 .72rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .np-titles b { color: #fb7185; }
-  .np-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; padding: .9rem .8rem 2rem; max-width: 64rem; margin: 0 auto; }
+  .np-grid { position: relative; z-index: 0; isolation: isolate; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; padding: .9rem .8rem 2rem; max-width: 64rem; margin: 0 auto; }
   @media (min-width: 640px) { .np-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; } }
   .np-card { position: relative; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: .4rem; display: flex; flex-direction: column; gap: .3rem; color: #f4f4f5; user-select: none; -webkit-user-select: none; }
   .np-img { position: relative; aspect-ratio: 2.5 / 3.5; border-radius: 6px; overflow: hidden; background: #09090b; }
@@ -761,7 +761,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.7';
+const APP_VERSION = '2026-10-22.9';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4526,6 +4526,13 @@ function startEmailAuth() {
 }
 
 /* If GitHub handed this phone an older saved copy of the app, switch to the newest one */
+// A home-screen app often resumes instead of restarting, so also look for a new version when it comes back into view
+let lastVersionCheck = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || Date.now() - lastVersionCheck < 60000) return;
+  if (dragSt || npDrag || (typeof trayDrag !== 'undefined' && trayDrag)) return;   // never in the middle of a drag
+  lastVersionCheck = Date.now(); checkForNewVersion();
+});
 function checkForNewVersion() {
   return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
     const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
