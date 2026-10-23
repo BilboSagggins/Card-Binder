@@ -5272,7 +5272,7 @@ document.addEventListener('visibilitychange', () => {
 });
 function checkForNewVersion() {
   return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
-    const v = (t.match(/const APP_VERSION = '2026-10-23.30']+)'/) || [])[1];
+    const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
     if (!v || v === APP_VERSION) return 'current';
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
     if (tried === v) return 'current';   // already tried once this visit; don't loop
