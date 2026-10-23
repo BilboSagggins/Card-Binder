@@ -107,6 +107,9 @@
   .np-conds b.nm { color: #34d399; font-weight: 800; }
   .np-card { touch-action: pan-y; -webkit-touch-callout: none; }
   .np-lock { margin-left: auto; flex: none; appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; border-radius: 999px; padding: .45rem .8rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
+  .np-acts { flex: 0 0 100%; display: flex; align-items: center; justify-content: flex-end; gap: .5rem; }
+  .np-acts .np-lock { margin-left: 0; }
+  #np-hint { margin-right: auto; font: 500 .68rem/1.3 Inter, system-ui, sans-serif; color: #71717a; }
   .np-lock.on { background: #e11d48; border-color: #fb7185; color: #fff; }
   .np-head { flex-wrap: wrap; }
   .np-titles { flex: 1; min-width: 0; }
@@ -129,6 +132,9 @@
   @keyframes np-stamp { from { transform: translate(-50%, -50%) rotate(-18deg) scale(2.4); opacity: 0; } to { transform: translate(-50%, -50%) rotate(-18deg) scale(1); opacity: 1; } }
   .np-hole { opacity: .25; outline: 2px dashed #f43f5e; outline-offset: 2px; }
   .np-ghost { position: fixed; z-index: 120; pointer-events: none; transform: scale(1.06) rotate(-2deg); box-shadow: 0 18px 40px rgba(0,0,0,.7); border-color: #f43f5e; opacity: .95; }
+  .np-link { display: none; text-align: center; font: 700 .62rem/1 Inter, system-ui, sans-serif; color: #c7d2fe; background: #312e81; border-radius: 6px; padding: .4rem; text-decoration: none; }
+  .np-export .np-link { display: block; }
+  .np-card.got .np-link { opacity: .4; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
@@ -464,9 +470,6 @@
         <button onclick="openNeedPage()" title="Your Need cards on one live page" class="btn bg-rose-600/80 hover:bg-rose-600 text-white border-rose-400/60 font-bold flex items-center gap-1.5">
           <span>📝</span> Need List
         </button>
-        <button onclick="exportNeededList()" title="Export Need list as HTML visual sheet" class="btn bg-rose-900/30 hover:bg-rose-900/70 text-rose-200 border-rose-500/50 font-bold flex items-center gap-1.5">
-          <span>📋</span> Export Need (HTML)
-        </button>
       </div>
 
       <!-- General Utility Buttons -->
@@ -692,7 +695,8 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
-    <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button>
+    <div class="np-acts"><span id="np-hint"></span><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
+    <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
   <div id="np-grid" class="np-grid"></div>
@@ -757,7 +761,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.5';
+const APP_VERSION = '2026-10-22.7';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3423,6 +3427,15 @@ function condRows(price) {
   const v = Number.isFinite(+price) && price != null ? +price : null;
   return `<div class="np-conds">${CONDITIONS.map(([k, f], i) => `<span>${k}</span><b${i ? '' : ' class="nm"'}>${v == null ? '—' : '$' + (v * f).toFixed(2)}</b>`).join('')}</div>`;
 }
+function needCardHTML(x, i) {
+  return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-key="${esc(x.key)}">
+      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
+      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
+      ${condRows(x.c.price)}
+      <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+    </div>`;
+}
 function openNeedPage() {
   if (peerUser) return toast('The Need List is for your own binders.', 'error');
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
@@ -3535,88 +3548,36 @@ function renderNeedPage() {
   page.classList.toggle('locked', npLocked);
   $('np-bar').hidden = !got; $('np-bar-text').textContent = `${got} acquired`;
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
-  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated<br>${npLocked ? 'Tap a card when you get it to stamp it Acquired' : 'Hold a card and drag it to set your priority'}` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
-  $('np-grid').innerHTML = all.length ? all.map((x, i) => `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-key="${esc(x.key)}">
-      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
-      <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
-      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
-      ${condRows(x.c.price)}
-    </div>`).join('')
+  $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
+  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it' : 'Hold and drag to set priority';
+  $('np-grid').innerHTML = all.length ? all.map(needCardHTML).join('')
     : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
 }
 
+// Export the Need List as it looks now: your priority order, condition prices, and Acquired stamps
 function exportNeededList() {
-  const neededCards = [];
-  getPagesArray().forEach(p => p.cards.forEach(c => {
-    if (c && c.status === 'needed') neededCards.push(c);
-  }));
-
-  if (!neededCards.length) return toast('No Need cards found to export', 'error');
-
-  let cardsHtml = '';
-  neededCards.forEach(c => {
-    const basePrice = parseFloat(c.price);
-    const hasPrice = Number.isFinite(basePrice);
-
-    const nm = hasPrice ? `$${basePrice.toFixed(2)}` : 'N/A';
-    const lp = hasPrice ? `$${(basePrice * 0.85).toFixed(2)}` : 'N/A';
-    const mp = hasPrice ? `$${(basePrice * 0.65).toFixed(2)}` : 'N/A';
-    const hp = hasPrice ? `$${(basePrice * 0.45).toFixed(2)}` : 'N/A';
-    const dmg = hasPrice ? `$${(basePrice * 0.30).toFixed(2)}` : 'N/A';
-    const imgUrl = c.image || c.thumb || '';
-    const linkUrl = cardLink(c);
-
-    cardsHtml += `
-      <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; color: #f4f4f5; font-family: sans-serif;">
-        <div style="aspect-ratio: 2.5/3.5; background: #09090b; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-          <img src="${imgUrl}" alt="${esc(c.name)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 300 420\'><rect width=\'300\' height=\'420\' fill=\'#18181b\'/><text x=\'150\' y=\'210\' fill=\'#a1a1aa\' font-family=\'sans-serif\' font-size=\'16\' text-anchor=\'middle\'>No Image</text></svg>'">
-        </div>
-        <div>
-          <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${esc(c.name)}</h3>
-          <p style="font-size: 12px; color: #a1a1aa; margin: 0;"><b>Set:</b> ${esc(c.set)} &bull; <b>No:</b> ${esc(c.number)}</p>
-        </div>
-        <div style="background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; justify-content: space-between;"><span style="color: #a1a1aa;">Near Mint (NM):</span><strong style="color: #34d399;">${nm}</strong></div>
-          <div style="display: flex; justify-content: space-between;"><span style="color: #a1a1aa;">Lightly Played (LP):</span><span>${lp}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="color: #a1a1aa;">Moderately Played (MP):</span><span>${mp}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="color: #a1a1aa;">Heavily Played (HP):</span><span>${hp}</span></div>
-          <div style="display: flex; justify-content: space-between;"><span style="color: #a1a1aa;">Damaged (DMG):</span><span>${dmg}</span></div>
-        </div>
-        <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="background: #4f46e5; color: white; text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: bold; text-decoration: none;">View on TCGplayer</a>
-      </div>
-    `;
-  });
-
-  const activeUser = peerUser || currentUser;
-  const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Need Cards Checklist</title>
-<style>
-  body { background-color: #09090b; color: #f4f4f5; font-family: sans-serif; margin: 0; padding: 24px; }
-  h1 { font-family: serif; font-size: 24px; margin-bottom: 4px; }
-  p { color: #a1a1aa; font-size: 14px; margin-top: 0; margin-bottom: 24px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-</style>
-</head>
-<body>
-  <h1>📋 Need Cards Wishlist (${activeUser})</h1>
-  <p>Generated on ${new Date().toLocaleDateString()} — Total Need Cards: ${neededCards.length}</p>
-  <div class="grid">
-    ${cardsHtml}
-  </div>
-</body>
-</html>`;
-
-  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Need_Cards_Wishlist_${activeUser}_${new Date().toISOString().slice(0, 10)}.html`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast(`Exported ${neededCards.length} Need card(s) as HTML sheet`);
+  const all = needCards(); if (!all.length) return toast('No Need cards to export', 'error');
+  const list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
+  const total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
+  // this page's own styles, so the export looks the same
+  let css = '';
+  for (const sh of document.styleSheets) { try { for (const r of sh.cssRules) { const t = r.cssText; if (/(^|[\s,])\.(np|jp-tag)|np-stamp/.test(t.split('{')[0]) || /^@keyframes np-/.test(t) || (r.media && /\.np/.test(t))) css += t + '\n'; } } catch (e) {} }
+  const name = titleOf(currentUser), day = new Date();
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Need List · ${esc(name)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;background:#09090b;color:#f4f4f5;font-family:Inter,system-ui,sans-serif}.np{position:static;overflow:visible}.np-head{position:static}
+${css}</style></head><body>
+<div class="np np-export"><div class="np-head"><div class="np-titles"><h2>Need List · ${esc(name)}</h2>
+<p><b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated${got ? ` · ${got} acquired` : ''}<br>In priority order · ${day.toLocaleDateString()}</p></div></div>
+<div class="np-grid">${all.map(needCardHTML).join('')}</div></div>
+<script>function imgErr(i){var a=(i.dataset.alts||'').split('|').filter(function(u){return u&&u!==i.src});var n=a.shift();i.dataset.alts=a.join('|');if(n)i.src=n;else{i.onerror=null;i.style.visibility='hidden';}}<\/script>
+</body></html>`;
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url;
+  a.download = `Need_List_${name.replace(/[^\w-]+/g, '_')}_${day.toISOString().slice(0, 10)}.html`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast(`Exported ${all.length} card${all.length === 1 ? '' : 's'} in priority order`);
 }
 
 function importData(e) {
