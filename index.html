@@ -1157,7 +1157,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.60';
+const APP_VERSION = '2026-10-23.61';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3095,6 +3095,11 @@ function setupFirebaseListener(username) {
   }
   activeListener = username;
   S.loadedFor = null; S.cloud = null;   // block saves until this binder has really been loaded
+  // Show this phone's saved copy right away (read-only until the cloud answers), or a loading note
+  const cached = readBinderCache(username);
+  if (cached) { S.layout = cached.layout || '4x3'; S.pages = normPages(cached.pages); }
+  else { S.pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }]; }
+  S.cover = null; render();
 
   db.ref('binders/' + username).on('value', snapshot => {
     const data = snapshot.val();
@@ -3112,12 +3117,25 @@ function setupFirebaseListener(username) {
       S.cloud = { layout: null, pages: [] };
     }
     S.loadedFor = username;
+    writeBinderCache(username, data);
     render();
     if (!peerUser && !dailyChecked[username]) { dailyChecked[username] = true; maybeDailyBackup(); }
   }, err => {
     S.loadedFor = null; S.cloud = null;
     dbProblem(`⚠️ Can't read your cards from the cloud (${err.code || err.message}). Nothing has been deleted, but changes can't be saved right now. If this says permission_denied, the Firebase database rules have probably expired: Firebase console → Realtime Database → Rules.`, 'read');
   });
+}
+
+// A copy of each binder's pages on this phone, so opening one is instant (the cloud copy always replaces it)
+const BCACHE = 'cardBinder.pages.';
+function readBinderCache(u) { try { const d = JSON.parse(localStorage.getItem(BCACHE + u) || 'null'); return d && d.pages ? d : null; } catch (e) { return null; } }
+function writeBinderCache(u, data) {
+  try {
+    if (!data) return localStorage.removeItem(BCACHE + u);
+    const txt = JSON.stringify({ layout: data.layout || '4x3', pages: data.pages || [] });
+    if (txt.length > 1500000) return;   // very large binders (lots of photos) just load from the cloud
+    localStorage.setItem(BCACHE + u, txt);
+  } catch (e) { try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE) && k !== BCACHE + u).forEach(k => localStorage.removeItem(k)); } catch (e2) {} }
 }
 
 /* Binder Layout & Core Interactions */
@@ -3159,6 +3177,7 @@ function render() {
   const sb = $('sel-btn'); if (sb) sb.hidden = !!peerUser;
   const pages = getPagesArray();
   const g = $('grid'); g.className = `w-full gap-3 sm:gap-4 grid-layout-${S.layout} animate-page-turn`;
+  const ln = $('load-note'); if (ln) ln.classList.toggle('hidden', !activeListener || S.loadedFor === activeListener);
   
   if (S.cur >= pages.length) S.cur = Math.max(0, pages.length - 1);
   pages[S.cur] ||= { title: `Page ${S.cur + 1}`, cards: Array(cap()).fill(null) };
