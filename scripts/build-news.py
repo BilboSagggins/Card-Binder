@@ -14,6 +14,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 
@@ -435,14 +436,25 @@ CARDISH_RE = re.compile(r"card|tcg|booster|deck|\bpack|\bbox\b|promo|riftbound|\
 SKIP_SRC = re.compile(r"reddit|youtube|facebook|instagram|tiktok|ebay|amazon|walmart|press release|einpresswire|globenewswire|prnewswire", re.I)
 
 
+FAILED_GOOGLE = set()
+
+
 def google_news():
     items = []
-    for game, q in GOOGLE:
+    for n, (game, q) in enumerate(GOOGLE):
         url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": q + " when:30d", "hl": "en-US", "gl": "US", "ceid": "US:en"})
-        try:
-            xml = get(url, browser=True)
-        except Exception as e:
-            errors.append(f"google {game}: {e}")
+        xml = None
+        for attempt in range(3):
+            time.sleep(1.5 if n or attempt else 0)
+            try:
+                xml = get(url, browser=True)
+                break
+            except Exception as e:
+                err = e
+                time.sleep(6 * (attempt + 1))
+        if xml is None:
+            errors.append(f"google {game}: {err}")
+            FAILED_GOOGLE.add(game)
             continue
         for it in rss_items(xml)[:25]:
             full = text(tag(it, "title"))
@@ -452,7 +464,7 @@ def google_news():
                     or game in ("fusionworld", "dbmasters") and not re.search(r"card|tcg|fusion world|booster|masters", title, re.I):
                 continue
             items.append({"game": game, "title": title, "url": text(tag(it, "link")), "date": iso(rss_date(tag(it, "pubDate"))),
-                          "src": src, "kind": kind_of(title), "imgs": []})
+                          "src": src, "kind": kind_of(title), "imgs": [], "via": "google"})
     return items
 
 
@@ -473,6 +485,15 @@ def main():
     items += pokebeach()
     items += onepiece_official()
     items += google_news()
+    # a Google search that failed this time: keep what the last run found for that game
+    if FAILED_GOOGLE:
+        try:
+            with open(OUT, encoding="utf-8") as f:
+                prev = json.load(f)
+            items += [x for x in prev.get("items", []) if x.get("via") == "google" and x["game"] in FAILED_GOOGLE]
+            raffles += [x for x in prev.get("raffles", []) if x.get("via") == "google" and x["game"] in FAILED_GOOGLE]
+        except Exception as e:
+            errors.append(f"previous news: {e}")
     # news about a drawing / lottery also goes on the raffle list (linked to the article)
     have = {norm_title(x["title"]) for x in raffles}
     for it in items:
@@ -482,7 +503,7 @@ def main():
             o, c = window([it["title"]] + re.split(r"(?<=[.!?])\s+", it.get("summary", "")), posted.year)
             if o and dt.date.fromisoformat(o) < posted.date() - dt.timedelta(days=2):
                 o, c = "", ""       # a date from before the post: not the entry window
-            raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"],
+            raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"], "via": it.get("via", ""),
                             "opens": o, "closes": c, "period": "", "event": "", "entries": [], "summary": it.get("summary", "")})
             have.add(norm_title(it["title"]))
     # newest first; drop near-duplicate headlines (keep the copy with pictures / from the official source)
