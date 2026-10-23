@@ -136,6 +136,32 @@
   .np-export .np-link { display: block; }
   .np-card.got .np-link { opacity: .4; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
+  /* Trade analyzer */
+  .tp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .8rem .7rem 2rem; max-width: 56rem; margin: 0 auto; }
+  .tp-side { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: .6rem; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+  .tp-side h3 { margin: 0; text-align: center; font: 800 .8rem/1.2 Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #fda4af; }
+  .tp-side[data-side="get"] h3 { color: #7dd3fc; }
+  .tp-list { display: flex; flex-direction: column; gap: .4rem; }
+  .tp-card { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .45rem; align-items: center; background: #09090b; border: 1px solid #27272a; border-radius: 9px; padding: .3rem; }
+  .tp-card img { width: 2.4rem; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 3px; display: block; background: #18181b; }
+  .tp-card .t { min-width: 0; }
+  .tp-card .t b { display: block; font: 700 .66rem/1.2 Inter, system-ui, sans-serif; color: #f4f4f5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tp-card .t span { display: block; font: 500 .56rem/1.25 Inter, system-ui, sans-serif; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tp-card .t i { font-style: normal; font: 800 .68rem/1.3 Inter, system-ui, sans-serif; color: #34d399; }
+  .tp-card .t i.none { color: #a1a1aa; font-weight: 600; }
+  .tp-card .x { appearance: none; border: 0; background: #27272a; color: #a1a1aa; width: 1.4rem; height: 1.4rem; border-radius: 6px; font-weight: 700; font-size: .7rem; }
+  .tp-empty { text-align: center; color: #52525b; font: 500 .7rem/1.4 Inter, system-ui, sans-serif; padding: 1rem .2rem; }
+  .tp-add { appearance: none; border: 1px dashed #52525b; background: transparent; color: #d4d4d8; border-radius: 9px; padding: .55rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
+  .tp-foot { margin-top: auto; border-top: 1px solid #27272a; padding-top: .5rem; display: flex; flex-direction: column; gap: .35rem; font: 600 .68rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .tp-foot > div, .tp-foot > label { display: flex; justify-content: space-between; align-items: center; gap: .3rem; }
+  .tp-foot b { color: #e4e4e7; }
+  .tp-pct { display: inline-flex; align-items: center; gap: .15rem; color: #e4e4e7; }
+  .tp-pct input { width: 3.6rem; text-align: right; background: #09090b; border: 1px solid #3f3f46; border-radius: 7px; color: #fff; padding: .3rem .35rem; font: 700 .8rem/1 Inter, system-ui, sans-serif; }
+  .tp-total { font-size: .8rem; color: #e4e4e7; }
+  .tp-total b { font-size: .95rem; color: #34d399; }
+  .tp-verdict { margin-right: auto; font: 800 .74rem/1.3 Inter, system-ui, sans-serif; padding: .4rem .6rem; border-radius: 9px; background: #27272a; color: #d4d4d8; }
+  .tp-verdict.fair { background: #14532d; color: #bbf7d0; }
+  .tp-verdict.short { background: #7c2d12; color: #fed7aa; }
   /* Drop a dragged binder card here to take it out */
   #drag-trash { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 90; transform: translate(-50%, 140%); display: flex; align-items: center; gap: .5rem;
     padding: .8rem 1.4rem; border-radius: 999px; background: rgba(24,24,27,.95); border: 2px dashed #f43f5e; color: #fecdd3; font: 700 .8rem Inter, system-ui, sans-serif;
@@ -467,6 +493,9 @@
         <button onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="btn bg-indigo-900/40 hover:bg-indigo-900/80 text-indigo-200 border-indigo-500/50 font-bold flex items-center gap-1.5">
           <span>📖</span> Export Binder (HTML)
         </button>
+        <button onclick="openTradePage()" title="Compare the two sides of a trade" class="btn bg-sky-700/70 hover:bg-sky-700 text-white border-sky-400/60 font-bold flex items-center gap-1.5">
+          <span>⚖️</span> Trade
+        </button>
         <button onclick="openNeedPage()" title="Your Need cards on one live page" class="btn bg-rose-600/80 hover:bg-rose-600 text-white border-rose-400/60 font-bold flex items-center gap-1.5">
           <span>📝</span> Need List
         </button>
@@ -690,6 +719,29 @@
 </div>
 
 <!-- Notification Toasts Container -->
+<!-- Trade analyzer: what you give vs what you get, with a multiplier on each side -->
+<div id="trade-page" class="np tp" hidden role="dialog" aria-modal="true" aria-labelledby="tp-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeTradePage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="tp-title">Trade</h2><p id="tp-sub">Add cards to each side to compare</p></div>
+    <div class="np-acts"><span id="tp-verdict" class="tp-verdict"></span><button type="button" class="np-lock" onclick="clearTrade()">Clear</button></div>
+  </div>
+  <div class="tp-cols">
+    <section class="tp-side" data-side="give"><h3>You give</h3><div class="tp-list" id="tp-give"></div>
+      <button type="button" class="tp-add" onclick="openTradeSearch('give')">＋ Add card</button>
+      <div class="tp-foot"><div><span>Cards</span><b id="tp-give-sub">$0.00</b></div>
+        <label><span>Multiplier</span><span class="tp-pct"><input id="tp-give-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('give', this.value)">%</span></label>
+        <div class="tp-total"><span>Total</span><b id="tp-give-tot">$0.00</b></div></div>
+    </section>
+    <section class="tp-side" data-side="get"><h3>You get</h3><div class="tp-list" id="tp-get"></div>
+      <button type="button" class="tp-add" onclick="openTradeSearch('get')">＋ Add card</button>
+      <div class="tp-foot"><div><span>Cards</span><b id="tp-get-sub">$0.00</b></div>
+        <label><span>Multiplier</span><span class="tp-pct"><input id="tp-get-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('get', this.value)">%</span></label>
+        <div class="tp-total"><span>Total</span><b id="tp-get-tot">$0.00</b></div></div>
+    </section>
+  </div>
+</div>
+
 <!-- Need list: a live page of every card marked Need in this binder -->
 <div id="need-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="np-title">
   <div class="np-head">
@@ -761,7 +813,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.11';
+const APP_VERSION = '2026-10-22.13';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1379,8 +1431,16 @@ function renderCollection() {
       <div class="text-[10px] text-zinc-400 mt-0.5 truncate">${esc([it.set, it.number].filter(Boolean).join(' · ') || 'From your collection')}</div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>
       <button type="button" data-set class="mt-1.5 py-1.5 w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[11px] font-semibold text-zinc-200">📚 Add whole set</button>`;
-    el.onclick = () => { const at = { ...target }; closeSearch(); placeCollectionItem(it, at); };
-    el.querySelector('[data-set]').onclick = e => { e.stopPropagation(); const at = { ...target }; closeSearch(); addWholeSet(it, at); };
+    el.onclick = async () => {
+      if (tradeSide) {
+        const side = tradeSide; closeSearch();
+        const r = await resolveCollItem(it, S.game).catch(() => null);
+        return addTradeCard(side, r ? r.card : { id: 'coll-' + it.id, name: it.name, set: it.set || 'Collection', number: it.number || '', price: null, image: it.image || '', thumb: it.image || '', alts: [], game: S.game, lang: 'en', source: 'collection' });
+      }
+      const at = { ...target }; closeSearch(); placeCollectionItem(it, at);
+    };
+    if (tradeSide) el.querySelector('[data-set]').remove();
+    else el.querySelector('[data-set]').onclick = e => { e.stopPropagation(); const at = { ...target }; closeSearch(); addWholeSet(it, at); };
     box.appendChild(el);
   });
   if (shown.length > 300) box.insertAdjacentHTML('beforeend', `<div class="col-span-full text-center text-xs text-zinc-500 py-2">Showing the first 300. Search to find the rest.</div>`);
@@ -2166,6 +2226,7 @@ function renderResults(cards, append) {
       <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${langTag(card, 'jp-inline')}${card.lang && card.lang !== 'en' ? ' ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
     el.onclick = () => { 
+      if (tradeSide) { const side = tradeSide; closeSearch(); return addTradeCard(side, card); }
       card.status = addStatus; 
       const pages = getPagesArray();
       pages[target.p].cards[target.s] = card; 
@@ -2186,11 +2247,12 @@ function renderResults(cards, append) {
 function openSearch(p, s) {
   if (peerUser) return toast('Cannot add cards in read-only peer mode', 'error');
   target = { p, s }; $('tgt').textContent = `Page ${p + 1}, Slot ${s + 1}`;
+  if (!tradeSide) $('s-modal').style.zIndex = '';
   $('q').value = '';$('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Search by name, ${S.game === 'onepiece' ? 'card ID' : 'Pokémon + number'}, or browse a set. Pick a set in any mode to narrow results.</div>`;
   resetCustom(); $('coll-q').value = ''; paintPkLang(); setMode(mode); setStatus(addStatus); $('s-modal').classList.remove('hidden');
 }
 
-const closeSearch = () => $('s-modal').classList.add('hidden');
+const closeSearch = () => { $('s-modal').classList.add('hidden'); $('s-modal').style.zIndex = ''; tradeSide = null; };
 
 function setStatus(st) {
   addStatus = st;
@@ -2303,6 +2365,7 @@ function addCustomCard() {
     rarity: 'Custom', price: Number.isFinite(price) && price >= 0 ? price : null, url: null,
     thumb: customImg, image: customImg, alts: [], game: 'custom', lang: 'en', source: 'custom', status: addStatus
   };
+  if (tradeSide) { const side = tradeSide; closeSearch(); return addTradeCard(side, card); }
   const pages = getPagesArray();
   pages[target.p].cards[target.s] = card;
   saveActivePages(pages); render(); closeSearch(); toast('Added ' + card.name);
@@ -3422,6 +3485,83 @@ function exportBinderHTML() {
   toast(`Exported full binder snapshot (${pages.length} pages)`);
 }
 
+/* --- Trade analyzer: two sides of cards, totals with a % multiplier each, and whether it's fair.
+   Saved per person at trades/<person> so it's there on every phone. --- */
+let TRADE = { give: [], get: [], giveMult: 100, getMult: 100 }, tradeRef = null, tradeSide = null;
+const TRADE_FAIR = 0.05;   // within 5% of the bigger side counts as fair
+function tradeCard(c) {
+  const keep = ['id', 'name', 'set', 'number', 'rarity', 'price', 'image', 'thumb', 'url', 'tcgPid', 'ctId', 'lang', 'game', 'source'];
+  const o = {}; keep.forEach(k => { if (c[k] != null && c[k] !== '') o[k] = c[k]; });
+  o.alts = (c.alts || []).filter(a => typeof a === 'string' && !a.startsWith('data:')).slice(0, 3);
+  if (String(o.image || '').startsWith('data:') && o.image.length > 200000) o.image = o.thumb = '';   // keep big photos out of the trade
+  o.tid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  return o;
+}
+function openTradePage() {
+  if (peerUser) return toast('Open one of your own binders to use Trade.', 'error');
+  const owner = ownerOf(currentUser);
+  if (tradeRef) tradeRef.off();
+  tradeRef = db.ref('trades/' + owner);
+  tradeRef.on('value', v => {
+    const d = v.val() || {}, arr = x => Array.isArray(x) ? x.filter(Boolean) : Object.values(x || {});
+    TRADE = { give: arr(d.give), get: arr(d.get), giveMult: Number.isFinite(+d.giveMult) ? +d.giveMult : 100, getMult: Number.isFinite(+d.getMult) ? +d.getMult : 100 };
+    renderTrade();
+  }, () => {});
+  $('trade-page').hidden = false; document.body.style.overflow = 'hidden';
+  renderTrade(); refreshTradePrices();
+}
+function closeTradePage() { $('trade-page').hidden = true; document.body.style.overflow = ''; if (tradeRef) { tradeRef.off(); tradeRef = null; } }
+function saveTrade() { if (tradeRef) tradeRef.set(TRADE).catch(() => toast('Couldn\'t save the trade. Check your connection.', 'error')); renderTrade(); }
+const tradeSum = side => TRADE[side].reduce((a, c) => a + (Number.isFinite(+c.price) && c.price != null ? +c.price : 0), 0);
+function renderTrade() {
+  if (!$('trade-page') || $('trade-page').hidden) return;
+  ['give', 'get'].forEach(side => {
+    const list = TRADE[side];
+    $('tp-' + side).innerHTML = list.length ? list.map(c => `<div class="tp-card">
+        ${imgTag(c.thumb || c.image, c.alts, c.name, '')}
+        <div class="t"><b title="${esc(c.name)}">${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc([c.set, c.number].filter(Boolean).join(' · '))}</span><i class="${c.price == null ? 'none' : ''}">${c.price == null ? 'No price' : fmt(c.price)}</i></div>
+        <button type="button" class="x" aria-label="Remove ${esc(c.name)}" onclick="removeTradeCard('${side}','${esc(c.tid)}')">✕</button></div>`).join('')
+      : `<p class="tp-empty">${side === 'give' ? 'Cards you\'re trading away' : 'Cards you\'re getting'}</p>`;
+    const m = $('tp-' + side + '-mult'); if (document.activeElement !== m) m.value = TRADE[side + 'Mult'];
+    $('tp-' + side + '-sub').textContent = fmt(tradeSum(side));
+    $('tp-' + side + '-tot').textContent = fmt(tradeSum(side) * TRADE[side + 'Mult'] / 100);
+  });
+  const give = tradeSum('give') * TRADE.giveMult / 100, get = tradeSum('get') * TRADE.getMult / 100, diff = get - give;
+  const v = $('tp-verdict'), noPrice = [...TRADE.give, ...TRADE.get].filter(c => c.price == null).length;
+  $('tp-sub').textContent = `You give ${fmt(give)} · You get ${fmt(get)}${noPrice ? ` · ${noPrice} without a price` : ''}`;
+  if (!TRADE.give.length && !TRADE.get.length) { v.className = 'tp-verdict'; v.textContent = 'Add cards to both sides'; return; }
+  if (Math.abs(diff) <= Math.max(1, TRADE_FAIR * Math.max(give, get))) { v.className = 'tp-verdict fair'; v.textContent = '✅ Fair trade'; }
+  else if (diff < 0) { v.className = 'tp-verdict short'; v.textContent = `They're ${fmt(-diff)} short — they should add more`; }
+  else { v.className = 'tp-verdict short'; v.textContent = `You're ${fmt(diff)} short — add more`; }
+}
+function setTradeMult(side, val) {
+  const n = Math.max(0, Math.min(500, parseFloat(val)));
+  TRADE[side + 'Mult'] = Number.isFinite(n) ? Math.round(n * 10) / 10 : 100; saveTrade();
+}
+function removeTradeCard(side, tid) { TRADE[side] = TRADE[side].filter(c => c.tid !== tid); saveTrade(); }
+function clearTrade() {
+  if ((TRADE.give.length || TRADE.get.length) && !confirm('Clear both sides of this trade?')) return;
+  TRADE = { give: [], get: [], giveMult: 100, getMult: 100 }; saveTrade();
+}
+function addTradeCard(side, card) {
+  TRADE[side] = [...TRADE[side], tradeCard(card)]; saveTrade();
+  toast(`${card.name} added to ${side === 'give' ? 'You give' : 'You get'}${card.price != null ? ' · ' + fmt(card.price) : ''}`);
+  if (card.price == null) lookupPrice(card).then(r => { if (!r) return; const c = TRADE[side].find(x => x.id === card.id && x.price == null); if (c) { c.price = r.price; if (r.url) c.url = r.url; saveTrade(); } }).catch(() => {});
+}
+// Pick cards with the usual search (or your collection); picking adds to the trade instead of the binder
+function openTradeSearch(side) {
+  tradeSide = side;
+  openSearch(S.cur, 0);
+  $('s-modal').style.zIndex = '65';   // above the trade page (60), under sheets like the set picker (70)
+  $('tgt').textContent = side === 'give' ? 'Trade · You give' : 'Trade · You get';
+}
+async function refreshTradePrices() {
+  for (const side of ['give', 'get']) for (const c of TRADE[side]) {
+    if (c.source === 'custom') continue;
+    try { const r = await lookupPrice(c); if (r && r.price !== c.price) { c.price = r.price; if (r.url) c.url = r.url; saveTrade(); } } catch (e) {}
+  }
+}
+
 /* --- Need List page: every card marked Need in this binder, live (it redraws whenever the binder changes) --- */
 // Each Need card's key in the saved priority order: its card id (a second copy of the same card gets "#2")
 function needCards() {
@@ -3940,7 +4080,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
-  closeNeedPage();
+  closeNeedPage(); closeTradePage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray();
   closePeerViewer(true);
