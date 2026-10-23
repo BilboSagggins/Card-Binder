@@ -115,8 +115,13 @@
   .np-bar button { appearance: none; border: 1px solid #16a34a; background: #14532d; color: #dcfce7; border-radius: 8px; padding: .35rem .6rem; font: 700 .68rem/1 Inter, system-ui, sans-serif; }
   .np.locked .np-card { cursor: pointer; }
   .np.locked .np-card:active { transform: scale(.97); }
-  .np-card.got .np-img img { filter: grayscale(.55) brightness(.7); }
-  .np-card.got .np-rank { background: #16a34a; }
+  .np-card.got .np-img img { filter: grayscale(1) brightness(.6); }
+  .np-card.got { background: #121214; border-color: #1f1f23; }
+  .np-card.got .np-name, .np-card.got .np-meta span, .np-card.got .np-conds span, .np-card.got .np-conds b, .np-card.got .np-conds b.nm { color: #52525b; }
+  .np-card.got .np-name { text-decoration: line-through; text-decoration-color: #3f3f46; }
+  .np-card.got .np-conds { background: #0c0c0e; border-color: #1f1f23; }
+  .np-card.got .jp-tag { filter: grayscale(1); opacity: .6; }
+  .np-card.got .np-rank { background: #3f3f46; color: #a1a1aa; }
   .np-stamp { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%) rotate(-18deg); padding: .2rem .45rem; border: 3px double #22c55e; border-radius: 6px; color: #22c55e; background: rgba(5,46,22,.55);
     font: 900 clamp(.62rem, 3.2vw, .95rem)/1 Inter, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
   .np-stamp.fresh { animation: np-stamp .35s cubic-bezier(.2,1.6,.4,1); }
