@@ -156,6 +156,20 @@
   .sp-row { display: flex; justify-content: space-between; align-items: center; gap: .3rem; font: 600 .65rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .sp-row b { color: #34d399; font-size: .78rem; }
   .sp-link { font: 700 .6rem/1 Inter, system-ui, sans-serif; color: #c7d2fe; text-decoration: none; }
+  /* Card scanner */
+  .scan-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .scan-btn { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .9rem .5rem; border-radius: 14px; background: #4f46e5; color: #fff; font: 800 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; text-align: center; }
+  .scan-btn.alt { background: #27272a; border: 1px solid #3f3f46; }
+  .scan-btn span { font-size: 1.4rem; line-height: 1; }
+  .scan-view { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .7rem; align-items: start; }
+  .scan-view.hidden { display: none; }
+  .scan-view img { width: 5.5rem; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 6px; background: #09090b; }
+  .scan-status { margin: 0 0 .45rem; font: 600 .75rem/1.35 Inter, system-ui, sans-serif; color: #d4d4d8; }
+  .scan-view > div { min-width: 0; }
+  .scan-fix { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem; gap: .35rem; }
+  .scan-fix input { width: 100%; min-width: 0; box-sizing: border-box; }
+  .scan-fix button { grid-column: 1 / -1; }
+  .scan-tip { margin: 0; font: 500 .66rem/1.35 Inter, system-ui, sans-serif; color: #71717a; }
   /* Trade picker */
   .tk { z-index: 62; padding-bottom: 5rem; }
   .tk-tabs { flex: 0 0 100%; display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .1rem; }
@@ -637,6 +651,7 @@
           <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">Card Name</button>
           <button onclick="setMode('num')" id="m-num" class="px-3 py-1 text-xs font-semibold rounded-md">Pokémon + Number</button>
           <button onclick="setMode('set')" id="m-set" class="px-3 py-1 text-xs font-semibold rounded-md">Browse Set</button>
+          <button onclick="setMode('scan')" id="m-scan" class="px-3 py-1 text-xs font-semibold rounded-md">📸 Scan</button>
           <button onclick="setMode('custom')" id="m-custom" class="px-3 py-1 text-xs font-semibold rounded-md">📷 Custom</button>
           <button onclick="setMode('coll')" id="m-coll" class="px-3 py-1 text-xs font-semibold rounded-md">📦 Collection</button>
           <button onclick="setMode('sealed')" id="m-sealed" class="hidden px-3 py-1 text-xs font-semibold rounded-md">🎁 Sealed</button>
@@ -669,6 +684,16 @@
           <option value="">Any rarity</option>
         </select>
       </div>
+      </div>
+      <!-- Card scanner: a photo is read on the phone (Tesseract) and matched to the price lists by name and number -->
+      <div id="scan-panel" class="hidden flex-col gap-3">
+        <div class="scan-btns">
+          <label class="scan-btn"><input type="file" accept="image/*" capture="environment" class="hidden" onchange="scanFile(this)"><span>📷</span>Take photo</label>
+          <label class="scan-btn alt"><input type="file" accept="image/*" class="hidden" onchange="scanFile(this)"><span>🖼️</span>Choose photo</label>
+        </div>
+        <div id="scan-view" class="scan-view hidden"><img id="scan-img" alt="Your photo"><div><p id="scan-status" class="scan-status"></p>
+          <div class="scan-fix"><input id="scan-name" class="field !py-1.5 !text-xs" placeholder="Card name"><input id="scan-num" class="field !py-1.5 !text-xs" placeholder="Number"><button type="button" class="btn-p !py-1.5 !text-xs" onclick="scanLookup()">Look up</button></div></div></div>
+        <p class="scan-tip">Tip: fill the photo with the card, in good light, avoiding glare. You'll pick the right match below.</p>
       </div>
       <div class="flex items-center justify-between panel px-3 py-2">
         <span class="text-xs text-zinc-400">Add selected card as:</span>
@@ -885,7 +910,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.1';
+const APP_VERSION = '2026-10-23.3';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2157,7 +2182,7 @@ const ptcgCard = c => ({
 
 // Fold the search options into one summary bar so the results get the room; tap it to bring them back
 function collapseSearch() {
-  if (mode === 'custom' || mode === 'coll') return;
+  if (mode === 'custom' || mode === 'coll' || mode === 'scan') return;
   const pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; };
   const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), pick('op-rarity'), S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
   $('s-sum-text').textContent = parts.join(' · ') || 'Search';
@@ -2166,15 +2191,17 @@ function collapseSearch() {
 function expandSearch() { $('s-sum').classList.add('hidden'); $('s-filters').classList.remove('hidden'); }
 function setMode(m) {
   mode = m; expandSearch();
-  const isCustom = m === 'custom', isColl = m === 'coll';
-  $('search-ui').classList.toggle('hidden', isCustom || isColl);
+  const isCustom = m === 'custom', isColl = m === 'coll', isScan = m === 'scan';
+  $('search-ui').classList.toggle('hidden', isCustom || isColl || isScan);
+  $('scan-panel').classList.toggle('hidden', !isScan); $('scan-panel').classList.toggle('flex', isScan);
   $('results').classList.toggle('hidden', isCustom || isColl);
   $('custom-panel').classList.toggle('hidden', !isCustom);
   $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
-  ['name', 'num', 'set', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
+  ['name', 'num', 'set', 'scan', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
   $('rar-label').textContent = m === 'sealed' ? 'Type:' : 'Rarity:';
   if (isColl) return openCollection();
   if (isCustom) return;
+  if (isScan) { if (!$('scan-view').classList.contains('hidden')) return; $('results').innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-sm">📸 Take a photo of a ${S.game === 'onepiece' ? 'One Piece' : 'Pokémon'} card, or choose one you already took.</div>`; return; }
   if (m === 'sealed') { $('q').placeholder = 'Product name (e.g. Elite Trainer Box, 151)'; return loadSets(); }
   $('q').placeholder = S.game === 'onepiece'
     ? (m === 'name' ? 'Card name (e.g. Roronoa Zoro)' : m === 'num' ? 'Card ID (e.g. OP01-001)' : 'Optional: filter the set by name or ID')
@@ -3565,6 +3592,111 @@ function exportBinderHTML() {
   a.click();
   URL.revokeObjectURL(url);
   toast(`Exported full binder snapshot (${pages.length} pages)`);
+}
+
+/* --- Card scanner: read the photo on the phone with Tesseract (loaded once from jsdelivr), then match the name and
+   number against the daily price lists. Nothing is uploaded. You always confirm the match. --- */
+const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let tessWorker = null, tessP = null;
+function loadTess() {
+  if (tessP) return tessP;
+  tessP = new Promise((res, rej) => {
+    if (window.Tesseract) return res(window.Tesseract);
+    const sc = document.createElement('script'); sc.src = TESS_URL; sc.async = true;
+    sc.onload = () => res(window.Tesseract); sc.onerror = () => { tessP = null; rej(new Error('Couldn\'t load the card reader. Check your connection.')); };
+    document.head.appendChild(sc);
+  }).then(async T => { if (!tessWorker) tessWorker = await T.createWorker('eng'); return tessWorker; });
+  return tessP;
+}
+// A photo as canvases: the whole card, and the bottom strip enlarged (card numbers are tiny)
+function scanCanvases(img) {
+  const max = 1600, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+  const draw = (sx, sy, sw, sh, scale) => {
+    const c = document.createElement('canvas'); c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
+    const x = c.getContext('2d'); x.filter = 'grayscale(1) contrast(1.35)'; x.drawImage(img, sx / k, sy / k, sw / k, sh / k, 0, 0, c.width, c.height); return c;
+  };
+  return { full: draw(0, 0, w, h, 1), top: draw(0, 0, w, h * 0.38, 2), bottom: draw(0, h * 0.6, w, h * 0.4, 2) };
+}
+// What the text says: card numbers ("125/197", "TG17/TG30", "OP01-001") and words that could be the name
+function parseScan(text) {
+  const t = String(text || '').replace(/[|]/g, '/').replace(/[“”"]/g, '');
+  const nums = [];
+  for (const m of t.matchAll(/\b(OP|ST|EB|PRB)\s?(\d{2})\s?[-–]\s?(\d{3})\b/gi)) nums.push({ op: `${m[1].toUpperCase()}${m[2]}-${m[3]}` });
+  for (const m of t.matchAll(/\bP\s?[-–]\s?(\d{3})\b/g)) nums.push({ op: `P-${m[1]}` });
+  for (const m of t.matchAll(/(?:^|[^\w])([A-Z]{0,4}[0-9OolI]{1,3})\s?\/\s?([A-Z]{0,4}[0-9OolI]{2,3})(?![\w])/g)) {
+    const fix = x => x.replace(/\s/g, '').replace(/[Oo](?=\d|$)/g, '0').replace(/[lI]/g, '1');
+    const n = fix(m[1]), tot = fix(m[2]);
+    if (/\d/.test(n) && /\d/.test(tot)) nums.push({ n, tot });
+  }
+  return { nums, words: t.split(/[^A-Za-zÀ-ÿ'’.\-]+/).filter(w => w.length >= 3), top: '', raw: norm(t) };
+}
+const numKey = x => String(x || '').toUpperCase().replace(/^([A-Z]*)0+(?=\d)/, '$1');
+// Rank cards from the lists against what was read: number match first, then how much of the name appears in the text
+async function scanMatches(read, nameHint, numHint) {
+  const lists = S.game === 'onepiece' ? ['onepiece'] : ['pokemon', 'pokemon-jp'];
+  const text = ' ' + (read.raw || norm(read.words.join(' '))) + ' ' + norm(nameHint || '') + ' ';
+  const wordSet = new Set([...read.words, ...String(nameHint || '').split(/\s+/)].map(w => norm(w)).filter(w => w.length >= 3));
+  let nums = read.nums.slice();
+  if (numHint) nums = parseScan(numHint).nums.concat(/^\d+$/.test(numHint.trim()) ? [{ n: numHint.trim(), tot: '' }] : []).concat(nums);
+  const out = [];
+  for (const list of lists) {
+    const L = await loadTcgList(list); if (!L) continue;
+    for (const [pid, e] of Object.entries(L.p)) {
+      const [n, tot] = String(e[2] || '').toUpperCase().split('/').map(x => numKey(x.trim()));
+      let numScore = 0;
+      for (const x of nums) {
+        if (x.op && String(e[2]).toUpperCase().replace(/\s/g, '') === x.op) numScore = Math.max(numScore, 3);
+        else if (x.n && n === numKey(x.n)) numScore = Math.max(numScore, x.tot && tot && numKey(x.tot) === tot ? 3 : x.tot ? 1 : 2);
+      }
+      const bare = norm(String(e[1]).replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/\s+-\s+.*$/, ''));
+      const toks = String(e[1]).replace(/\s*[([][^)\]]*[)\]]/g, '').split(/[^A-Za-zÀ-ÿ0-9]+/).map(norm).filter(w => w.length >= 3);
+      let nameScore = 0;
+      if (bare.length >= 3 && text.includes(bare)) nameScore = 2 + Math.min(1, bare.length / 12) + (read.top && read.top.includes(bare) ? 1.5 : 0);   // the name printed at the top counts most
+      else if (toks.length && toks.some(w => wordSet.has(w))) nameScore = toks.filter(w => wordSet.has(w)).length / toks.length;
+      if (!numScore && nameScore < 1.5) continue;
+      out.push({ pid, list, L, score: numScore * 2 + nameScore + (e[0] != null ? 0.05 : 0) + (+e[3] || 0) / 1e7, numScore, nameScore });   // ties go to the newer set
+    }
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, 30);
+}
+let scanRead = { nums: [], words: [] };
+async function scanFile(input) {
+  const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+  const url = URL.createObjectURL(f), img = $('scan-img');
+  img.src = url; $('scan-view').classList.remove('hidden');
+  $('scan-name').value = ''; $('scan-num').value = '';
+  const status = m => { $('scan-status').textContent = m; };
+  $('results').innerHTML = '';
+  try {
+    await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('That photo couldn\'t be opened.')); });
+    status(tessWorker ? '🔎 Reading the card…' : '⏳ Getting the card reader ready (first time only)…');
+    const w = await loadTess();
+    status('🔎 Reading the card…');
+    const cv = scanCanvases(img), texts = [];
+    for (const c of [cv.full, cv.bottom, cv.top]) { const r = await w.recognize(c); texts.push(r.data.text || ''); }
+    scanRead = parseScan(texts.join('\n'));
+    scanRead.top = norm(texts[2] || '');
+    const num = scanRead.nums[0];
+    $('scan-num').value = num ? (num.op || `${num.n}${num.tot ? '/' + num.tot : ''}`) : '';
+    await scanLookup(true);
+  } catch (e) { status('⚠️ ' + (e.message || 'Something went wrong reading the photo.')); }
+}
+async function scanLookup(auto) {
+  const status = m => { $('scan-status').textContent = m; };
+  const name = $('scan-name').value.trim(), num = $('scan-num').value.trim();
+  const hits = await scanMatches(auto ? scanRead : { nums: [], words: name.split(/\s+/) }, name, num);
+  if (!hits.length) {
+    status(auto ? 'Couldn\'t read enough of the card. Type its name or number above and tap Look up, or try another photo.' : 'No match. Check the spelling or the number.');
+    $('results').innerHTML = '<div class="col-span-full text-center py-8 text-zinc-500 text-sm">No matching cards yet.</div>'; return;
+  }
+  const top = hits[0];
+  if (auto && !name && top.nameScore > 0) $('scan-name').value = String(top.L.p[top.pid][1]).replace(/\s+-\s+.*$/, '').replace(/\s*[([].*$/, '');
+  const sure = top.numScore >= 3 && top.nameScore >= 2;
+  status(sure ? '✅ Found it — it\'s first below. Tap it to add (other printings follow).' : `Best ${Math.min(hits.length, 30)} match${hits.length === 1 ? '' : 'es'} — tap the right card to add it. Not right? Fix the name or number and tap Look up.`);
+  pending = { items: hits, shown: 0, make: async h => { const c = h.list === 'onepiece' ? cardFromTcg(h.pid, 'onepiece', h.L) : cardFromTcg(h.pid, 'pokemon', h.L); if (c && h.list === 'pokemon-jp') c.lang = 'ja'; return c; } };
+  await loadBatch(false);
 }
 
 /* --- Sealed product: TCGplayer's sealed list (prices/<game>-sealed.json, built daily): [price, name, setId, type] --- */
