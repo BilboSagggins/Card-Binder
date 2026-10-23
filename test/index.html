@@ -471,6 +471,20 @@
   .ctray-item .q { right: 3px; background: rgba(0,0,0,.8); color: #fff; }
   .ctray-item .in { left: 3px; background: #4f46e5; color: #fff; }
   .ctray-item.lifted { opacity: .3; }
+  #sel-btn[aria-pressed="true"] { background: #e11d48; border-color: #e11d48; color: #fff; }
+  body.sel-mode #grid .act { pointer-events: none; }
+  body.sel-mode #grid [data-slot] .group-hover\:opacity-100 { opacity: 0 !important; }
+  #grid [data-slot].sel { outline: 3px solid #e11d48; outline-offset: -3px; }
+  #grid [data-slot].sel::after { content: '✓'; position: absolute; top: 6px; left: 6px; z-index: 20; width: 24px; height: 24px; border-radius: 50%; background: #e11d48; color: #fff; font: 800 14px/24px Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  body.sel-mode #grid [data-slot]:not(.sel) img { opacity: .75; }
+  .sel-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 45; display: flex; align-items: center; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(24,24,27,.97); border: 1px solid #3f3f46; box-shadow: 0 10px 30px rgba(0,0,0,.6); max-width: 560px; margin: 0 auto; }
+  .sel-bar[hidden] { display: none; }
+  .sel-bar span { flex: 1; min-width: 0; font: 700 .78rem/1.2 Inter, system-ui, sans-serif; color: #e4e4e7; padding-left: 4px; }
+  .sel-bar button { appearance: none; border: 0; border-radius: 10px; padding: .65rem .7rem; font: 800 .75rem/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
+  .sel-bar .sb-all, .sel-bar .sb-cancel { background: #27272a; color: #d4d4d8; }
+  .sel-bar .sb-del { background: #e11d48; color: #fff; }
+  .sel-bar .sb-del:disabled { opacity: .4; }
+  body.sel-mode main { padding-bottom: 90px; }
   .ctray-item.picked img, .ctray-item.picked .ph { outline: 3px solid #10b981; outline-offset: -3px; }
   .ctray-item.picked.need img, .ctray-item.picked.need .ph { outline-color: #e11d48; }
   .ctray-item .pk { left: auto; right: 3px; top: auto; bottom: 20px; background: #10b981; color: #022c22; }
@@ -641,6 +655,7 @@
     <div class="flex items-center gap-2 w-full sm:w-72">
       <span class="text-xs text-zinc-400 whitespace-nowrap">Title:</span>
       <input type="text" id="page-title-input" oninput="updatePageTitle(this.value)" placeholder="e.g. Charizard Collection" class="field !py-1 !text-xs w-full">
+      <button type="button" id="sel-btn" onclick="toggleSelectMode()" class="btn !py-1 whitespace-nowrap" aria-pressed="false" title="Select several cards to remove">☑ Select</button>
     </div>
   </div>
 
@@ -664,6 +679,14 @@
     <button onclick="delPage()" class="btn px-4 py-2">➖ Delete Page</button>
   </div>
 </main>
+
+<!-- Select mode: tap cards on the page, then remove them together -->
+<div id="sel-bar" class="sel-bar" hidden>
+  <span id="sel-count">Tap cards to select</span>
+  <button type="button" class="sb-all" onclick="selectAllOnPage()">All on page</button>
+  <button type="button" class="sb-cancel" onclick="toggleSelectMode(false)">Done</button>
+  <button type="button" id="sel-del" class="sb-del" onclick="deleteSelected()" disabled>🗑 Remove</button>
+</div>
 
 <!-- Collection tray: drag cards from your collection onto slots -->
 <div id="ctray" class="ctray" hidden>
@@ -960,7 +983,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.30';
+const APP_VERSION = '2026-10-23.31';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1761,6 +1784,7 @@ async function addWholeSet(it, at) {
 function toggleTray() { $('ctray').hidden ? openTray() : closeTray(); }
 function openTray() {
   if (peerUser) return;
+  if (selMode) toggleSelectMode(false);
   watchCollection(ownerOf(currentUser), S.game);
   $('ctray').hidden = false; document.body.classList.add('tray-open');
   $('who-coll').setAttribute('aria-pressed', 'true');
@@ -2856,6 +2880,7 @@ function render() {
     $('page-title-input').classList.remove('opacity-60', 'cursor-not-allowed');$('page-controls').classList.remove('hidden');
   }
 
+  const sb = $('sel-btn'); if (sb) sb.hidden = !!peerUser;
   const pages = getPagesArray();
   const g = $('grid'); g.className = `w-full gap-3 sm:gap-4 grid-layout-${S.layout} animate-page-turn`;
   
@@ -2887,7 +2912,11 @@ function render() {
       el.oncontextmenu = e => { if (dragSt) e.preventDefault(); };
     }
 
-    el.onclick = e => { if (suppressClick || e.target.closest('.act')) return; c ? openInspect(S.cur, i) : (!peerUser && openSearch(S.cur, i)); };
+    el.onclick = e => {
+      if (selMode) { if (c) toggleSel(S.cur, i, el); return; }
+      if (suppressClick || e.target.closest('.act')) return; c ? openInspect(S.cur, i) : (!peerUser && openSearch(S.cur, i));
+    };
+    if (selMode && c && selSlots.has(S.cur + '|' + i)) el.classList.add('sel');
     
     el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(c.image, c.alts, c.name, 'w-full h-full object-cover rounded-xl')}
         ${langTag(c)}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
@@ -2998,7 +3027,7 @@ function markSource() {
 }
 
 function slotPress(e, i) {
-  if (peerUser || dragSt || e.button > 0 || e.target.closest('.act')) return;
+  if (peerUser || selMode || dragSt || e.button > 0 || e.target.closest('.act')) return;
   const card = getPagesArray()[S.cur].cards[i];
   if (!card) return;
   dragSt = { p: S.cur, s: i, card, id: e.pointerId, touch: e.pointerType === 'touch',
@@ -3143,6 +3172,55 @@ function dragCleanup() {
 // Drop on an empty slot: the card just moves. Drop on a filled slot: the two cards swap. Hold over the filled slot for a
 // moment first (it turns amber, "Slide") and the card goes there while the cards in between slide one place to make room:
 // up/down within a column, sideways within a row, otherwise in reading order (across pages too).
+/* Select mode: tap several cards (on any page), then remove them together, with Undo */
+let selMode = false, selSlots = new Set();
+function toggleSelectMode(on) {
+  selMode = on === undefined ? !selMode : !!on;
+  if (selMode && peerUser) selMode = false;
+  selSlots.clear();
+  if (selMode && typeof closeTray === 'function') closeTray();
+  document.body.classList.toggle('sel-mode', selMode);
+  $('sel-btn').setAttribute('aria-pressed', selMode); $('sel-btn').textContent = selMode ? '✓ Done' : '☑ Select';
+  render(); paintSelBar();
+}
+function toggleSel(p, s, el) {
+  const k = p + '|' + s;
+  if (selSlots.has(k)) selSlots.delete(k); else selSlots.add(k);
+  if (el) el.classList.toggle('sel', selSlots.has(k));
+  paintSelBar();
+}
+function selectAllOnPage() {
+  const cards = getPagesArray()[S.cur].cards, keys = cards.map((c, i) => c ? S.cur + '|' + i : null).filter(Boolean);
+  const all = keys.length && keys.every(k => selSlots.has(k));
+  keys.forEach(k => all ? selSlots.delete(k) : selSlots.add(k));
+  render(); paintSelBar();
+}
+function paintSelBar() {
+  const bar = $('sel-bar'); if (!bar) return;
+  bar.hidden = !selMode;
+  const n = selSlots.size, pages = new Set([...selSlots].map(k => k.split('|')[0])).size;
+  $('sel-count').textContent = n ? `${n} selected${pages > 1 ? ` on ${pages} pages` : ''}` : 'Tap cards to select';
+  $('sel-del').disabled = !n; $('sel-del').textContent = n ? `🗑 Remove ${n}` : '🗑 Remove';
+  const cards = selMode ? getPagesArray()[S.cur].cards : [];
+  const keys = cards.map((c, i) => c ? S.cur + '|' + i : null).filter(Boolean);
+  bar.querySelector('.sb-all').textContent = keys.length && keys.every(k => selSlots.has(k)) ? 'None on page' : 'All on page';
+}
+function deleteSelected() {
+  if (peerUser || !selSlots.size) return;
+  const pages = getPagesArray(), gone = [];
+  selSlots.forEach(k => { const [p, s] = k.split('|').map(Number); const c = pages[p] && pages[p].cards[s]; if (c) { gone.push({ p, s, c }); pages[p].cards[s] = null; } });
+  if (!gone.length) return toggleSelectMode(false);
+  saveActivePages(pages); toggleSelectMode(false);
+  const binder = currentUser;
+  toastUndo(`Removed ${gone.length} card${gone.length === 1 ? '' : 's'}`, () => {
+    if (currentUser !== binder) return;
+    const pg = getPagesArray(); let back = 0, skipped = 0;
+    gone.forEach(({ p, s, c }) => { if (pg[p] && !pg[p].cards[s]) { pg[p].cards[s] = c; back++; } else skipped++; });
+    saveActivePages(pg); render();
+    toast(`Put back ${back} card${back === 1 ? '' : 's'}${skipped ? ` · ${skipped} slot${skipped === 1 ? ' was' : 's were'} filled since` : ''}`);
+  });
+}
+
 function moveCard(from, to, slide) {
   if (peerUser || (from.p === to.p && from.s === to.s)) return;
   const pages = getPagesArray(), n = cap();
@@ -4661,7 +4739,7 @@ function renderShelf() {
 function showLanding() {
   closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage();
   const L = $('landing'); if (!L) return;
-  closeSheet(); closeTray();
+  closeSheet(); closeTray(); if (selMode) toggleSelectMode(false);
   closePeerViewer(true);
   staged = null;
   $('lb-stage').hidden = true; $('lb-stage').className = '';
