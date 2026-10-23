@@ -191,6 +191,14 @@
   .nw-alert { position: absolute; top: -.5rem; right: -.45rem; z-index: 2; padding: .2rem .38rem; border-radius: 999px; background: #f59e0b; color: #111; font: 900 .6rem/1 Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.5); pointer-events: none; }
   .tt.has-raffle { overflow: visible; }
   .nw-card.unseen { border-color: #f59e0b; box-shadow: 0 0 0 1px rgba(245,158,11,.5); }
+  .nw-alerts { border-color: #7c3aed; }
+  .nw-toggles { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .nw-toggles button { appearance: none; display: inline-flex; align-items: center; gap: .3rem; border: 1px solid #3f3f46; background: #09090b; color: #a1a1aa; border-radius: 999px; padding: .5rem .7rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
+  .nw-toggles button span { display: inline-block; width: .95rem; height: .95rem; border-radius: 4px; border: 1px solid #52525b; font-size: .65rem; line-height: .9rem; text-align: center; }
+  .nw-toggles button[aria-pressed="true"] { background: #2e1065; border-color: #7c3aed; color: #fff; }
+  .nw-toggles button[aria-pressed="true"] span { background: #7c3aed; border-color: #a78bfa; color: #fff; }
+  #nw-bell { margin-left: 0; }
+  #nw-bell.on { background: #7c3aed; border-color: #a78bfa; }
   .nw-pill.nw-new { background: #f59e0b; color: #111; }
   #nw-tabs button.hot { background: #f59e0b; border-color: #fbbf24; color: #111; }
   #nw-tabs button.hot[aria-selected="true"] { background: #d97706; color: #fff; }
@@ -918,6 +926,7 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNewsPage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="nw-title">TCG News</h2><p id="nw-sub">Loading…</p></div>
+    <button type="button" id="nw-bell" class="np-lock" onclick="NW.showAlerts=!NW.showAlerts;nwPaint()" aria-expanded="false" title="Choose which games' raffles alert you">🔔 Alerts</button>
     <div class="tk-tabs nw-games" id="nw-games" role="tablist" aria-label="Game"></div>
     <div class="tk-tabs" id="nw-tabs" role="tablist" aria-label="Section"></div>
   </div>
@@ -4167,7 +4176,28 @@ function nwLiveRaffles() {
 // Raffles you've tapped stop the alert (on this phone). A new drawing, or new dates for one, alerts again.
 const nwKey = r => [r.url || r.title, r.opens || '', r.closes || ''].join('|');
 function nwSeen() { try { return new Set(JSON.parse(localStorage.getItem('cardBinder.rafflesSeen') || '[]')); } catch (e) { return new Set(); } }
-function nwUnseen() { const seen = nwSeen(); return nwLiveRaffles().filter(r => !seen.has(nwKey(r))); }
+function nwUnseen() { const seen = nwSeen(), on = nwAlertGames(); return nwLiveRaffles().filter(r => !seen.has(nwKey(r)) && on.has(r.game === 'pokemon-jp' ? 'pokemon' : r.game)); }
+// Which games' raffles light up the News button, on this phone (all of them until changed)
+const NW_ALERT_GAMES = NW_GAMES.filter(([k]) => k !== 'all').map(([k]) => k);
+function nwAlertGames() {
+  try { const v = JSON.parse(localStorage.getItem('cardBinder.raffleAlerts')); if (Array.isArray(v)) return new Set(v); } catch (e) {}
+  return new Set(NW_ALERT_GAMES);
+}
+function setAlertGames(list) {
+  try { localStorage.setItem('cardBinder.raffleAlerts', JSON.stringify(list)); } catch (e) { toast('This phone couldn\u2019t save the setting', 'error'); }
+  nwPaint();
+}
+function toggleAlertGame(g) { const on = nwAlertGames(); on.has(g) ? on.delete(g) : on.add(g); setAlertGames([...on]); }
+function nwAlertsPanel() {
+  const on = nwAlertGames(), none = !on.size;
+  return `<div class="nw-card nw-alerts">
+    <div class="nw-top"><b style="color:#fff;font-size:.78rem">🔔 Raffle alerts on this phone</b></div>
+    <p class="nw-p">The News button lights up when an official lottery or drawing opens for the games picked here. Raffles still lists every game.</p>
+    <div class="nw-toggles">${NW_ALERT_GAMES.map(g => `<button type="button" aria-pressed="${on.has(g)}" onclick="toggleAlertGame('${g}')"><span>${on.has(g) ? '✓' : ''}</span>${esc(NW_LABELS[g])}</button>`).join('')}</div>
+    <div class="nw-links"><a href="#" class="alt" onclick="event.preventDefault();setAlertGames(NW_ALERT_GAMES)">All on</a><a href="#" class="alt" onclick="event.preventDefault();setAlertGames([])">Turn all off</a></div>
+    ${none ? '<p class="nw-p" style="color:#fbbf24">Raffle alerts are off. You can still check the Raffles tab any time.</p>' : ''}
+  </div>`;
+}
 function markRaffleSeen(i) {
   const r = (NW.shown || [])[i]; if (!r) return;
   const seen = nwSeen(); if (seen.has(nwKey(r))) return;
@@ -4220,12 +4250,13 @@ const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}
 const nwLink = (u, label, cls) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${label}</a>`;
 function nwPaint() {
   nwTabsPaint();
-  const d = NW.data || {}, box = $('nw-list'); let h = '';
+  const bell = $('nw-bell'); if (bell) { const n = nwAlertGames().size; bell.classList.toggle('on', !!NW.showAlerts); bell.setAttribute('aria-expanded', !!NW.showAlerts); bell.textContent = n ? '🔔 Alerts' : '🔕 Alerts off'; }
+  const d = NW.data || {}, box = $('nw-list'); let h = NW.showAlerts ? nwAlertsPanel() : '';
   if (NW.tab === 'raffles') {
     const order = { open: 0, soon: 1, closed: 2 };
     const list = nwRaffles().map(r => ({ r, s: nwStatus(r) })).sort((a, b) => order[a.s.k] - order[b.s.k] || String(b.r.posted).localeCompare(String(a.r.posted)));
     const seen = nwSeen(); NW.shown = list.map(x => x.r);
-    h = list.length ? list.map(({ r, s }, i) => { const isNew = s.k !== 'closed' && !seen.has(nwKey(r)); return `<div class="nw-card${s.k === 'closed' ? ' dim' : ''}${isNew ? ' unseen' : ''}" data-raffle="${i}" onclick="markRaffleSeen(${i})">
+    h += list.length ? list.map(({ r, s }, i) => { const isNew = s.k !== 'closed' && !seen.has(nwKey(r)); return `<div class="nw-card${s.k === 'closed' ? ' dim' : ''}${isNew ? ' unseen' : ''}" data-raffle="${i}" onclick="markRaffleSeen(${i})">
         <div class="nw-top">${nwBadge(r.game)}${isNew ? '<span class="nw-pill nw-new">NEW</span>' : ''}<span class="nw-pill ${s.k}">${esc(s.t)}</span><span>${esc(r.src || '')}</span></div>
         <h3 class="nw-t">${esc(r.title)}</h3>
         ${r.period ? `<p class="nw-p"><b>Entry period:</b> ${esc(r.period)}</p>` : ''}
@@ -4238,7 +4269,7 @@ function nwPaint() {
     const all = (d.releases || []).filter(r => nwPick(r.game)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const rel = [...all.filter(r => nwDay(r.date) >= today), ...all.filter(r => nwDay(r.date) < today).reverse()];   // upcoming first, just released after
     let month = '';
-    h = rel.map(r => {
+    h += rel.map(r => {
       const day = nwDay(r.date), days = Math.round((day - today) / 86400000);
       const m = days < 0 ? 'Just released' : day.toLocaleDateString([], { month: 'long', year: 'numeric' });
       const head = m !== month ? `<p class="nw-h">${esc(m)}</p>` : ''; month = m;
@@ -4256,7 +4287,7 @@ function nwPaint() {
   } else {
     const items = (d.items || []).filter(x => nwPick(x.game) && (NW.tab !== 'previews' || x.kind === 'preview'));
     const KIND = { preview: '🃏 Preview', release: '📦 Release', raffle: '🎟️ Drawing', news: '' };
-    h = items.slice(0, 150).map(x => {
+    h += items.slice(0, 150).map(x => {
       const big = NW.tab === 'previews' && x.imgs && x.imgs.length;
       const thumb = x.imgs && x.imgs[0] && !big ? `<img class="nw-thumb" loading="lazy" src="${esc(x.imgs[0])}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'nw-thumb',textContent:'${NW_EMOJI[x.game] || '📰'}'}))">` : `<div class="nw-thumb">${NW_EMOJI[x.game] || '📰'}</div>`;
       return `<div class="nw-card">
