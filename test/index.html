@@ -983,7 +983,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.32';
+const APP_VERSION = '2026-10-23.33';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1128,7 +1128,17 @@ async function fetchCard(c, lang, setMeta) {
   const pid = tp && Object.values(tp).find(v => v && typeof v === 'object' && v.productId)?.productId;
   const setId = d.set?.id || setMeta?.id || String(c.id).slice(0, String(c.id).lastIndexOf('-'));
   const total = d.set?.cardCount?.official || setMeta?.cardCount?.official;
-  const im = buildImages({ ...d, setId }, lang, pid);
+  let im = buildImages({ ...d, setId }, lang, pid);
+  // TCGdex sometimes stores the wrong picture (e.g. an alternate art) while its TCGplayer product is right.
+  // When the price list confirms that product is this same card and number, show TCGplayer's picture first.
+  if (lang === 'en' && pid) {
+    const L = await loadTcgList('pokemon').catch(() => null), e = L && L.p && L.p[String(pid)];
+    const strip = x => lc(String(x || '').split('/')[0].trim()).replace(/^0+(?=\d)/, '');
+    if (e && d.localId && strip(e[2]) === strip(d.localId) && lc(e[1]).includes(lc(d.name || '#'))) {
+      const mid = `https://product-images.tcgplayer.com/fit-in/437x610/${pid}.jpg`;
+      im = { low: mid, high: tcgImg(pid), alts: [mid, ...im.alts.filter(u => !u.includes(String(pid))), im.high, im.low].filter(Boolean) };
+    }
+  }
   return {
     id: d.id || c.id, name: d.name || 'Unknown', set: d.set?.name || setMeta?.name || setId,
     number: total && /^\d+$/.test(d.localId) ? `${d.localId}/${total}` : String(d.localId || 'Promo'),
