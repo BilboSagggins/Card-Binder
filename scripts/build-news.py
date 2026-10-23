@@ -417,6 +417,55 @@ def riftbound_drawing(title, url, d, desc, banner=()):
     return r
 
 
+# Official YouTube channels (the same reveal videos the publishers post on X, which can't be read without a paid API)
+YOUTUBE = [
+    ("UCT5u6XqA2oaSqxsXKp3zubw", "Bandai Card Games (official)", None),          # One Piece, Fusion World, DB Masters...
+    ("UCZVYjENKJSXMke-dYUxCLvw", "NARUTO CARD GAME (official)", "naruto"),
+    ("UCjrU2FHeEIQFP3GOcCOiuVw", "Riftbound (official)", "riftbound"),
+    ("UCFctpiB_Hnlk3ejWfHqSm6Q", "Pokémon (official)", "pokemon"),               # TCG videos only (see below)
+]
+VIDEO_PREVIEW_RE = re.compile(r"reveal|preview|spoiler|new cards?|card list|trailer|\bPV\b|promotion video|introduc|showcase|first look|booster|starter deck|extra booster|premium|set\b|product|collection|leader|legend|champion|unbox|opening", re.I)
+VIDEO_SKIP_RE = re.compile(r"\blive\b|stream|tournament|championship|\bfinals\b|grand final|top \d|regional|how to play|tutorial|\brules\b|gameplay|\bmatch\b|\bvs\.?\b|news!|quiz", re.I)
+
+
+def bandai_game(title):
+    if re.search(r"one ?piece", title, re.I):
+        return "onepiece"
+    if re.search(r"fusion ?world", title, re.I):
+        return "fusionworld"
+    if re.search(r"dragon ?ball", title, re.I):
+        return "dbmasters"
+    if re.search(r"naruto", title, re.I):
+        return "naruto"
+    return None          # Digimon, Gundam, Union Arena... not followed here
+
+
+def youtube_videos():
+    items = []
+    for cid, src, game in YOUTUBE:
+        try:
+            xml = get(f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}", browser=True)
+        except Exception as e:
+            errors.append(f"youtube {src}: {e}")
+            continue
+        for e in re.findall(r"<entry>(.*?)</entry>", xml, re.S):
+            vid = tag(e, "yt:videoId")
+            title = text(tag(e, "title"))
+            g = game or bandai_game(title)
+            if not vid or not g or VIDEO_SKIP_RE.search(title):
+                continue
+            if g == "pokemon" and not re.search(r"\bTCG\b|trading card", title, re.I):
+                continue      # the main Pokémon channel: games, anime... only card game videos
+            pub = tag(e, "published")
+            try:
+                when = dt.datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            except ValueError:
+                when = None
+            items.append({"game": g, "title": title, "url": f"https://www.youtube.com/watch?v={vid}", "date": iso(when), "src": src,
+                          "kind": "preview", "imgs": [f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"], "video": vid})
+    return items
+
+
 GOOGLE = [
     ("pokemon", '"Pokemon TCG" OR "Pokémon TCG"'),
     ("onepiece", '"One Piece Card Game" OR "One Piece TCG"'),
@@ -499,6 +548,7 @@ def main():
     r, i = riftbound_official(); raffles += r; items += i
     items += pokebeach()
     items += onepiece_official()
+    items += youtube_videos()
     items += google_news()
     # a Google search that failed this time: keep what the last run found for that game
     if FAILED_GOOGLE:
