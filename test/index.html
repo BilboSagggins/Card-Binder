@@ -171,6 +171,9 @@
   .pc-p.none { color: #71717a; font-size: .72rem; font-weight: 600; }
   .pc-more { display: none; padding: 0 .6rem .6rem; gap: .5rem; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
   .pc-row.open .pc-more { display: grid; }
+  .pc-big { grid-column: 1 / -1; display: flex; justify-content: center; }
+  .pc-big img { width: min(100%, 22rem); max-height: 62vh; aspect-ratio: 2.5 / 3.5; object-fit: contain; border-radius: 4.5% / 3.2%; background: #09090b; box-shadow: 0 10px 30px rgba(0,0,0,.55); }
+  .pc-row.sealed .pc-big img { aspect-ratio: 1; background: #fff; border-radius: 10px; padding: .4rem; box-sizing: border-box; }
   .pc-acts { display: flex; flex-direction: column; gap: .35rem; }
   .pc-acts a, .pc-acts button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; text-align: center; white-space: nowrap; }
   .pc-acts a { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
@@ -945,7 +948,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.11';
+const APP_VERSION = '2026-10-23.14';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4008,16 +4011,22 @@ function pcSearch() {
     const c = pcCard(h.src, h.pid); if (!c) return '';
     const sub = [c.sealed ? c.rarity : '', c.set, c.number !== '—' ? c.number : '', !c.sealed && !/^(—|None)$/.test(c.rarity) ? c.rarity : ''].filter(Boolean).join(' · ');
     return `<div class="pc-row${c.sealed ? ' sealed' : ''}" data-i="${i}">
-      <button type="button" class="pc-main" onclick="this.parentNode.classList.toggle('open')">${imgTag(c.thumb, c.alts, c.name, '')}
+      <button type="button" class="pc-main" onclick="pcToggle(this.parentNode)">${imgTag(c.thumb, c.alts, c.name, '')}
         <div class="pc-t"><b>${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc(sub)}</span></div>
         <div class="pc-p${c.price == null ? ' none' : ''}">${c.price == null ? 'No price' : fmt(c.price)}${c.price != null ? `<small>${c.ctId ? 'CardTrader low' : 'market'}</small>` : ''}</div></button>
-      <div class="pc-more">${c.sealed || c.ctId ? '<div></div>' : condRows(c.price)}<div class="pc-acts">
+      <div class="pc-more"><div class="pc-big"><img alt="${esc(c.name)}" data-src="${esc(c.image || c.thumb)}" data-alts="${esc((c.alts || []).join('|'))}" referrerpolicy="no-referrer" onerror="imgErr(this)"></div>${c.sealed || c.ctId ? '<div></div>' : condRows(c.price)}<div class="pc-acts">
         <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${c.ctId ? 'CardTrader' : 'TCGplayer'} live ↗</a>
         <button type="button" onclick="pcToTrade(${i},'give')">＋ You give</button><button type="button" onclick="pcToTrade(${i},'get')">＋ You get</button></div></div>
     </div>`;
   }).join('') + (hits.length > 60 ? `<p class="pc-note">Showing the top 60 of ${hits.length >= 4000 ? '4,000+' : hits.length}. Add a word to narrow it down.</p>` : '')
     : '<p class="pc-note">Nothing matches that. Try fewer words, or another tab.</p>';
   PC.top = top;
+}
+// Open a result: show the card big (loaded only now, to save data) with its prices and buttons
+function pcToggle(row) {
+  const open = row.classList.toggle('open'), img = row.querySelector('.pc-big img');
+  if (open && img && !img.getAttribute('src')) img.src = img.dataset.src;
+  if (open) setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
 }
 // Send a looked-up item straight into the trade
 function pcToTrade(i, side) {
