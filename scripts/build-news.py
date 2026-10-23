@@ -351,7 +351,7 @@ def riftbound_drawing(title, url, d, desc):
         r["summary"] = " ".join((dated or sents)[:4])[:600] or desc
         for a in re.finditer(r'"(https?://[^"\s]+)"', nd.group(1) if nd else page):
             u = a.group(1).replace("\\u002F", "/").replace("\\/", "/")
-            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
+            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
                 if u not in [e[1] for e in r["entries"]]:
                     r["entries"].append([re.sub(r"^https?://(www\.)?", "", u).split("/")[0], u])
         ds = sorted(set(dates_in(" ".join(dated), d.year)))
