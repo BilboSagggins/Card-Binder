@@ -1,6 +1,113 @@
-https://www.pokebeach.com/news/2026/10/product_pack_kmqoi.jpg None 200 image/jpeg 116400
-https://www.pokebeach.com/news/2026/10/product_pack_kmqoi.jpg https://example.com/ ERR HTTP Error 403: Forbidden
-https://www.pokebeach.com/news/2026/10/product_pack_kmqoi-103x200.jpg None 200 image/jpeg 9661
-https://www.pokebeach.com/news/2026/10/product_pack_kmqoi-103x200.jpg https://example.com/ ERR HTTP Error 403: Forbidden
-https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg None 200 image/jpeg 210843
-https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg https://example.com/ ERR HTTP Error 403: Forbidden
+[google 'Riftbound' 2026-05-01..2026-06-15] 2026-05-12 kind=raffle | Riot updates Riftbound Unleashed Catch-Up drawing after player feedback - Esports News UK
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Special Riftbound T1 Promo Set Commemorates 2025 League Of Legends World Champions - Star City Games
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Riot unveils Riftbound x T1 2025 Worlds Champion Collection - Sheep Esports
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-02 kind=release | Riftbound x T1 2025 League of Legends Worlds Champion Collection Launches this August - TriplePoint Newsroom
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-02 kind=release | The Riftbound x T1 2025 Worlds Champion Collection - Riftbound
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-06-26 kind=news | Riftbound Is Heading to South Korea – And It’s Bringing a T1 Tribute With It - The Outerhaven
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | Riftbound Reveals Limited T1 Worlds Champion Collection - The Outerhaven
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-06 kind=release | Riot Games unveils Riftbound x T1 2025 Worlds Champion Collection - Inven Global
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=news | T1 LoL World Champions Riftbound Cards Guarantee Riot At Least $10m - Insider Gaming
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=release | The T1 Worlds Champion Collection Is INCREDIBLE! (Full Breakdown) - YouTube
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | T1’s Riftbound cards revealed during MSI, showcasing players and collectors versions - Esports News UK
+[google 'Riftbound' 2026-06-15..2026-07-20] 2026-06-19 kind=news | T1 enters Riftbound, signing LS as its pro player, and gets special partnership at LoL MSI - Esports News UK
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-12 kind=raffle | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 - Resell Calendar
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-21 kind=news | Riftbound T1 Sets Resell for Up to $10,000 - Resell Calendar
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-06 kind=preview | Riftbound Secret Garden, T1 Worlds 2025 Collection, and Gift Bundle Revealed - Yahoo Tech
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-23 kind=release | Riftbound's T1 Set Release Has Not Gone Well - Resell Calendar
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-07-27 kind=news | 'LS' Nick De Cesare Joins T1 as a Riftbound Player - Inven Global
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-18 kind=release | Riftbound Sells Out Pre-Orders for Limited-Edition T1 Set - Inven Global
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-11 kind=release | Riot to Open Pre-orders for 'Riftbound' T1 Championship Edition on the 14th - Inven Global
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-17 kind=release | How to Pre-Order T1 Worlds 2025 Winner Riftbound Cards - Insider Gaming
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-05 kind=release | "It's important to foster the grassroots nature of TCGs": T1 CEO Joe Marsh talks entering Riftbound, T1 bundle cards, and grassroots communities - Esports Insider
+[google 'Riftbound' 2026-07-20..2026-08-31] 2026-08-12 kind=release | Riftbound T1 Signature Edition Pre-Orders Open On August 14 In Korea - Hotspawn
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-02 kind=release | The Riftbound x T1 2025 Worlds Champion Collection - Riftbound
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Special Riftbound T1 Promo Set Commemorates 2025 League Of Legends World Champions - Star City Games
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-02 kind=release | Riftbound x T1 2025 League of Legends Worlds Champion Collection Launches this August - TriplePoint Newsroom
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Riot unveils Riftbound x T1 2025 Worlds Champion Collection - Sheep Esports
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | Riftbound Reveals Limited T1 Worlds Champion Collection - The Outerhaven
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=news | T1 LoL World Champions Riftbound Cards Guarantee Riot At Least $10m - Insider Gaming
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-06 kind=release | Riot Games unveils Riftbound x T1 2025 Worlds Champion Collection - Inven Global
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | T1’s Riftbound cards revealed during MSI, showcasing players and collectors versions - Esports News UK
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=release | The T1 Worlds Champion Collection Is INCREDIBLE! (Full Breakdown) - YouTube
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Riot unveils Riftbound x T1 2025 Worlds Champion Collection - Sheep Esports
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-06-26 kind=news | Riftbound Is Heading to South Korea – And It’s Bringing a T1 Tribute With It - The Outerhaven
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | League of Legends TCG Riftbound Reveals T1 Championship Collection - 게임메카
+[google 'Riftbound T1' 2026-06-15..2026-07-20] 2026-06-19 kind=news | T1 enters Riftbound, signing LS as its pro player, and gets special partnership at LoL MSI - Esports News UK
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-12 kind=raffle | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 - Resell Calendar
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-06 kind=preview | Riftbound Secret Garden, T1 Worlds 2025 Collection, and Gift Bundle Revealed - GameDaily
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-05 kind=release | "It's important to foster the grassroots nature of TCGs": T1 CEO Joe Marsh talks entering Riftbound, T1 bundle cards, and grassroots communities - Esports Insider
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-11 kind=release | Riot to Open Pre-orders for 'Riftbound' T1 Championship Edition on the 14th - Inven Global
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-17 kind=release | How to Pre-Order T1 Worlds 2025 Winner Riftbound Cards - Insider Gaming
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-12 kind=release | Riftbound T1 Signature Edition Pre-Orders Open On August 14 In Korea - Hotspawn
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-21 kind=news | Riftbound T1 Sets Resell for Up to $10,000 - Resell Calendar
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-18 kind=release | Riftbound Sells Out Pre-Orders for Limited-Edition T1 Set - Inven Global
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-12 kind=release | Riftbound T1 Signature Edition, Pre-orders Start on the 14th - 게임메카
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-23 kind=release | Riftbound's T1 Set Release Has Not Gone Well - Resell Calendar
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-07-27 kind=news | 'LS' Nick De Cesare Joins T1 as a Riftbound Player - Inven Global
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-03 kind=raffle | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 - GameFragger.com
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-13 kind=raffle | Everything you need to know about the T1 Raffle in Riftbound - The Escapist
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-21 kind=news | The Riftbound T1 Worlds Champion Signature Sets Are Already Reselling For Up To $10,000 - GameFragger.com
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-20 kind=raffle | Unfortunately For Fans, The Riftbound T1 Signature Edition Drawing Still Lost To Bots And Scalpers It Seems - GameFragger.com
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-20 kind=raffle | Riot Has Started Voiding Bot Orders For Riftbound T1 Signature Edition Drawing After Fan Outcry And Anger - GameFragger.com
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-21 kind=release | Check Your Emails, Riftbound T1 Signature Bundle Refunds Are Hitting Legitimate Buyers, Causing Many Issues - GameFragger.com
+[google 'Riftbound T1' 2026-07-20..2026-08-31] 2026-08-21 kind=release | Riftbound Issues Apology And Corrections After T1 Signature Edition Set Cancellation Errors - GameFragger.com
+[google 'Riftbound drawing' 2026-05-01..2026-06-15] 2026-05-12 kind=raffle | Riot updates Riftbound Unleashed Catch-Up drawing after player feedback - Esports News UK
+[google 'Riftbound drawing' 2026-06-15..2026-07-20] 2026-07-02 kind=release | The Riftbound x T1 2025 Worlds Champion Collection - Riftbound
+[google 'Riftbound drawing' 2026-06-15..2026-07-20] 2026-07-03 kind=release | Special Riftbound T1 Promo Set Commemorates 2025 League Of Legends World Champions - Star City Games
+[google 'Riftbound drawing' 2026-06-15..2026-07-20] 2026-07-02 kind=release | Riftbound x T1 2025 League of Legends Worlds Champion Collection Launches this August - TriplePoint Newsroom
+[google 'Riftbound drawing' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | Riftbound Reveals Limited T1 Worlds Champion Collection - The Outerhaven
+[google 'Riftbound drawing' 2026-06-15..2026-07-20] 2026-07-03 kind=preview | T1’s Riftbound cards revealed during MSI, showcasing players and collectors versions - Esports News UK
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-12 kind=raffle | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 - Resell Calendar
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-17 kind=release | How to Pre-Order T1 Worlds 2025 Winner Riftbound Cards - Insider Gaming
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-03 kind=raffle | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 - GameFragger.com
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-13 kind=raffle | Everything you need to know about the T1 Raffle in Riftbound - The Escapist
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-20 kind=raffle | Unfortunately For Fans, The Riftbound T1 Signature Edition Drawing Still Lost To Bots And Scalpers It Seems - GameFragger.com
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-04 kind=raffle | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown - Dot Esports
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-20 kind=raffle | Riot Has Started Voiding Bot Orders For Riftbound T1 Signature Edition Drawing After Fan Outcry And Anger - GameFragger.com
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-21 kind=release | Check Your Emails, Riftbound T1 Signature Bundle Refunds Are Hitting Legitimate Buyers, Causing Many Issues - GameFragger.com
+[google 'Riftbound drawing' 2026-07-20..2026-08-31] 2026-08-21 kind=release | Riftbound Issues Apology And Corrections After T1 Signature Edition Set Cancellation Errors - GameFragger.com
+sitemap https://riftbound.leagueoflegends.com/sitemap.xml 9
+sitemap https://riftbound.leagueoflegends.com/en-us/sitemap.xml 9
+sitemap https://playriftbound.com/sitemap.xml 9
+official T1/drawing articles: 8
+   https://playriftbound.com/en-us/news/announcements/product-drawing-faq/
+   https://playriftbound.com/en-us/news/announcements/regional-championship-qualification-faq/
+   https://playriftbound.com/en-us/news/announcements/spiritforged-product-drawing-faq/
+   https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/
+   https://playriftbound.com/en-us/news/announcements/vi--vex-champion-decks/
+   https://playriftbound.com/en-us/news/organizedplay/2026-regional-championship-info/
+   https://playriftbound.com/en-us/news/organizedplay/north-american-regional-championship-info/
+   https://playriftbound.com/en-us/news/organizedplay/regional-championships-competitive-integrity-prizing/
+
+== would-be raffle? product drawing faq | kind: raffle | raffle-word: True
+   opens 2026-10-27 closes 2026-11-03 | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/product-drawing-faq/']]
+   summary: Registration goes live on October 27 at 9:00 AM PT, and closes October 30 at 9:00 AM PT. Drawing registration opens: October 27, 9:00 AM PT Drawing registration closes: October 30, 9:00 AM PT Emails to first round of selectees: November 3 Enter drawing for the Riftbound x K/DA Couture Collection starting October 27.
+
+== would-be raffle? regional championship qualification faq | kind: news | raffle-word: False
+   opens 2026-10-27 closes 2026-10-27 | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/regional-championship-qualification-faq/']]
+   summary: Enter drawing for the Riftbound x K/DA Couture Collection starting October 27.
+
+== would-be raffle? spiritforged product drawing faq | kind: raffle | raffle-word: True
+   opens 2026-02-03 closes 2026-10-27 | entries [['spiritforged.registration.riftbound.leagueoflegends.com', 'https://spiritforged.registration.riftbound.leagueoflegends.com/en-us/\\'], ['rumble.registration.riftbound.leagueoflegends.com', 'https://rumble.registration.riftbound.leagueoflegends.com/en-us/\\'], ['fiora.registration.riftbound.leagueoflegends.com', 'https://fiora.registration.riftbound.leagueoflegends.com/en-us/\\']]
+   summary: Tomorrow morning (February 3rd), at 9am Pacific, we’re opening entry into drawings for Spiritforged product. Drawings will open at 9am Pacific on February 3rd, 2026. February 3rd, 9AM PST: Registration for Drawing Begins  February 5th, 9AM PST: Registration for Drawing Closes February 9th: Purchase links begin to go out to players. Enter drawing for the Riftbound x K/DA Couture Collection starting October 27.
+
+== would-be raffle? the riftbound x t1 2025 worlds champion collection | kind: release | raffle-word: False
+   opens 2026-08-03 closes 2026-10-27 | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/']]
+   summary: Announced  on August 3, 2026 : The  T1 2025 Worlds Champion Signature Edition drawing will open on Friday, August. Enter drawing for the Riftbound x K/DA Couture Collection starting October 27.
+
+== would-be raffle? vi  vex champion decks | kind: news | raffle-word: False
+   opens 2026-10-27 closes 2026-10-27 | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/vi--vex-champion-decks/']]
+   summary: Enter drawing for the Riftbound x K/DA Couture Collection starting October 27.
+
+== would-be raffle? 2026 regional championship info | kind: news | raffle-word: False
+   opens None closes None | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/organizedplay/2026-regional-championship-info/']]
+   summary: It will consist of the main event, a 256-player invitational Regional Championship, plus an open-registration tournament for more than 1,500 participants.
+
+== would-be raffle? north american regional championship info | kind: news | raffle-word: False
+   opens None closes None | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/organizedplay/north-american-regional-championship-info/']]
+   summary: It has more information about the event, including the Fan First Registration  process designed to ensure players of both Riftbound and TFT can secure an opportunity to purchase passes for the event. The event will take place across all three days of Convergence Fest: Friday 6 Swiss rounds Players with 12 or more match points advance to Day 2 Saturday 6 additional Swiss rounds Top 8 advances to single elimination Quarterfinal winners advance to Sunday Sunday Semifinals and Finals The Road to Wor
+
+== would-be raffle? regional championships competitive integrity prizing | kind: news | raffle-word: False
+   opens None closes None | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/organizedplay/regional-championships-competitive-integrity-prizing/']]
+   summary: No Deciding Matches After Time: If a match naturally ends in a draw due to time limits, players cannot attempt to randomly or arbitrarily determine a winner. Intentional Draws (IDs): Intentional Draws prior to time expiring remain legal and permitted under standard tournament policy.
+errors: []
