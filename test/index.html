@@ -80,6 +80,12 @@
   .animate-page-turn { animation: turn .35s ease forwards; transform-origin: left center; }
   .dragging { opacity: .4; }
   .drag-over { outline: 2px dashed #6366f1; outline-offset: -4px; }
+  /* holding a dragged card over another for a moment: drop will slide the cards in between instead of swapping */
+  #grid .drag-slide { outline: 3px solid #f59e0b; outline-offset: -4px; }
+  .ghost-slide { overflow: visible !important; outline: 4px solid #f59e0b; }
+  .ghost-slide::before { content: "⇣ Slide"; position: absolute; left: 50%; top: -1.9rem; transform: translateX(-50%); background: #f59e0b; color: #111; font: 900 .8rem/1 Inter, system-ui, sans-serif; padding: .4rem .65rem; border-radius: 999px; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,.6); }
+  #grid .drag-slide { outline-width: 4px; box-shadow: 0 0 0 4px rgba(245,158,11,.35), 0 0 22px rgba(245,158,11,.55); }
+  #grid .drag-slide::after { content: "⇣ Slide"; position: absolute; left: 50%; top: .35rem; transform: translateX(-50%); z-index: 30; background: #f59e0b; color: #111; font: 900 .72rem/1 Inter, system-ui, sans-serif; padding: .35rem .55rem; border-radius: 999px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
   .slot, .slot * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .slot img { -webkit-user-drag: none; pointer-events: none; }
   body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
@@ -957,7 +963,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.23';
+const APP_VERSION = '2026-10-23.27';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2993,9 +2999,16 @@ function updateHover() {
   const trash = !!(hit && hit.closest('#drag-trash'));
   if (trash !== !!dragSt.trash) { dragSt.trash = trash; $('drag-trash').classList.toggle('drag-over', trash); if (trash && navigator.vibrate) navigator.vibrate(8); }
   if (slot !== dragSt.hover) {
-    if (dragSt.hover) dragSt.hover.classList.remove('drag-over');
+    if (dragSt.hover) dragSt.hover.classList.remove('drag-over', 'drag-slide');
     if (slot) slot.classList.add('drag-over');
     dragSt.hover = slot;
+    // rest on a filled slot for a moment to switch from swap to slide
+    clearTimeout(dragSt.slideTimer); dragSt.slide = false; if (dragSt.ghost) dragSt.ghost.classList.remove('ghost-slide');
+    const filled = slot && getPagesArray()[S.cur].cards[+slot.dataset.slot] && !(S.cur === dragSt.p && +slot.dataset.slot === dragSt.s);
+    if (filled) dragSt.slideTimer = setTimeout(() => {
+      if (!dragSt || dragSt.hover !== slot) return;
+      dragSt.slide = true; slot.classList.add('drag-slide'); if (dragSt.ghost) dragSt.ghost.classList.add('ghost-slide'); if (navigator.vibrate) navigator.vibrate([10, 40, 10]);
+    }, 900);
   }
   const nav = hit && hit.closest('#prev, #next');
   if (nav !== dragSt.nav) {
@@ -3028,7 +3041,7 @@ function dragTick() {
 function dragEnd(e) {
   if (!dragSt || e.pointerId !== dragSt.id) return;
   const st = dragSt;
-  let to = null, trash = false;
+  let to = null, trash = false, slide = !!st.slide;
   if (st.active) {
     const { hit, slot } = slotUnder(e.clientX, e.clientY);
     trash = !!(hit && hit.closest('#drag-trash'));
@@ -3037,7 +3050,7 @@ function dragEnd(e) {
   }
   dragCleanup();
   if (trash) dropToTrash(st.p, st.s);
-  else if (to) moveCard({ p: st.p, s: st.s }, to);
+  else if (to) moveCard({ p: st.p, s: st.s }, to, slide);
 }
 // Remove a card dropped on the remove spot, with a few seconds to undo
 function dropToTrash(p, s) {
@@ -3057,7 +3070,8 @@ function dragAbort() { dragCleanup(); }
 
 function dragCleanup() {
   if (!dragSt) return;
-  clearTimeout(dragSt.timer); clearTimeout(dragSt.navTimer); cancelAnimationFrame(dragSt.raf);
+  clearTimeout(dragSt.timer); clearTimeout(dragSt.navTimer); clearTimeout(dragSt.slideTimer); cancelAnimationFrame(dragSt.raf);
+  document.querySelectorAll('#grid .drag-slide').forEach(n => n.classList.remove('drag-slide'));
   if (dragSt.ghost) dragSt.ghost.remove();
   document.querySelectorAll('.drag-over, #grid .dragging').forEach(n => n.classList.remove('drag-over', 'dragging'));
   document.body.classList.remove('is-dragging', 'card-dragging');
@@ -3067,9 +3081,10 @@ function dragCleanup() {
   dragSt = null;
 }
 
-// Drop on an empty slot: the card just moves. Drop on a filled slot: the card goes there and the cards in between
-// slide one place to make room: up/down within a column, sideways within a row, otherwise in reading order (across pages too).
-function moveCard(from, to) {
+// Drop on an empty slot: the card just moves. Drop on a filled slot: the two cards swap. Hold over the filled slot for a
+// moment first (it turns amber, "Slide") and the card goes there while the cards in between slide one place to make room:
+// up/down within a column, sideways within a row, otherwise in reading order (across pages too).
+function moveCard(from, to, slide) {
   if (peerUser || (from.p === to.p && from.s === to.s)) return;
   const pages = getPagesArray(), n = cap();
   if (!pages[from.p] || !pages[to.p]) return;
@@ -3077,6 +3092,13 @@ function moveCard(from, to) {
   if (!pages[to.p].cards[to.s]) {
     pages[to.p].cards[to.s] = card; pages[from.p].cards[from.s] = null;
     saveActivePages(pages); render(); return toast('Card moved');
+  }
+  if (!slide) {   // a normal drop on another card: the two trade places
+    const other = pages[to.p].cards[to.s];
+    pages[to.p].cards[to.s] = card; pages[from.p].cards[from.s] = other;
+    saveActivePages(pages); render();
+    let tips = 0; try { tips = +localStorage.getItem('cardBinder.slideTip') || 0; localStorage.setItem('cardBinder.slideTip', tips + 1); } catch (e) {}
+    return toast(tips < 3 ? 'Cards swapped · tip: rest on a card for a second before dropping to slide instead' : 'Cards swapped');
   }
   const cols = ({ '2x2': 2, '3x3': 3, '4x3': 4 })[S.layout] || 3;
   // the line of slots the cards slide along: the column for an up/down drag, the row for a sideways one,
