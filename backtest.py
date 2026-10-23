@@ -1,36 +1,32 @@
-"""Would the news job have caught the Riftbound T1 drawing earlier this year?"""
-import importlib.util, re, urllib.parse, json
+"""Replay: what would the Raffles list have shown around the Riftbound T1 Signature Edition drawing (Aug 2026)?"""
+import importlib.util, re, urllib.parse, datetime as dt
 spec = importlib.util.spec_from_file_location("bn", "scripts/build-news.py"); bn = importlib.util.module_from_spec(spec); spec.loader.exec_module(bn)
 out = []
 def p(*a): out.append(" ".join(str(x) for x in a))
-# 1) Google News, as the job queries it, but for the months around the T1 release (Aug 1)
-for q in ['Riftbound', 'Riftbound T1', 'Riftbound drawing']:
-    for a, b in [("2026-05-01", "2026-06-15"), ("2026-06-15", "2026-07-20"), ("2026-07-20", "2026-08-31")]:
-        url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"{q} after:{a} before:{b}", "hl": "en-US", "gl": "US", "ceid": "US:en"})
-        try: xml = bn.get(url, browser=True)
-        except Exception as e: p("ERR", q, e); continue
-        for it in bn.rss_items(xml):
-            t = bn.text(bn.tag(it, "title"))
-            if re.search(r"t1|worlds champion|drawing|raffle|lottery", t, re.I):
-                p(f"[google '{q}' {a}..{b}]", (bn.rss_date(bn.tag(it, 'pubDate')) or '').__str__()[:10], "kind=" + bn.kind_of(t), "|", t)
-# 2) Riftbound's official site: every news article in the sitemap that mentions T1 / drawing
-urls = []
-for sm in ["https://riftbound.leagueoflegends.com/sitemap.xml", "https://riftbound.leagueoflegends.com/en-us/sitemap.xml", "https://playriftbound.com/sitemap.xml"]:
-    try:
-        x = bn.get(sm, browser=True); locs = re.findall(r"<loc>(.*?)</loc>", x); p("sitemap", sm, len(locs))
-        for l in locs:
-            if l.endswith(".xml"):
-                try: locs += re.findall(r"<loc>(.*?)</loc>", bn.get(l, browser=True))
-                except Exception as e: p("  sub ERR", l, e)
-        urls += [l for l in locs if "/news/" in l and re.search(r"t1|drawing|champion", l, re.I)]
-    except Exception as e: p("sitemap ERR", sm, e)
-urls = sorted(set(u for u in urls if "/en-us/" in u))
-p("official T1/drawing articles:", len(urls)); [p("  ", u) for u in urls[:30]]
-import datetime as dt
-for u in urls[:12]:
-    title = u.rstrip("/").split("/")[-1].replace("-", " ")
-    p("\n== would-be raffle?", title, "| kind:", bn.kind_of(title), "| raffle-word:", bool(bn.RAFFLE_RE.search(title)))
-    r = bn.riftbound_drawing(title, u, dt.datetime(2026, 7, 1, tzinfo=dt.timezone.utc), "")
-    p("   opens", r.get("opens"), "closes", r.get("closes"), "| entries", r["entries"][:3]); p("   summary:", r["summary"][:500])
+for day in ["2026-08-05", "2026-08-13", "2026-08-15"]:
+    now = dt.datetime.fromisoformat(day + "T18:00:00+00:00"); bn.NOW, bn.TODAY = now, now.date()
+    a = (now - dt.timedelta(days=30)).date()
+    url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"Riftbound after:{a} before:{now.date() + dt.timedelta(days=1)}", "hl": "en-US", "gl": "US", "ceid": "US:en"})
+    xml = bn.get(url, browser=True)
+    items = []
+    for it in bn.rss_items(xml)[:25]:
+        full = bn.text(bn.tag(it, "title")); src = bn.text(bn.tag(it, "source"))
+        title = full.rsplit(" - ", 1)[0] if src and full.endswith(" - " + src) else full
+        if bn.SKIP_SRC.search(src) or bn.DEAL_RE.search(title) or not bn.CARDISH_RE.search(title + " " + src): continue
+        items.append({"game": "riftbound", "title": title, "url": "", "date": bn.iso(bn.rss_date(bn.tag(it, "pubDate"))), "src": src, "kind": bn.kind_of(title), "summary": ""})
+    p(f"\n=== As of {day}: Google News 'Riftbound' (job's query, past 30 days) -> {len(items)} items; raffle-type:")
+    for it in items:
+        if it["kind"] == "raffle" and not re.search(r"\bfaq\b", it["title"], re.I):
+            posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
+            o, c = bn.window([it["title"]], posted.year)
+            if o and dt.date.fromisoformat(o) < posted.date() - dt.timedelta(days=2): o, c = "", ""
+            live = (c and now.date() <= dt.date.fromisoformat(c)) or (o and not c and (now.date() - dt.date.fromisoformat(o)).days <= 7) or (o and now.date() < dt.date.fromisoformat(o))
+            p(f"   {it['date'][:10]} opens={o or '-'} closes={c or '-'} alert={'YES' if live else 'no'} | {it['title']} ({it['src']})")
+# Riot's own T1 article, read with today's job
+bn.NOW, bn.TODAY = dt.datetime.now(dt.timezone.utc), dt.date.today()
+idx = bn.get("https://riftbound.leagueoflegends.com/en-us/news/", browser=True); banner = set(bn.sentences_of(idx))
+u = "https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/"
+r = bn.riftbound_drawing("The Riftbound x T1 2025 Worlds Champion Collection", u, dt.datetime(2026, 7, 2, tzinfo=dt.timezone.utc), "", banner)
+p("\n=== Riot's T1 article:", "counts as a drawing:", r.get("drawing"), "| opens", r.get("opens"), "closes", r.get("closes"), "| entries", r["entries"][:3]); p("   summary:", r["summary"])
 p("errors:", bn.errors)
 open("probe-report.txt", "w").write("\n".join(out))

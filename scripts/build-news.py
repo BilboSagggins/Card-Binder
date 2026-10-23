@@ -178,18 +178,49 @@ def dates_in(s, year_hint=None):
     """All dates written as 10/16/2026, 10/16 or October 16(, 2026) in a piece of text, in order."""
     found = []
     y0 = year_hint or TODAY.year
-    for m in re.finditer(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?", s, re.I):
+    for m in re.finditer(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*[-–]\s*(\d{1,2})(?:st|nd|rd|th)?\b)?(?:,?\s+(\d{4}))?", s, re.I):
         try:
             if m.group(1):
                 y = int(m.group(3)) if m.group(3) else y0
                 y = y + 2000 if y < 100 else y
                 d = dt.date(y, int(m.group(1)), int(m.group(2)))
             else:
-                d = dt.date(int(m.group(6)) if m.group(6) else y0, MONTHS[m.group(4).lower()[:3]], int(m.group(5)))
+                y = int(m.group(7)) if m.group(7) else y0
+                d = dt.date(y, MONTHS[m.group(4).lower()[:3]], int(m.group(5)))
+                if m.group(6):          # "August 14-17": a range in one month
+                    found.append(d)
+                    d = dt.date(y, d.month, int(m.group(6)))
             found.append(d)
         except ValueError:
             pass
     return found
+
+
+def window(sentences, year_hint=None):
+    """(opens, closes) of a drawing: the date right after open/begin/start/runs and the one right after close/end/until."""
+    opens = closes = None
+    blob = " \n ".join(sentences)
+    for m in re.finditer(r"\b(opens?|opening|begins?|starts?|starting|goes live|live on|runs?|running|from)\b|\b(clos(?:es|ing|e)|ends?|ending|deadline|until|through)\b", blob, re.I):
+        before = blob[max(0, m.start() - 70):m.start()]
+        after = blob[m.end():m.end() + 45]
+        lab = re.search(r"([A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)[^\n]{0,20}?:(?!\d)[^:\n]{0,45}$", before)
+        right_after = re.match(r"\s*(?:on|:)?\s*(?:[A-Za-z]+day,?\s*)?(?:[A-Za-z]{3,9}\.?\s+\d|\d{1,2}/\d)", after)
+        # "opens: October 27" (date after) or "February 3rd, 9AM PST: Registration ... Begins" (date before)
+        next_label = re.match(r"\s*(?:[A-Za-z]{3,9}\.?\s+\d{1,2}(?:st|nd|rd|th)?|\d{1,2}/\d{1,2}(?:/\d{2,4})?)[^\n]{0,20}?:(?!\d)", after)
+        use_before = lab and (not right_after or next_label)     # the date after belongs to the next "date: label" line
+        ds = dates_in(lab.group(1), year_hint) if use_before else dates_in(after, year_hint)
+        if not ds:
+            continue
+        if m.group(1):
+            opens = opens or ds[0]
+            if len(ds) > 1 and re.match(r"[^\n]{0,30}?\d\s*[-–]\s*\d", blob[m.end():m.end() + 45]):
+                closes = closes or ds[1]          # "runs August 14-17"
+        else:
+            closes = closes or ds[0]
+    if not opens:
+        allds = sorted(d for x in sentences for d in dates_in(x, year_hint))
+        opens = allds[0] if allds else None
+    return (str(opens) if opens else "", str(closes) if closes and (not opens or closes >= opens) else "")
 
 
 def bandai_shops():
@@ -319,6 +350,8 @@ def riftbound_official():
             for v in o:
                 walk(v)
     walk(data)
+    # text that sits on every page (e.g. a site-wide "Enter drawing for ..." banner): ignore it inside articles
+    banner = set(sentences_of(page))
     seen = set()
     for title, when, url, img, desc in found:
         if title in seen:
@@ -330,33 +363,48 @@ def riftbound_official():
         except ValueError:
             d = None
         desc = text(desc if isinstance(desc, str) else json.dumps(desc))[:240]
-        if RAFFLE_RE.search(title) and not re.search(r"\bfaq\b", title, re.I) and d and d > NOW - dt.timedelta(days=60):
-            raffles.append(riftbound_drawing(title, url, d, desc))
+        recent = d and d > NOW - dt.timedelta(days=60)
+        named = RAFFLE_RE.search(title) and not re.search(r"\bfaq\b", title, re.I)
+        maybe = re.search(r"collection|edition|signature|bundle|exclusive|limited|pre-?order|drawing|lottery|raffle", title + " " + desc, re.I) and not re.search(r"\bfaq\b", title, re.I)
+        if recent and (named or maybe):
+            r = riftbound_drawing(title, url, d, desc, banner)
+            if named or r.pop("drawing", False):
+                raffles.append(r)
         items.append({"game": "riftbound", "title": title, "url": url, "date": iso(d), "src": "Riftbound (official)",
                       "kind": kind_of(title), "imgs": [img.split("?")[0] + "?w=800"] if img else [], "summary": desc})
     return raffles, items[:20]
 
 
-def riftbound_drawing(title, url, d, desc):
-    """Open a Riftbound drawing article for its dates and entry links."""
+def sentences_of(page):
+    nd = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', page, re.S)
+    strings = re.findall(r'"(?:text|body|description|content|html|value|title|label)":"((?:[^"\\]|\\.){20,})"', nd.group(1) if nd else page)
+    out = []
+    for x in strings:
+        try:
+            x = json.loads('"' + x + '"')
+        except ValueError:
+            continue
+        out += [y.strip() for y in re.split(r"(?<=[.!?])\s+|\n", text(x)) if len(y.strip()) > 12]
+    return out
+
+
+def riftbound_drawing(title, url, d, desc, banner=()):
+    """Open a Riftbound article for drawing dates and entry links. Sets "drawing" when the article describes one."""
     r = {"game": "riftbound", "title": title, "url": url, "posted": iso(d), "src": "Riftbound (official)",
          "period": "", "event": "", "entries": [], "summary": desc}
     try:
         page = get(url, browser=True)
         nd = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', page, re.S)
-        strings = re.findall(r'"(?:text|body|description|content|html|value)":"((?:[^"\\]|\\.){20,})"', nd.group(1) if nd else page)
-        body = text(" \n".join(json.loads('"' + x + '"') for x in strings))
-        sents = [x.strip() for x in re.split(r"(?<=[.!?])\s+|\n", body) if re.search(r"draw|enter|entry|regist|sign up|winners?|purchase window", x, re.I)]
+        sents = [x for x in dict.fromkeys(sentences_of(page)) if x not in banner and re.search(r"draw|lottery|raffle|regist|sign up|selectees|winners?|purchase window", x, re.I)]
         dated = [x for x in sents if dates_in(x)]
+        r["drawing"] = bool([x for x in dated if re.search(r"drawing|lottery|raffle|registration", x, re.I)])
         r["summary"] = " ".join((dated or sents)[:4])[:600] or desc
         for a in re.finditer(r'"(https?://[^"\s]+)"', nd.group(1) if nd else page):
-            u = a.group(1).replace("\\u002F", "/").replace("\\/", "/")
+            u = a.group(1).replace("\\u002F", "/").replace("\\/", "/").rstrip("\\")
             if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
                 if u not in [e[1] for e in r["entries"]]:
                     r["entries"].append([re.sub(r"^https?://(www\.)?", "", u).split("/")[0], u])
-        ds = sorted(set(dates_in(" ".join(dated), d.year)))
-        if ds:
-            r["opens"], r["closes"] = str(ds[0]), str(ds[-1])
+        r["opens"], r["closes"] = window(dated, d.year)
     except Exception as e:
         errors.append(f"riftbound drawing {url}: {e}")
     r["entries"] = r["entries"][:6] or [["Open the drawing page", url]]
@@ -419,8 +467,12 @@ def main():
     for it in items:
         if it["kind"] == "raffle" and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
                 dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00")) > NOW - dt.timedelta(days=45):
+            posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
+            o, c = window([it["title"]] + re.split(r"(?<=[.!?])\s+", it.get("summary", "")), posted.year)
+            if o and dt.date.fromisoformat(o) < posted.date() - dt.timedelta(days=2):
+                o, c = "", ""       # a date from before the post: not the entry window
             raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"],
-                            "period": "", "event": "", "entries": [], "summary": it.get("summary", "")})
+                            "opens": o, "closes": c, "period": "", "event": "", "entries": [], "summary": it.get("summary", "")})
             have.add(norm_title(it["title"]))
     # newest first; drop near-duplicate headlines (keep the copy with pictures / from the official source)
     items.sort(key=lambda x: (bool(x["imgs"]), x.get("date") or ""), reverse=True)
