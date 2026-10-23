@@ -84,7 +84,7 @@
   .slot img { -webkit-user-drag: none; pointer-events: none; }
   body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
   /* Tools: five even tiles that always fit across the screen */
-  .tool-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; width: 100%; max-width: 30rem; }
+  .tool-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; width: 100%; max-width: 30rem; }
   .tt { appearance: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; min-width: 0; padding: .45rem .2rem; border-radius: 12px;
     border: 1px solid color-mix(in srgb, var(--tt) 70%, #fff 0%); background: color-mix(in srgb, var(--tt) 30%, #18181b); color: #fff; font: 700 .62rem/1.1 Inter, system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tt span { font-size: 1.05rem; line-height: 1; }
@@ -157,6 +157,24 @@
   .sp-row { display: flex; justify-content: space-between; align-items: center; gap: .3rem; font: 600 .65rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .sp-row b { color: #34d399; font-size: .78rem; }
   .sp-link { font: 700 .6rem/1 Inter, system-ui, sans-serif; color: #c7d2fe; text-decoration: none; }
+  /* Price check */
+  .pc-list { max-width: 44rem; margin: 0 auto; padding: .5rem .7rem 3rem; display: flex; flex-direction: column; gap: .45rem; }
+  .pc-row { background: #18181b; border: 1px solid #27272a; border-radius: 12px; overflow: hidden; }
+  .pc-main { display: grid; grid-template-columns: 2.9rem minmax(0, 1fr) auto; gap: .6rem; align-items: center; padding: .45rem .6rem .45rem .45rem; width: 100%; appearance: none; border: 0; background: none; color: inherit; text-align: left; }
+  .pc-main img { width: 2.9rem; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4px; background: #09090b; display: block; }
+  .pc-row.sealed .pc-main img { aspect-ratio: 1; object-fit: contain; background: #fff; padding: 2px; box-sizing: border-box; }
+  .pc-t { min-width: 0; }
+  .pc-t b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font: 700 .78rem/1.25 Inter, system-ui, sans-serif; color: #f4f4f5; }
+  .pc-t span { display: block; font: 500 .62rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pc-p { text-align: right; font: 800 1rem/1.1 Inter, system-ui, sans-serif; color: #34d399; white-space: nowrap; }
+  .pc-p small { display: block; font: 600 .55rem/1.2 Inter, system-ui, sans-serif; color: #71717a; }
+  .pc-p.none { color: #71717a; font-size: .72rem; font-weight: 600; }
+  .pc-more { display: none; padding: 0 .6rem .6rem; gap: .5rem; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+  .pc-row.open .pc-more { display: grid; }
+  .pc-acts { display: flex; flex-direction: column; gap: .35rem; }
+  .pc-acts a, .pc-acts button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; text-align: center; white-space: nowrap; }
+  .pc-acts a { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
+  .pc-note { text-align: center; color: #71717a; font: 500 .72rem/1.5 Inter, system-ui, sans-serif; padding: 1rem; }
   /* Card scanner */
   .scan-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
   .scan-btn { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .9rem .5rem; border-radius: 14px; background: #4f46e5; color: #fff; font: 800 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; text-align: center; }
@@ -173,6 +191,9 @@
   .scan-tip { margin: 0; font: 500 .66rem/1.35 Inter, system-ui, sans-serif; color: #71717a; }
   /* Trade picker */
   .tk { z-index: 62; padding-bottom: 5rem; }
+  .pc { z-index: 61; }
+  .pc .tk-find { flex: 0 0 100%; font-size: 16px; }   /* 16px keeps iPhone from zooming in */
+  .pc-t .jp-tag { display: inline-block; vertical-align: 1px; margin-right: .25rem; }
   .tk-tabs { flex: 0 0 100%; display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .1rem; }
   .tk-tabs::-webkit-scrollbar { display: none; }
   .tk-tabs button { appearance: none; flex: 1 1 auto; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 999px; padding: .45rem .55rem; white-space: nowrap; font: 700 .7rem/1 Inter, system-ui, sans-serif; }
@@ -530,6 +551,7 @@
           <button type="button" id="who-coll" onclick="toggleTray()" class="btn !py-1" aria-pressed="false" title="Show your collection to drag cards into slots">📦 Collection</button>
           <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
           <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
+          <button type="button" id="who-prices" onclick="openPricePage()" class="btn !py-1" title="Look up any card or sealed price">💲 Prices</button>
         </div>
         <!-- Kept for older code paths; filled from the people list -->
         <select id="user-select" class="hidden" aria-hidden="true" tabindex="-1"></select>
@@ -561,6 +583,7 @@
         <button type="button" onclick="openSealedPage()" title="The sealed product you own" class="tt" style="--tt:#d97706"><span>🎁</span>Sealed</button>
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
         <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
+        <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
       </div>
 
       <!-- General Utility Buttons -->
@@ -793,6 +816,17 @@
 </div>
 
 <!-- Notification Toasts Container -->
+<!-- Price check: type to look up any card or sealed product, all games, from the daily price lists -->
+<div id="price-page" class="np pc" hidden role="dialog" aria-modal="true" aria-labelledby="pc-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closePricePage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="pc-title">Price check</h2><p id="pc-sub">Loading prices…</p></div>
+    <input type="search" id="pc-q" class="tk-find" placeholder="Card or product name, number, or set" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="pcSearchSoon()">
+    <div class="tk-tabs" id="pc-tabs" role="tablist"></div>
+  </div>
+  <div id="pc-list" class="pc-list"></div>
+</div>
+
 <!-- Trade picker: tap your own cards, collection or sealed to add several at once -->
 <div id="trade-pick" class="np tk" hidden role="dialog" aria-modal="true" aria-labelledby="tk-title">
   <div class="np-head">
@@ -911,7 +945,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.8';
+const APP_VERSION = '2026-10-23.11';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3912,6 +3946,88 @@ function addTradeCard(side, card) {
   toast(`${card.name} added to ${side === 'give' ? 'You give' : 'You get'}${card.price != null ? ' · ' + fmt(card.price) : ''}`);
   if (card.price == null) lookupPrice(card).then(r => { if (!r) return; const c = TRADE[side].find(x => x.id === card.id && x.price == null); if (c) { c.price = r.price; if (r.url) c.url = r.url; saveTrade(); } }).catch(() => {});
 }
+/* --- Price check: every card and sealed product in the daily lists (Pokémon English/Japanese/Chinese, One Piece), searched as
+   you type, with condition prices and a link to the live TCGplayer (or CardTrader) page --- */
+const PC_SOURCES = [
+  { key: 'pokemon', label: 'Pokémon', tab: 'pokemon' }, { key: 'pokemon-jp', label: 'Japanese', tab: 'jp' }, { key: 'pokemon-zh', label: 'Chinese', tab: 'zh' },
+  { key: 'onepiece', label: 'One Piece', tab: 'op' }, { key: 'pokemon-sealed', label: 'Sealed', tab: 'sealed' }, { key: 'pokemon-jp-sealed', label: 'Sealed', tab: 'sealed' },
+  { key: 'onepiece-sealed', label: 'Sealed', tab: 'sealed' },
+];
+const PC_TABS = [['all', 'All'], ['pokemon', 'Pokémon'], ['jp', 'Japanese'], ['zh', 'Chinese'], ['op', 'One Piece'], ['sealed', 'Sealed']];
+let PC = { tab: 'all', ready: false, open: null }, pcTimer = null;
+async function openPricePage() {
+  $('price-page').hidden = false; document.body.style.overflow = 'hidden';
+  if (!PC.ready) {
+    $('pc-sub').textContent = 'Loading prices…';
+    await Promise.all(PC_SOURCES.map(x => loadTcgList(x.key).catch(() => null)));
+    PC.ready = true;
+  }
+  const L = TCG_LISTS.pokemon || Object.values(TCG_LISTS).find(x => x && x.updated);
+  const when = L && L.updated ? new Date(L.updated) : null;
+  $('pc-sub').textContent = when ? `Prices updated ${when.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · TCGplayer market, daily` : 'Daily TCGplayer market prices';
+  pcTabs(); pcSearch();
+  setTimeout(() => $('pc-q').focus(), 60);
+}
+function closePricePage() { $('price-page').hidden = true; document.body.style.overflow = ''; }
+function pcTabs() { $('pc-tabs').innerHTML = PC_TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === PC.tab}" onclick="PC.tab='${k}';pcTabs();pcSearch()">${l}</button>`).join(''); }
+function pcSearchSoon() { clearTimeout(pcTimer); pcTimer = setTimeout(pcSearch, 140); }
+// One entry from any list, as a card object the rest of the app understands
+function pcCard(src, pid) {
+  const L = TCG_LISTS[src.key]; if (!L) return null;
+  if (src.tab === 'sealed') return cardFromSealed(pid, L, src.key);
+  if (src.key === 'pokemon-zh') return cardFromCT(pid, L);
+  const c = cardFromTcg(pid, src.key === 'onepiece' ? 'onepiece' : 'pokemon', L); if (c && src.key === 'pokemon-jp') c.lang = 'ja'; return c;
+}
+function pcSearch() {
+  const box = $('pc-list'), raw = $('pc-q').value.trim();
+  if (!PC.ready) { box.innerHTML = '<p class="pc-note">⏳ Loading prices…</p>'; return; }
+  if (raw.length < 2) { box.innerHTML = '<p class="pc-note">Type a name, a number like 125/197 or OP01-025, or a set — e.g. “charizard 151”, “surging sparks etb”.</p>'; return; }
+  // shorthand people use at shows
+  const ALIAS = { etb: 'elite trainer box', pcetb: 'pokemon center elite trainer box', bb: 'booster bundle', upc: 'ultra premium collection', bbox: 'booster box', 'b&b': 'build & battle', sir: 'special illustration rare', ir: 'illustration rare', alt: 'alternate art' };
+  const words = lc(raw).split(/\s+/).filter(Boolean).map(w => ALIAS[w] || w), qn = norm(raw);
+  const hits = [];
+  for (const src of PC_SOURCES) {
+    if (PC.tab !== 'all' && src.tab !== PC.tab) continue;
+    const L = TCG_LISTS[src.key]; if (!L || !L.p) continue;
+    const sealed = src.tab === 'sealed', strip = x => x.replace(/^([a-z]*)0+(?=\d)/, '$1');
+    // search text for each entry, built once per list
+    if (!L._pc) L._pc = Object.entries(L.p).map(([pid, e]) => {
+      const name = String(e[1] || ''), set = (L.groups && L.groups[sealed ? e[2] : e[3]]) || '', num = sealed ? '' : String(e[2] || '');
+      return [pid, e, lc(name + ' ' + set + ' ' + num + ' ' + (sealed ? e[3] : e[4] || '')), strip(num.toLowerCase().split('/')[0]), norm(name), lc(name)];
+    });
+    for (const [pid, e, hay, n0, nn, ln] of L._pc) {
+      if (!words.every(w => hay.includes(w) || (/\d/.test(w) && n0 === strip(w)))) continue;
+      const name = ln, score = (nn === qn ? 4 : nn.startsWith(qn) ? 3 : name.includes(lc(raw)) ? 2 : 1) + (/^(pokemon|onepiece|pokemon-sealed|onepiece-sealed)$/.test(src.key) ? 0.6 : 0) - (sealed && e[3] === 'Case' && !words.includes('case') ? 1 : 0) + (e[0] != null ? Math.min(1, Math.log10(1 + e[0]) / 3) : 0);
+      hits.push({ src, pid, score, price: e[0] });
+      if (hits.length > 4000) break;
+    }
+  }
+  hits.sort((a, b) => b.score - a.score || (b.price || 0) - (a.price || 0));
+  const top = hits.slice(0, 60);
+  box.innerHTML = top.length ? top.map((h, i) => {
+    const c = pcCard(h.src, h.pid); if (!c) return '';
+    const sub = [c.sealed ? c.rarity : '', c.set, c.number !== '—' ? c.number : '', !c.sealed && !/^(—|None)$/.test(c.rarity) ? c.rarity : ''].filter(Boolean).join(' · ');
+    return `<div class="pc-row${c.sealed ? ' sealed' : ''}" data-i="${i}">
+      <button type="button" class="pc-main" onclick="this.parentNode.classList.toggle('open')">${imgTag(c.thumb, c.alts, c.name, '')}
+        <div class="pc-t"><b>${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc(sub)}</span></div>
+        <div class="pc-p${c.price == null ? ' none' : ''}">${c.price == null ? 'No price' : fmt(c.price)}${c.price != null ? `<small>${c.ctId ? 'CardTrader low' : 'market'}</small>` : ''}</div></button>
+      <div class="pc-more">${c.sealed || c.ctId ? '<div></div>' : condRows(c.price)}<div class="pc-acts">
+        <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${c.ctId ? 'CardTrader' : 'TCGplayer'} live ↗</a>
+        <button type="button" onclick="pcToTrade(${i},'give')">＋ You give</button><button type="button" onclick="pcToTrade(${i},'get')">＋ You get</button></div></div>
+    </div>`;
+  }).join('') + (hits.length > 60 ? `<p class="pc-note">Showing the top 60 of ${hits.length >= 4000 ? '4,000+' : hits.length}. Add a word to narrow it down.</p>` : '')
+    : '<p class="pc-note">Nothing matches that. Try fewer words, or another tab.</p>';
+  PC.top = top;
+}
+// Send a looked-up item straight into the trade
+function pcToTrade(i, side) {
+  const h = PC.top && PC.top[i]; if (!h) return;
+  if (peerUser || !currentUser) return toast('Open one of your own binders to use Trade.', 'error');
+  const c = pcCard(h.src, h.pid); if (!c) return;
+  closePricePage(); openTradePage();
+  setTimeout(() => { TRADE[side] = [...TRADE[side], tradeCard(c)]; saveTrade(); toast(`${c.name} added to ${side === 'give' ? 'You give' : 'You get'}`); }, 300);
+}
+
 /* Trade picker: your Owned cards and Need cards from all your binders, your collection and your sealed product,
    tap to pick several, then add them in one go. "Search all" opens the usual search for anything else. */
 let TK = { side: 'give', tab: 'owned', items: {}, picked: new Map(), loading: false };
@@ -4530,7 +4646,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
-  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage();
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray();
   closePeerViewer(true);
