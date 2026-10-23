@@ -1,1 +1,6 @@
-releases 20, raffles 2, items 109, errors 0
+https://www.pokebeach.com/news/2026/10/product_pack_kmqoi.jpg None 200 image/jpeg 116400
+https://www.pokebeach.com/news/2026/10/product_pack_kmqoi.jpg https://example.com/ ERR HTTP Error 403: Forbidden
+https://www.pokebeach.com/news/2026/10/product_pack_kmqoi-103x200.jpg None 200 image/jpeg 9661
+https://www.pokebeach.com/news/2026/10/product_pack_kmqoi-103x200.jpg https://example.com/ ERR HTTP Error 403: Forbidden
+https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg None 200 image/jpeg 210843
+https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg https://example.com/ ERR HTTP Error 403: Forbidden
