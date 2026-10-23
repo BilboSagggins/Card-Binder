@@ -403,10 +403,13 @@ def riftbound_drawing(title, url, d, desc, banner=()):
         r["summary"] = " ".join((dated or sents)[:4])[:600] or desc
         for a in re.finditer(r'"(https?://[^"\s]+)"', nd.group(1) if nd else page):
             u = a.group(1).replace("\\u002F", "/").replace("\\/", "/").rstrip("\\")
-            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
+            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"youtube|youtu\.be|twitter|x\.com|facebook|instagram|tiktok|discord|twitch|reddit|publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
                 if u not in [e[1] for e in r["entries"]]:
                     r["entries"].append([re.sub(r"^https?://(www\.)?", "", u).split("/")[0], u])
         r["opens"], r["closes"] = window(dated, d.year)
+        # only a drawing if its dates are after the article went up (not an old date mentioned in passing)
+        if r["drawing"] and not any(x and dt.date.fromisoformat(x) >= d.date() - dt.timedelta(days=2) for x in (r["opens"], r["closes"])):
+            r["drawing"] = False
     except Exception as e:
         errors.append(f"riftbound drawing {url}: {e}")
     r["entries"] = r["entries"][:6] or [["Open the drawing page", url]]
