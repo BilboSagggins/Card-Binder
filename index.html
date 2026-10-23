@@ -951,7 +951,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.25';
+const APP_VERSION = '2026-10-23.29';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2808,6 +2808,12 @@ function render() {
   
   $('page-title-input').value = pages[S.cur].title || `Page ${S.cur + 1}`;
 
+  // A card being held keeps its element alive off-screen when the grid is rebuilt (page flip mid-drag): on phones the finger's
+  // move and release events go to the element first touched, so if it were thrown away the drop would never arrive.
+  if (dragSt && dragSt.el && g.contains(dragSt.el)) {
+    let keep = $('drag-keep'); if (!keep) { keep = document.createElement('div'); keep.id = 'drag-keep'; keep.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0'; document.body.appendChild(keep); }
+    keep.appendChild(dragSt.el);
+  }
   g.innerHTML = '';
   pages[S.cur].cards.forEach((c, i) => {
     const el = document.createElement('div');
@@ -2937,7 +2943,7 @@ function slotPress(e, i) {
   const card = getPagesArray()[S.cur].cards[i];
   if (!card) return;
   dragSt = { p: S.cur, s: i, card, id: e.pointerId, touch: e.pointerType === 'touch',
-             x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY, active: false };
+             x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY, active: false, el: e.currentTarget };
   try { e.target.releasePointerCapture(e.pointerId); } catch (_) {}
   if (dragSt.touch) dragSt.timer = setTimeout(beginDrag, 350);
   document.addEventListener('pointermove', dragMove);
@@ -3004,8 +3010,15 @@ function updateHover() {
     if (nav) {
       nav.classList.add('drag-over');
       dragSt.navTimer = setTimeout(function flip() {
-        if (!dragSt || !dragSt.active || dragSt.nav !== nav || nav.disabled) return;
-        go(nav.id === 'next' ? 1 : -1);
+        if (!dragSt || !dragSt.active || dragSt.nav !== nav) return;
+        const pages = getPagesArray();
+        if (nav.id === 'next' && S.cur === pages.length - 1) {   // past the last page: start a new, empty one (once per drag)
+          if (dragSt.addedPage) return; dragSt.addedPage = true;
+          pages.push({ title: `Page ${pages.length + 1}`, cards: Array(cap()).fill(null) });
+          saveActivePages(pages); toast(`Added Page ${pages.length}`);
+          S.pages = pages; S.cur = pages.length - 1; render();
+        } else if (nav.disabled) return;
+        else go(nav.id === 'next' ? 1 : -1);
         dragSt.hover = null;
         dragSt.navTimer = setTimeout(flip, 800);
       }, 600);
@@ -3059,6 +3072,7 @@ function dragCleanup() {
   clearTimeout(dragSt.timer); clearTimeout(dragSt.navTimer); clearTimeout(dragSt.slideTimer); cancelAnimationFrame(dragSt.raf);
   document.querySelectorAll('#grid .drag-slide').forEach(n => n.classList.remove('drag-slide'));
   if (dragSt.ghost) dragSt.ghost.remove();
+  const keep = $('drag-keep'); if (keep) keep.innerHTML = '';
   document.querySelectorAll('.drag-over, #grid .dragging').forEach(n => n.classList.remove('drag-over', 'dragging'));
   document.body.classList.remove('is-dragging', 'card-dragging');
   document.removeEventListener('pointermove', dragMove);
