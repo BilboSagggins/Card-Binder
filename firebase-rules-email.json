@@ -35,6 +35,11 @@
       "$code": {
         ".write": "auth != null && root.child('users/' + (newData.exists() ? newData.child('owner').val() : data.child('owner').val()) + '/email').val() === auth.token.email"
       }
+    },
+    "trades": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
     }
   }
 }
