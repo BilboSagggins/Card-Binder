@@ -137,6 +137,10 @@
   .np-card.got .np-link { opacity: .4; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
   /* Sealed page */
+  /* Sealed product names are long: show them in full (up to three lines) */
+  .sealed-name { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.25; min-height: 3.75em; }
+  .sp-grid .np-name { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: normal; font-size: .78rem; line-height: 1.25; }
+  .tp-card.sealed .t b { -webkit-line-clamp: 3; }
   .sp-hint { margin-right: auto; font: 500 .68rem/1.3 Inter, system-ui, sans-serif; color: #71717a; }
   .sp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (min-width: 640px) { .sp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -2259,7 +2263,7 @@ function renderResults(cards, append) {
     const el = document.createElement('div');
     el.className = 'panel p-2.5 flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer group';
     el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden ${card.sealed ? 'bg-white' : 'bg-zinc-900'} mb-2">${imgTag(card.thumb, card.alts, card.name, `w-full h-full ${card.sealed ? 'object-contain p-1' : 'object-cover'} group-hover:scale-105 transition duration-300`)}</div>
-      <h4 class="font-bold text-xs truncate">${esc(card.name)}</h4>
+      <h4 class="font-bold text-xs ${card.sealed ? 'sealed-name' : 'truncate'}">${esc(card.name)}</h4>
       <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${langTag(card, 'jp-inline')}${card.lang && card.lang !== 'en' ? ' ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
     el.onclick = () => { 
@@ -3651,7 +3655,7 @@ function renderTrade() {
   if (!$('trade-page') || $('trade-page').hidden) return;
   ['give', 'get'].forEach(side => {
     const list = TRADE[side];
-    $('tp-' + side).innerHTML = list.length ? list.map(c => `<div class="tp-card">
+    $('tp-' + side).innerHTML = list.length ? list.map(c => `<div class="tp-card${c.sealed ? ' sealed' : ''}">
         ${imgTag(c.thumb || c.image, c.alts, c.name, c.sealed ? 'sealed-img' : '')}
         <div class="t"><b title="${esc(c.name)}">${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc([c.sealed ? c.rarity : '', c.set, c.number].filter(Boolean).join(' · '))}</span><i class="${c.price == null ? 'none' : ''}">${c.price == null ? 'No price' : fmt(c.price * (c.qty || 1))}</i>
           <div class="tp-qty"><button type="button" onclick="tradeQty('${side}','${esc(c.tid)}',-1)" aria-label="One fewer">−</button><span>${c.qty || 1}</span><button type="button" onclick="tradeQty('${side}','${esc(c.tid)}',1)" aria-label="One more">＋</button></div></div>
