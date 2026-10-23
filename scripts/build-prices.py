@@ -50,13 +50,47 @@ def pick_price(rows):
 
 
 def build(game, cats):
-    out = {"updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "groups": {}, "sets": [], "p": {}}
+    """Single cards into one list, sealed product into a second (prices/<game>-sealed.json)."""
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    out = {"updated": now, "groups": {}, "sets": [], "p": {}}
+    sealed = {"updated": now, "groups": {}, "sets": [], "p": {}}
     for cat in cats:
-        add_category(game, cat, out)
+        add_category(game, cat, out, sealed)
+    SEALED[game] = sealed
     return out
 
 
-def add_category(game, cat, out):
+SEALED = {}
+# Details only single cards have
+CARD_FIELDS = ("Rarity", "Card Type", "CardType", "HP", "Stage", "Attack 1", "Card Text", "Weakness", "Resistance", "Retreat Cost", "Cost", "Power", "Counterplus", "Color", "Life")
+# Not sealed product, even though they have no card number
+NOT_SEALED = re.compile(r"code card|online code|digital|\bpromo card\b|playmat|sleeves|deck box|binder|portfolio|card case|dice|coin\b|damage counter|figure|plush|pin\b|poster|art print|oversized|jumbo|\bmat\b", re.I)
+# What kind of sealed product it is, from its name (first match wins)
+SEALED_TYPES = [
+    ("Case", r"\bcase\b"),
+    ("Booster Box", r"booster box|booster display|display box|\bbooster  ?display"),
+    ("Elite Trainer Box", r"elite trainer box|\betb\b"),
+    ("Booster Bundle", r"booster bundle|bundle"),
+    ("Build & Battle", r"build (&|and) battle|prerelease kit|prerelease pack"),
+    ("Ultra Premium Collection", r"ultra.premium|super.premium"),
+    ("Premium Collection", r"premium collection|premium figure|special collection|figure collection"),
+    ("Tin", r"\btins?\b|mini tin|stacking tin"),
+    ("Blister", r"blister|checklane|3.pack|three.pack|2.pack|two.pack|sleeved booster|booster pack.*art|poke ball tin"),
+    ("Deck", r"\bdecks?\b|theme deck|battle deck|league battle|starter set|trainer kit|battle academy|v battle|ex battle"),
+    ("Booster Pack", r"booster pack|\bbooster\b|\bpack\b"),
+    ("Collection / Box", r"collection|\bbox\b|chest|gift set|calendar|showcase|toolkit|special set|card set|file set|premium file|\bkit\b|commemoration|briefcase|don!! set"),
+]
+SEALED_TYPES = [(t, re.compile(rx, re.I)) for t, rx in SEALED_TYPES]
+
+
+def sealed_type(name):
+    for t, rx in SEALED_TYPES:
+        if rx.search(name):
+            return t
+    return "Other"
+
+
+def add_category(game, cat, out, sealed):
     groups = get(f"{cat}/groups")
     for i, g in enumerate(groups, 1):
         gid = g["groupId"]
@@ -66,17 +100,26 @@ def add_category(game, cat, out):
         prices = {}
         for r in get(f"{cat}/{gid}/prices"):
             prices.setdefault(r["productId"], []).append(r)
-        kept = 0
+        kept = kept_sealed = 0
         for p in products:
             ext = {e.get("name"): e.get("value") for e in (p.get("extendedData") or [])}
             number = (ext.get("Number") or "").strip()
             if not number:  # sealed product, not a single card
+                name = (p.get("name") or "").strip()
+                if any((ext.get(k) or "").strip() for k in CARD_FIELDS):  # a single card without a number, not a product
+                    continue
+                if name and not NOT_SEALED.search(name):
+                    sealed["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, gid, sealed_type(name)]
+                    kept_sealed += 1
                 continue
             name = p.get("name") or ""
             if name.endswith(" - " + number):
                 name = name[: -len(" - " + number)]
             out["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, number, gid, (ext.get("Rarity") or "").strip()]
             kept += 1
+        if kept_sealed:
+            sealed["groups"][str(gid)] = g.get("name") or ""
+            sealed["sets"].append([gid, g.get("name") or "", (g.get("publishedOn") or "")[:10], g.get("abbreviation") or "", kept_sealed])
         if kept:
             out["groups"][str(gid)] = g.get("name") or ""
             out["sets"].append([gid, g.get("name") or "", (g.get("publishedOn") or "")[:10], g.get("abbreviation") or "", kept])
@@ -157,6 +200,15 @@ def main():
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
         print(f"  wrote {n} {game} cards to {os.path.relpath(path)}", flush=True)
+        sealed = SEALED.get(game)
+        if sealed and len(sealed["p"]) >= 20:
+            spath = os.path.join(OUT, f"{game}-sealed.json")
+            with open(spath, "w", encoding="utf-8") as f:
+                json.dump(sealed, f, ensure_ascii=False, separators=(",", ":"))
+            types = {}
+            for e in sealed["p"].values():
+                types[e[3]] = types.get(e[3], 0) + 1
+            print(f"  wrote {len(sealed['p'])} {game} sealed products to {os.path.relpath(spath)}: {types}", flush=True)
 
 
 if __name__ == "__main__":

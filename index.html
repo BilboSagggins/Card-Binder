@@ -136,19 +136,38 @@
   .np-export .np-link { display: block; }
   .np-card.got .np-link { opacity: .4; }
   .np-empty { grid-column: 1 / -1; text-align: center; color: #71717a; font: 500 .85rem/1.5 Inter, system-ui, sans-serif; padding: 3rem 1rem; }
+  /* Sealed page */
+  /* Sealed product names are long: show them in full (up to three lines) */
+  .sealed-name { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.25; min-height: 3.75em; }
+  .sp-grid .np-name { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: normal; font-size: .78rem; line-height: 1.25; }
+  .tp-card.sealed .t b { -webkit-line-clamp: 3; }
+  .sp-hint { margin-right: auto; font: 500 .68rem/1.3 Inter, system-ui, sans-serif; color: #71717a; }
+  .sp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 640px) { .sp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .sp-img { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #fff; }
+  .sp-img img { width: 100%; height: 100%; object-fit: contain; padding: .3rem; box-sizing: border-box; display: block; }
+  .sp-type { font: 700 .58rem/1.2 Inter, system-ui, sans-serif; color: #fbbf24; text-transform: uppercase; letter-spacing: .05em; }
+  .sp-row { display: flex; justify-content: space-between; align-items: center; gap: .3rem; font: 600 .65rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .sp-row b { color: #34d399; font-size: .78rem; }
+  .sp-link { font: 700 .6rem/1 Inter, system-ui, sans-serif; color: #c7d2fe; text-decoration: none; }
   /* Trade analyzer */
   .tp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .8rem .7rem 2rem; max-width: 56rem; margin: 0 auto; }
   .tp-side { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: .6rem; display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
   .tp-side h3 { margin: 0; text-align: center; font: 800 .8rem/1.2 Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #fda4af; }
   .tp-side[data-side="get"] h3 { color: #7dd3fc; }
   .tp-list { display: flex; flex-direction: column; gap: .4rem; }
-  .tp-card { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .45rem; align-items: center; background: #09090b; border: 1px solid #27272a; border-radius: 9px; padding: .3rem; }
+  .tp-card { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .45rem; align-items: start; background: #09090b; border: 1px solid #27272a; border-radius: 9px; padding: .3rem; }
   .tp-card img { width: 2.4rem; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 3px; display: block; background: #18181b; }
   .tp-card .t { min-width: 0; }
-  .tp-card .t b { display: block; font: 700 .66rem/1.2 Inter, system-ui, sans-serif; color: #f4f4f5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tp-card .t b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font: 700 .66rem/1.2 Inter, system-ui, sans-serif; color: #f4f4f5; overflow: hidden; }
   .tp-card .t span { display: block; font: 500 .56rem/1.25 Inter, system-ui, sans-serif; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tp-card .t i { font-style: normal; font: 800 .68rem/1.3 Inter, system-ui, sans-serif; color: #34d399; }
   .tp-card .t i.none { color: #a1a1aa; font-weight: 600; }
+  .tp-card img.sealed-img { object-fit: contain; background: #fff; }
+  .tp-card .t i small { font-weight: 600; color: #71717a; font-size: .55rem; }
+  .tp-qty { display: inline-flex; align-items: center; gap: .3rem; margin-top: .2rem; }
+  .tp-qty button { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; width: 1.35rem; height: 1.35rem; border-radius: 6px; font: 800 .75rem/1 Inter, system-ui, sans-serif; padding: 0; }
+  .tp-qty span, .tp-card .t .tp-qty span { display: inline-block; min-width: 1rem; text-align: center; font: 800 .75rem/1 Inter, system-ui, sans-serif; color: #fff; }
   .tp-card .x { appearance: none; border: 0; background: #27272a; color: #a1a1aa; width: 1.4rem; height: 1.4rem; border-radius: 6px; font-weight: 700; font-size: .7rem; }
   .tp-empty { text-align: center; color: #52525b; font: 500 .7rem/1.4 Inter, system-ui, sans-serif; padding: 1rem .2rem; }
   .tp-add { appearance: none; border: 1px dashed #52525b; background: transparent; color: #d4d4d8; border-radius: 9px; padding: .55rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
@@ -492,6 +511,9 @@
         <button onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="btn bg-indigo-900/40 hover:bg-indigo-900/80 text-indigo-200 border-indigo-500/50 font-bold flex items-center gap-1.5">
           <span>📖</span> Export Binder (HTML)
         </button>
+        <button onclick="openSealedPage()" title="The sealed product you own" class="btn bg-amber-600/80 hover:bg-amber-600 text-white border-amber-300/60 font-bold flex items-center gap-1.5">
+          <span>🎁</span> Sealed
+        </button>
         <button onclick="openTradePage()" title="Compare the two sides of a trade" class="btn bg-sky-700/70 hover:bg-sky-700 text-white border-sky-400/60 font-bold flex items-center gap-1.5">
           <span>⚖️</span> Trade
         </button>
@@ -591,6 +613,7 @@
           <button onclick="setMode('set')" id="m-set" class="px-3 py-1 text-xs font-semibold rounded-md">Browse Set</button>
           <button onclick="setMode('custom')" id="m-custom" class="px-3 py-1 text-xs font-semibold rounded-md">📷 Custom</button>
           <button onclick="setMode('coll')" id="m-coll" class="px-3 py-1 text-xs font-semibold rounded-md">📦 Collection</button>
+          <button onclick="setMode('sealed')" id="m-sealed" class="hidden px-3 py-1 text-xs font-semibold rounded-md">🎁 Sealed</button>
         </div>
         <div id="pk-lang" class="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800" role="group" aria-label="Card language">
           <button type="button" onclick="setPkLang('en')" id="pl-en" class="px-3 py-1 text-xs font-semibold rounded-md">English</button>
@@ -615,7 +638,7 @@
       </div>
       <!-- Narrow results by rarity (options depend on the game) -->
       <div id="op-rar-row" class="flex items-center gap-2 panel px-3 py-2">
-        <span class="text-xs text-zinc-400 whitespace-nowrap">Rarity:</span>
+        <span id="rar-label" class="text-xs text-zinc-400 whitespace-nowrap">Rarity:</span>
         <select id="op-rarity" onchange="if($('q').value.trim() || $('set').value || this.value) search()" class="field !py-1.5 !text-xs w-full">
           <option value="">Any rarity</option>
         </select>
@@ -718,6 +741,16 @@
 </div>
 
 <!-- Notification Toasts Container -->
+<!-- Sealed product you own -->
+<div id="sealed-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="sp-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeSealedPage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="sp-title">Sealed</h2><p id="sp-sub"></p></div>
+    <div class="np-acts"><span id="sp-hint" class="sp-hint">Market prices from TCGplayer</span><button type="button" class="np-lock on" onclick="openSealedSearch()">＋ Add sealed</button></div>
+  </div>
+  <div id="sp-grid" class="np-grid sp-grid"></div>
+</div>
+
 <!-- Trade analyzer: what you give vs what you get, with a multiplier on each side -->
 <div id="trade-page" class="np tp" hidden role="dialog" aria-modal="true" aria-labelledby="tp-title">
   <div class="np-head">
@@ -727,14 +760,14 @@
   </div>
   <div class="tp-cols">
     <section class="tp-side" data-side="give"><h3>You give</h3><div class="tp-list" id="tp-give"></div>
-      <button type="button" class="tp-add" onclick="openTradeSearch('give')">＋ Add card</button>
-      <div class="tp-foot"><div><span>Cards</span><b id="tp-give-sub">$0.00</b></div>
+      <button type="button" class="tp-add" onclick="openTradeSearch('give')">＋ Add card or sealed</button>
+      <div class="tp-foot"><div><span>Subtotal</span><b id="tp-give-sub">$0.00</b></div>
         <label><span>Multiplier</span><span class="tp-pct"><input id="tp-give-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('give', this.value)">%</span></label>
         <div class="tp-total"><span>Total</span><b id="tp-give-tot">$0.00</b></div></div>
     </section>
     <section class="tp-side" data-side="get"><h3>You get</h3><div class="tp-list" id="tp-get"></div>
-      <button type="button" class="tp-add" onclick="openTradeSearch('get')">＋ Add card</button>
-      <div class="tp-foot"><div><span>Cards</span><b id="tp-get-sub">$0.00</b></div>
+      <button type="button" class="tp-add" onclick="openTradeSearch('get')">＋ Add card or sealed</button>
+      <div class="tp-foot"><div><span>Subtotal</span><b id="tp-get-sub">$0.00</b></div>
         <label><span>Multiplier</span><span class="tp-pct"><input id="tp-get-mult" type="number" inputmode="decimal" min="0" max="500" step="5" value="100" onchange="setTradeMult('get', this.value)">%</span></label>
         <div class="tp-total"><span>Total</span><b id="tp-get-tot">$0.00</b></div></div>
     </section>
@@ -812,7 +845,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.13';
+const APP_VERSION = '2026-10-22.17';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1009,6 +1042,10 @@ async function tcgByNameNumber(card) {
 
 const lookupPrice = async card => {
   if (card.source === 'custom') return null;
+  if (card.sealed) {
+    const list = card.game === 'onepiece' ? 'onepiece-sealed' : card.lang === 'ja' ? 'pokemon-jp-sealed' : 'pokemon-sealed';
+    const c = cardFromSealed(card.tcgPid, await loadTcgList(list), list); return c && c.price != null ? { price: c.price, url: c.url } : null;
+  }
   if (card.ctId) { const c = cardFromCT(card.ctId, await zhList()); return c && c.price != null ? { price: c.price, url: card.url || c.url } : null; }
   const pid = card.tcgPid || pidInUrl(card.url);
   if (pid) {
@@ -1705,7 +1742,7 @@ function splitCollName(raw) {
    { updated, groups: { groupId: set name }, p: { productId: [marketPrice, name, number, groupId, rarity] } } */
 const TCG_LISTS = {}, tcgListP = {};
 function loadTcgList(game) {
-  if (!['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece'].includes(game)) return Promise.resolve(null);
+  if (!['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed'].includes(game)) return Promise.resolve(null);
   if (TCG_LISTS[game]) return Promise.resolve(TCG_LISTS[game]);
   if (!tcgListP[game]) tcgListP[game] = (async () => {
     // the repo copy is current the moment the daily job finishes; the site's own copy is the backup
@@ -2094,9 +2131,11 @@ function setMode(m) {
   $('results').classList.toggle('hidden', isCustom || isColl);
   $('custom-panel').classList.toggle('hidden', !isCustom);
   $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
-  ['name', 'num', 'set', 'custom', 'coll'].forEach(k => $('m-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
+  ['name', 'num', 'set', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
+  $('rar-label').textContent = m === 'sealed' ? 'Type:' : 'Rarity:';
   if (isColl) return openCollection();
   if (isCustom) return;
+  if (m === 'sealed') { $('q').placeholder = 'Product name (e.g. Elite Trainer Box, 151)'; return loadSets(); }
   $('q').placeholder = S.game === 'onepiece'
     ? (m === 'name' ? 'Card name (e.g. Roronoa Zoro)' : m === 'num' ? 'Card ID (e.g. OP01-001)' : 'Optional: filter the set by name or ID')
     : (m === 'name' ? 'Card name (e.g. Charizard)' : m === 'num' ? 'Pokémon + number (e.g. Pikachu 25)' : 'Optional: filter the set by name, number, or prefix (e.g. GG)');
@@ -2104,6 +2143,7 @@ function setMode(m) {
 }
 
 async function loadSets() {
+  if (mode === 'sealed') return sealedLoadSets();
   if (S.game === 'onepiece') { opFillRarities(); return opLoadSets(); }
   if (pkLang === 'ja') { jpFillRarities(); return jpLoadSets(); }
   if (pkLang === 'zh') { zhFillRarities(); return zhLoadSets(); }
@@ -2153,6 +2193,7 @@ async function pkCardsOfRarity(lang, rar) {
   return pkRarityCards[k];
 }
 async function search() {
+  if (mode === 'sealed') return sealedSearch();
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
   if (pkLang === 'zh') return zhSearch();
@@ -2220,12 +2261,13 @@ function renderResults(cards, append) {
   cards.forEach(card => {
     const el = document.createElement('div');
     el.className = 'panel p-2.5 flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer group';
-    el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden bg-zinc-900 mb-2">${imgTag(card.thumb, card.alts, card.name, 'w-full h-full object-cover group-hover:scale-105 transition duration-300')}</div>
-      <h4 class="font-bold text-xs truncate">${esc(card.name)}</h4>
+    el.innerHTML = `<div class="aspect-[2.5/3.5] w-full rounded-lg overflow-hidden ${card.sealed ? 'bg-white' : 'bg-zinc-900'} mb-2">${imgTag(card.thumb, card.alts, card.name, `w-full h-full ${card.sealed ? 'object-contain p-1' : 'object-cover'} group-hover:scale-105 transition duration-300`)}</div>
+      <h4 class="font-bold text-xs ${card.sealed ? 'sealed-name' : 'truncate'}">${esc(card.name)}</h4>
       <div class="flex justify-between text-[10px] text-zinc-400 mt-0.5"><span class="truncate max-w-[65%]" title="${esc(card.set)} · ${esc(card.number)}">${langTag(card, 'jp-inline')}${card.lang && card.lang !== 'en' ? ' ' : ''}${esc(card.set)} · ${esc(card.number)}</span><b data-p class="text-emerald-400">${fmt(card.price)}</b></div>
       <div class="mt-2 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold text-center">➕ Select (${(addStatus === 'needed' ? 'need' : addStatus).toUpperCase()})</div>`;
     el.onclick = () => { 
       if (tradeSide) { const side = tradeSide; closeSearch(); return addTradeCard(side, card); }
+      if (sealedAdd) { closeSearch(); return addSealedOwned(card); }
       card.status = addStatus; 
       const pages = getPagesArray();
       pages[target.p].cards[target.s] = card; 
@@ -2246,12 +2288,13 @@ function renderResults(cards, append) {
 function openSearch(p, s) {
   if (peerUser) return toast('Cannot add cards in read-only peer mode', 'error');
   target = { p, s }; $('tgt').textContent = `Page ${p + 1}, Slot ${s + 1}`;
+  if (mode === 'sealed' && !sealedAllowed()) mode = 'name';
   if (!tradeSide) $('s-modal').style.zIndex = '';
   $('q').value = '';$('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Search by name, ${S.game === 'onepiece' ? 'card ID' : 'Pokémon + number'}, or browse a set. Pick a set in any mode to narrow results.</div>`;
   resetCustom(); $('coll-q').value = ''; paintPkLang(); setMode(mode); setStatus(addStatus); $('s-modal').classList.remove('hidden');
 }
 
-const closeSearch = () => { $('s-modal').classList.add('hidden'); $('s-modal').style.zIndex = ''; tradeSide = null; };
+const closeSearch = () => { $('s-modal').classList.add('hidden'); $('s-modal').style.zIndex = ''; tradeSide = null; sealedAdd = false; };
 
 function setStatus(st) {
   addStatus = st;
@@ -3484,16 +3527,111 @@ function exportBinderHTML() {
   toast(`Exported full binder snapshot (${pages.length} pages)`);
 }
 
+/* --- Sealed product: TCGplayer's sealed list (prices/<game>-sealed.json, built daily): [price, name, setId, type] --- */
+let sealedAdd = false;   // the search is adding to your sealed product
+const sealedAllowed = () => !!(tradeSide || sealedAdd);
+const sealedListName = () => S.game === 'onepiece' ? 'onepiece-sealed' : pkLang === 'ja' ? 'pokemon-jp-sealed' : pkLang === 'zh' ? '' : 'pokemon-sealed';
+const SEALED_ORDER = ['Booster Box', 'Elite Trainer Box', 'Booster Bundle', 'Booster Pack', 'Blister', 'Ultra Premium Collection', 'Premium Collection', 'Collection / Box', 'Tin', 'Build & Battle', 'Deck', 'Case', 'Other'];
+function cardFromSealed(pid, L, list) {
+  const e = L && L.p && L.p[String(pid)]; if (!e) return null;
+  return { id: 'sealed-' + pid, tcgPid: +pid, name: e[1], set: (L.groups && L.groups[e[2]]) || '', number: '', rarity: e[3] || 'Sealed', price: e[0] ?? null,
+    url: `https://www.tcgplayer.com/product/${pid}`, thumb: tcgImg(pid, true), image: tcgImg(pid), alts: tcgAlts(pid),
+    game: list === 'onepiece-sealed' ? 'onepiece' : 'pokemon', lang: list === 'pokemon-jp-sealed' ? 'ja' : 'en', source: 'tcgplayer', sealed: true };
+}
+async function sealedLoadSets() {
+  const dd = $('set'), list = sealedListName(), rd = $('op-rarity');
+  if (!list) { dd.innerHTML = '<option value="">No Chinese sealed product yet</option>'; return; }
+  dd.innerHTML = '<option value="">Loading sets…</option>';
+  const L = await loadTcgList(list);
+  if (mode !== 'sealed') return;
+  if (!L) { dd.innerHTML = '<option value="">Sealed list unavailable — try again soon</option>'; return; }
+  fillSetDropdown(L, 'sd:');
+  if (rd.dataset.ready !== 'sealed:' + list) {
+    const have = new Set(Object.values(L.p).map(e => e[3]));
+    rd.innerHTML = '<option value="">Any type</option>' + SEALED_ORDER.filter(t => have.has(t)).map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    rd.dataset.ready = 'sealed:' + list;
+  }
+}
+async function sealedSearch() {
+  const list = sealedListName(); if (!list) return toast('There\'s no Chinese sealed product list yet. Switch to English or Japanese.', 'error');
+  const setVal = $('set').value, text = $('q').value.trim(), type = $('op-rarity').value;
+  const ids = setVal.startsWith('sd:') ? setVal.slice(3).split(',') : null;
+  if (!ids && !text && !type) return toast('Type a product name, or choose a set or type', 'error');
+  $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching sealed product…</div>';
+  const L = await loadTcgList(list);
+  if (!L) { $('results').innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the sealed list. Try again in a moment.</div>'; return; }
+  const words = lc(text).split(/\s+/).filter(Boolean);
+  const hay = e => lc(e[1] + ' ' + (L.groups[e[2]] || ''));
+  const items = Object.entries(L.p).filter(([, e]) => (!ids || ids.includes(String(e[2]))) && (!type || e[3] === type) && words.every(w => hay(e).includes(w)))
+    .sort((a, b) => (ids ? ids.indexOf(String(a[1][2])) - ids.indexOf(String(b[1][2])) : b[1][2] - a[1][2]) || SEALED_ORDER.indexOf(a[1][3]) - SEALED_ORDER.indexOf(b[1][3]) || String(a[1][1]).localeCompare(String(b[1][1])));
+  if (!items.length) { $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching sealed product found.</div>'; return; }
+  pending = { items, shown: 0, make: async ([pid]) => cardFromSealed(pid, L, list) };
+  await loadBatch(false);
+}
+
+/* --- Sealed product you own: sealed/<person>/items/<id> = { pid, name, set, type, price, game, lang, qty, image } --- */
+let SEALED_OWNED = {}, sealedRef = null;
+function openSealedPage() {
+  if (peerUser) return toast('Open one of your own binders to see your sealed product.', 'error');
+  if (sealedRef) sealedRef.off();
+  sealedRef = db.ref('sealed/' + ownerOf(currentUser) + '/items');
+  sealedRef.on('value', v => { SEALED_OWNED = v.val() || {}; renderSealedPage(); }, () => {});
+  $('sealed-page').hidden = false; document.body.style.overflow = 'hidden';
+  renderSealedPage(); setTimeout(refreshSealedPrices, 400);
+}
+function closeSealedPage() { $('sealed-page').hidden = true; document.body.style.overflow = ''; if (sealedRef) { sealedRef.off(); sealedRef = null; } }
+function renderSealedPage() {
+  const page = $('sealed-page'); if (!page || page.hidden) return;
+  const items = Object.entries(SEALED_OWNED).map(([id, x]) => ({ id, ...x })).sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  const count = items.reduce((a, x) => a + (x.qty || 1), 0), total = items.reduce((a, x) => a + (x.price != null ? x.price * (x.qty || 1) : 0), 0);
+  $('sp-title').textContent = `Sealed · ${nameOf(ownerOf(currentUser))}`;
+  $('sp-sub').innerHTML = count ? `<b>${count}</b> item${count === 1 ? '' : 's'} · ${fmt(total)} at market` : 'No sealed product yet';
+  $('sp-grid').innerHTML = items.length ? items.map(x => `<div class="np-card">
+      <div class="sp-img">${imgTag(x.image || tcgImg(x.pid), tcgAlts(x.pid), x.name, '')}</div>
+      <div class="sp-type">${esc(x.type || 'Sealed')}${x.lang === 'ja' ? ' · JP' : ''}</div>
+      <div class="np-name" title="${esc(x.name)}">${esc(x.name)}</div>
+      <div class="np-meta"><span>${esc(x.set || '')}</span></div>
+      <div class="sp-row"><span>${x.price == null ? 'No price' : fmt(x.price) + ' each'}</span><b>${x.price == null ? '' : fmt(x.price * (x.qty || 1))}</b></div>
+      <div class="sp-row"><div class="tp-qty"><button type="button" onclick="sealedQty('${esc(x.id)}',-1)" aria-label="One fewer">−</button><span>${x.qty || 1}</span><button type="button" onclick="sealedQty('${esc(x.id)}',1)" aria-label="One more">＋</button></div>
+        <a class="sp-link" href="https://www.tcgplayer.com/product/${esc(x.pid)}" target="_blank" rel="noopener noreferrer">TCGplayer ↗</a></div>
+    </div>`).join('')
+    : '<p class="np-empty">Track the sealed product you own here.<br>Tap <b>＋ Add sealed</b> to search booster boxes, ETBs, bundles and more.</p>';
+}
+function openSealedSearch() {
+  sealedAdd = true;
+  openSearch(S.cur, 0); setMode('sealed');
+  $('s-modal').style.zIndex = '65'; $('tgt').textContent = 'Your sealed product';
+}
+function addSealedOwned(card) {
+  const id = 'p' + card.tcgPid + (card.lang === 'ja' ? 'j' : ''), have = SEALED_OWNED[id], ref = db.ref(`sealed/${ownerOf(currentUser)}/items/${id}`);
+  const done = have ? ref.child('qty').set((have.qty || 1) + 1)
+    : ref.set({ pid: card.tcgPid, name: card.name, set: card.set || '', type: card.rarity || 'Sealed', price: card.price ?? null, game: card.game, lang: card.lang || 'en', qty: 1, image: card.image || '', addedAt: Date.now() });
+  done.then(() => toast(`${card.name}${have ? ` · now ${(have.qty || 1) + 1}` : ' added to your sealed'}`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error'));
+}
+function sealedQty(id, d) {
+  const x = SEALED_OWNED[id]; if (!x) return;
+  const q = (x.qty || 1) + d, ref = db.ref(`sealed/${ownerOf(currentUser)}/items/${id}`);
+  if (q < 1) { if (confirm(`Remove ${x.name} from your sealed product?`)) ref.remove(); return; }
+  ref.child('qty').set(Math.min(999, q));
+}
+async function refreshSealedPrices() {
+  for (const [id, x] of Object.entries(SEALED_OWNED)) {
+    const list = x.game === 'onepiece' ? 'onepiece-sealed' : x.lang === 'ja' ? 'pokemon-jp-sealed' : 'pokemon-sealed';
+    const c = cardFromSealed(x.pid, await loadTcgList(list), list);
+    if (c && c.price != null && c.price !== x.price && sealedRef) db.ref(`sealed/${ownerOf(currentUser)}/items/${id}/price`).set(c.price).catch(() => {});
+  }
+}
+
 /* --- Trade analyzer: two sides of cards, totals with a % multiplier each, and whether it's fair.
    Saved per person at trades/<person> so it's there on every phone. --- */
 let TRADE = { give: [], get: [], giveMult: 100, getMult: 100 }, tradeRef = null, tradeSide = null;
 const TRADE_FAIR = 0.05;   // within 5% of the bigger side counts as fair
 function tradeCard(c) {
-  const keep = ['id', 'name', 'set', 'number', 'rarity', 'price', 'image', 'thumb', 'url', 'tcgPid', 'ctId', 'lang', 'game', 'source'];
+  const keep = ['id', 'name', 'set', 'number', 'rarity', 'price', 'image', 'thumb', 'url', 'tcgPid', 'ctId', 'lang', 'game', 'source', 'sealed'];
   const o = {}; keep.forEach(k => { if (c[k] != null && c[k] !== '') o[k] = c[k]; });
   o.alts = (c.alts || []).filter(a => typeof a === 'string' && !a.startsWith('data:')).slice(0, 3);
   if (String(o.image || '').startsWith('data:') && o.image.length > 200000) o.image = o.thumb = '';   // keep big photos out of the trade
-  o.tid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  o.tid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); o.qty = 1;
   return o;
 }
 function openTradePage() {
@@ -3511,14 +3649,15 @@ function openTradePage() {
 }
 function closeTradePage() { $('trade-page').hidden = true; document.body.style.overflow = ''; if (tradeRef) { tradeRef.off(); tradeRef = null; } }
 function saveTrade() { if (tradeRef) tradeRef.set(TRADE).catch(() => toast('Couldn\'t save the trade. Check your connection.', 'error')); renderTrade(); }
-const tradeSum = side => TRADE[side].reduce((a, c) => a + (Number.isFinite(+c.price) && c.price != null ? +c.price : 0), 0);
+const tradeSum = side => TRADE[side].reduce((a, c) => a + (Number.isFinite(+c.price) && c.price != null ? +c.price * (c.qty || 1) : 0), 0);
 function renderTrade() {
   if (!$('trade-page') || $('trade-page').hidden) return;
   ['give', 'get'].forEach(side => {
     const list = TRADE[side];
-    $('tp-' + side).innerHTML = list.length ? list.map(c => `<div class="tp-card">
-        ${imgTag(c.thumb || c.image, c.alts, c.name, '')}
-        <div class="t"><b title="${esc(c.name)}">${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc([c.set, c.number].filter(Boolean).join(' · '))}</span><i class="${c.price == null ? 'none' : ''}">${c.price == null ? 'No price' : fmt(c.price)}</i></div>
+    $('tp-' + side).innerHTML = list.length ? list.map(c => `<div class="tp-card${c.sealed ? ' sealed' : ''}">
+        ${imgTag(c.thumb || c.image, c.alts, c.name, c.sealed ? 'sealed-img' : '')}
+        <div class="t"><b title="${esc(c.name)}">${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc([c.sealed ? c.rarity : '', c.set, c.number].filter(Boolean).join(' · '))}</span><i class="${c.price == null ? 'none' : ''}">${c.price == null ? 'No price' : fmt(c.price * (c.qty || 1))}</i>
+          <div class="tp-qty"><button type="button" onclick="tradeQty('${side}','${esc(c.tid)}',-1)" aria-label="One fewer">−</button><span>${c.qty || 1}</span><button type="button" onclick="tradeQty('${side}','${esc(c.tid)}',1)" aria-label="One more">＋</button></div></div>
         <button type="button" class="x" aria-label="Remove ${esc(c.name)}" onclick="removeTradeCard('${side}','${esc(c.tid)}')">✕</button></div>`).join('')
       : `<p class="tp-empty">${side === 'give' ? 'Cards you\'re trading away' : 'Cards you\'re getting'}</p>`;
     const m = $('tp-' + side + '-mult'); if (document.activeElement !== m) m.value = TRADE[side + 'Mult'];
@@ -3537,6 +3676,11 @@ function setTradeMult(side, val) {
   const n = Math.max(0, Math.min(500, parseFloat(val)));
   TRADE[side + 'Mult'] = Number.isFinite(n) ? Math.round(n * 10) / 10 : 100; saveTrade();
 }
+function tradeQty(side, tid, d) {
+  const c = TRADE[side].find(x => x.tid === tid); if (!c) return;
+  const q = (c.qty || 1) + d; if (q < 1) return removeTradeCard(side, tid);
+  c.qty = Math.min(99, q); saveTrade();
+}
 function removeTradeCard(side, tid) { TRADE[side] = TRADE[side].filter(c => c.tid !== tid); saveTrade(); }
 function clearTrade() {
   if ((TRADE.give.length || TRADE.get.length) && !confirm('Clear both sides of this trade?')) return;
@@ -3550,7 +3694,7 @@ function addTradeCard(side, card) {
 // Pick cards with the usual search (or your collection); picking adds to the trade instead of the binder
 function openTradeSearch(side) {
   tradeSide = side;
-  openSearch(S.cur, 0);
+  openSearch(S.cur, 0); setMode(mode);
   $('s-modal').style.zIndex = '65';   // above the trade page (60), under sheets like the set picker (70)
   $('tgt').textContent = side === 'give' ? 'Trade · You give' : 'Trade · You get';
 }
@@ -4079,7 +4223,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
-  closeNeedPage(); closeTradePage();
+  closeNeedPage(); closeTradePage(); closeSealedPage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray();
   closePeerViewer(true);

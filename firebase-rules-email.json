@@ -40,6 +40,11 @@
       "$person": {
         ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
       }
+    },
+    "sealed": {
+      "$person": {
+        ".write": "auth != null && root.child('users/' + $person + '/email').val() === auth.token.email"
+      }
     }
   }
 }
