@@ -82,6 +82,12 @@
   .slot, .slot * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .slot img { -webkit-user-drag: none; pointer-events: none; }
   body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
+  /* Tools: five even tiles that always fit across the screen */
+  .tool-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; width: 100%; max-width: 30rem; }
+  .tt { appearance: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; min-width: 0; padding: .45rem .2rem; border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--tt) 70%, #fff 0%); background: color-mix(in srgb, var(--tt) 30%, #18181b); color: #fff; font: 700 .62rem/1.1 Inter, system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt span { font-size: 1.05rem; line-height: 1; }
+  .tt:active { transform: scale(.96); }
   /* Need list page */
   .np { position: fixed; inset: 0; z-index: 60; background: #09090b; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: env(safe-area-inset-bottom); }
   .np[hidden] { display: none; }
@@ -508,27 +514,17 @@
     </div>
 
     <!-- Controls Row 2: cover, exports and utilities, folded behind "Tools" so the binder stays in view -->
-    <div id="tools-row" class="hidden w-full flex items-center justify-center sm:justify-end gap-2 flex-wrap pt-2 border-t border-zinc-800/60">
-      <div class="flex items-center gap-2">
-        <button onclick="openCover()" title="Design your binder cover (used in the export)" class="btn bg-amber-900/30 hover:bg-amber-900/60 text-amber-200 border-amber-500/50 font-bold flex items-center gap-1.5">
-          <span>🎨</span> Cover
-        </button>
-        <button onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="btn bg-indigo-900/40 hover:bg-indigo-900/80 text-indigo-200 border-indigo-500/50 font-bold flex items-center gap-1.5">
-          <span>📖</span> Export Binder (HTML)
-        </button>
-        <button onclick="openSealedPage()" title="The sealed product you own" class="btn bg-amber-600/80 hover:bg-amber-600 text-white border-amber-300/60 font-bold flex items-center gap-1.5">
-          <span>🎁</span> Sealed
-        </button>
-        <button onclick="openTradePage()" title="Compare the two sides of a trade" class="btn bg-sky-700/70 hover:bg-sky-700 text-white border-sky-400/60 font-bold flex items-center gap-1.5">
-          <span>⚖️</span> Trade
-        </button>
-        <button onclick="openNeedPage()" title="Your Need cards on one live page" class="btn bg-rose-600/80 hover:bg-rose-600 text-white border-rose-400/60 font-bold flex items-center gap-1.5">
-          <span>📝</span> Need List
-        </button>
+    <div id="tools-row" class="hidden w-full flex flex-col items-stretch sm:items-end gap-2 pt-2 border-t border-zinc-800/60">
+      <div class="tool-tiles">
+        <button type="button" onclick="openCover()" title="Design your binder cover (used in the export)" class="tt" style="--tt:#b45309"><span>🎨</span>Cover</button>
+        <button type="button" onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="tt" style="--tt:#4338ca"><span>📖</span>Export</button>
+        <button type="button" onclick="openSealedPage()" title="The sealed product you own" class="tt" style="--tt:#d97706"><span>🎁</span>Sealed</button>
+        <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
+        <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
       </div>
 
       <!-- General Utility Buttons -->
-      <div class="flex items-center gap-2 ml-0 sm:ml-2">
+      <div class="flex items-center justify-center gap-2">
         <button onclick="exportData()" title="Export JSON backup" class="btn">📥</button>
         <label title="Import JSON backup" class="btn cursor-pointer">📤<input type="file" accept=".json" onchange="importData(event)" class="hidden"></label>
         <button onclick="refreshPrices()" title="Refresh prices" class="btn">🔄</button>
@@ -851,7 +847,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-22.19';
+const APP_VERSION = '2026-10-22.21';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
