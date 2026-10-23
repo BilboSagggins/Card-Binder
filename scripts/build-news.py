@@ -424,7 +424,10 @@ YOUTUBE = [
     ("UCjrU2FHeEIQFP3GOcCOiuVw", "Riftbound (official)", "riftbound"),
     ("UCFctpiB_Hnlk3ejWfHqSm6Q", "Pokémon (official)", "pokemon"),               # TCG videos only (see below)
 ]
-VIDEO_PREVIEW_RE = re.compile(r"reveal|preview|spoiler|new cards?|card list|trailer|\bPV\b|promotion video|introduc|showcase|first look|booster|starter deck|extra booster|premium|set\b|product|collection|leader|legend|champion|unbox|opening", re.I)
+# only videos that show cards: reveals / previews / spoilers, and the set trailers that walk through a set's cards
+VIDEO_REVEAL_RE = re.compile(r"reveal|preview|spoiler|new cards?\b|card list|first look|sneak peek|exclusive card|\bcards\b[^|]{0,40}\b(art|featuring|revealed)|"
+                             r"\[(?:OP|EB|ST|PRB|FB|FS|BT|SD|SB|EX)-?\d+\][^|]{0,40}trailer|trailer[^|]{0,40}\[(?:OP|EB|ST|PRB|FB|FS|BT|SD|SB|EX)-?\d+\]|booster[^|]{0,60}trailer", re.I)
+VIDEO_NOT_CARDS_RE = re.compile(r"animated|overview|anime|mechanic|battle\b|gameplay|deck ?profile|how to|tips", re.I)
 VIDEO_SKIP_RE = re.compile(r"\blive\b|stream|tournament|championship|\bfinals\b|grand final|top \d|regional|how to play|tutorial|\brules\b|gameplay|\bmatch\b|\bvs\.?\b|news!|quiz", re.I)
 
 
@@ -452,7 +455,7 @@ def youtube_videos():
             vid = tag(e, "yt:videoId")
             title = text(tag(e, "title"))
             g = game or bandai_game(title)
-            if not vid or not g or VIDEO_SKIP_RE.search(title):
+            if not vid or not g or VIDEO_SKIP_RE.search(title) or not VIDEO_REVEAL_RE.search(title) or VIDEO_NOT_CARDS_RE.search(title):
                 continue
             if g == "pokemon" and (not re.search(r"\bTCG\b|trading card", title, re.I) or re.search(r"pocket|\blive\b", title, re.I)):
                 continue      # the main Pokémon channel: games, anime... only card game videos
@@ -462,7 +465,7 @@ def youtube_videos():
             except ValueError:
                 when = None
             items.append({"game": g, "title": title, "url": f"https://www.youtube.com/watch?v={vid}", "date": iso(when), "src": src,
-                          "kind": "preview", "imgs": [f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"], "video": vid})
+                          "kind": "video", "imgs": [f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"], "video": vid})
     return items
 
 
