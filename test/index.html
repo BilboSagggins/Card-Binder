@@ -189,7 +189,7 @@
   .nw #nw-tabs button { display: flex; flex-direction: column; align-items: center; gap: .18rem; border-radius: 12px; padding: .4rem .1rem .45rem; font-size: .66rem; overflow: hidden; text-overflow: ellipsis; }
   .nw #nw-tabs button span { position: relative; font-size: 1rem; line-height: 1; }
   .nw #nw-tabs button span i { position: absolute; top: -.35rem; left: 100%; margin-left: -.1rem; padding: .08rem .25rem; border-radius: 999px; background: #3f3f46; color: #fff; font: 800 .5rem/1 Inter, system-ui, sans-serif; opacity: 1; }
-  .nw #nw-tabs button[aria-selected="true"] span i { background: #312e81; }
+  .nw #nw-tabs button span i { background: #f59e0b; color: #111; }
   /* a store lottery / drawing is open (or about to open): the News buttons and the Raffles tab light up */
   .has-raffle { position: relative; border-color: #f59e0b !important; box-shadow: 0 0 0 1px #f59e0b, 0 0 14px rgba(245,158,11,.45); animation: raffle-glow 2.4s ease-in-out infinite; }
   @keyframes raffle-glow { 50% { box-shadow: 0 0 0 1px #fbbf24, 0 0 22px rgba(251,191,36,.7); } }
@@ -1061,7 +1061,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.34';
+const APP_VERSION = '2026-10-23.37';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4265,7 +4265,7 @@ function nwTabsPaint() {
   if (!tabs.some(t => t[0] === NW.tab)) NW.tab = 'soon';
   $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
   const live = nwUnseen().filter(r => nwPick(r.game)).length;
-  $('nw-tabs').innerHTML = tabs.map(([k, ic, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()"><span>${ic}</span>${l}</button>`).join('');
+  $('nw-tabs').innerHTML = tabs.map(([k, ic, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()"><span>${ic}${k === 'raffles' && n ? `<i>${n}</i>` : ''}</span>${l}</button>`).join('');
   paintNewsBadge();
 }
 const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}">${esc(NW_LABELS[g] || g)}</span>`;
