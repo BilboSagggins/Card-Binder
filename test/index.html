@@ -910,7 +910,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.3';
+const APP_VERSION = '2026-10-23.5';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3608,34 +3608,55 @@ function loadTess() {
   }).then(async T => { if (!tessWorker) tessWorker = await T.createWorker('eng'); return tessWorker; });
   return tessP;
 }
-// A photo as canvases: the whole card, and the bottom strip enlarged (card numbers are tiny)
-function scanCanvases(img) {
-  const max = 1600, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-  const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
-  const draw = (sx, sy, sw, sh, scale) => {
-    const c = document.createElement('canvas'); c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
-    const x = c.getContext('2d'); x.filter = 'grayscale(1) contrast(1.35)'; x.drawImage(img, sx / k, sy / k, sw / k, sh / k, 0, 0, c.width, c.height); return c;
-  };
-  return { full: draw(0, 0, w, h, 1), top: draw(0, 0, w, h * 0.38, 2), bottom: draw(0, h * 0.6, w, h * 0.4, 2) };
+// A greyscale canvas of the photo (done by hand so every phone gets the same): sized to a long side of `base`,
+// enlarged by `scale`, from `top` (0–1) down to the bottom
+function scanCanvas(img, base, scale, top = 0) {
+  const k = Math.min(1, base / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k), sy = Math.round(h * top), sh = h - sy;
+  const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(sh * scale);
+  const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high';
+  x.drawImage(img, 0, sy / k, w / k, sh / k, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { const v = p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114; p[i] = p[i + 1] = p[i + 2] = v; }
+  x.putImageData(d, 0, 0); return c;
 }
+// Several quick reads, pooled: no single setting reads every real card (holo shine, sleeves, busy art), but together
+// they do. Whole photo for the name, bottom of the photo enlarged for the card number. Stops early once it's sure.
+const SCAN_PASSES = [
+  { base: 1600, scale: 1, top: 0, psm: '11' },
+  { base: 1200, scale: 2, top: 0.65, psm: '6' },
+  { base: 1000, scale: 2, top: 0, psm: '12' },
+  { base: 1200, scale: 2, top: 0.65, psm: '11' },
+  { base: 1200, scale: 3, top: 0.7, psm: '11' },
+];
 // What the text says: card numbers ("125/197", "TG17/TG30", "OP01-001") and words that could be the name
 function parseScan(text) {
   const t = String(text || '').replace(/[|]/g, '/').replace(/[“”"]/g, '');
   const nums = [];
   for (const m of t.matchAll(/\b(OP|ST|EB|PRB)\s?(\d{2})\s?[-–]\s?(\d{3})\b/gi)) nums.push({ op: `${m[1].toUpperCase()}${m[2]}-${m[3]}` });
   for (const m of t.matchAll(/\bP\s?[-–]\s?(\d{3})\b/g)) nums.push({ op: `P-${m[1]}` });
+  // Black Star promos: "MEP 061", "SVP EN 123", "SWSH123", "SM 210" (stored as 061 / 123 / SWSH123 / SM210)
+  for (const m of t.matchAll(/\b(MEP|SVP|SWSH|SMP?|XY|BW|HGSS|DP)\b[^\n0-9]{0,6}?([0-9OolI]{3}|[0-9OolI]{2}(?![0-9]))/g)) {
+    const d = m[2].replace(/[Oo]/g, '0').replace(/[lI]/g, '1'), pre = m[1] === 'SMP' ? 'SM' : m[1];
+    nums.push({ n: d, tot: '', promo: true }); if (!/^(MEP|SVP)$/.test(pre)) nums.push({ n: pre + d, tot: '', promo: true });
+  }
   for (const m of t.matchAll(/(?:^|[^\w])([A-Z]{0,4}[0-9OolI]{1,3})\s?\/\s?([A-Z]{0,4}[0-9OolI]{2,3})(?![\w])/g)) {
     const fix = x => x.replace(/\s/g, '').replace(/[Oo](?=\d|$)/g, '0').replace(/[lI]/g, '1');
     const n = fix(m[1]), tot = fix(m[2]);
     if (/\d/.test(n) && /\d/.test(tot)) nums.push({ n, tot });
   }
-  return { nums, words: t.split(/[^A-Za-zÀ-ÿ'’.\-]+/).filter(w => w.length >= 3), top: '', raw: norm(t) };
+  const promo = /\b(MEP|SVP|SWSH|SMP|BLACK STAR)\b/.test(t);
+  // a promo code with its number read apart ("MEP Lh 061"): pair the code with loose 3-digit numbers
+  if (promo && !nums.some(x => x.promo)) for (const m of t.matchAll(/(?:^|\s)([0O]\d{2}|\d{3})(?=\s|$)/g)) nums.push({ n: m[1].replace(/O/g, '0'), tot: '', promo: true, loose: true });
+  const toks = t.split(/[^A-Za-zÀ-ÿ0-9]+/).map(norm).filter(Boolean);
+  return { nums, words: t.split(/[^A-Za-zÀ-ÿ'’.\-]+/).filter(w => w.length >= 3), top: '', raw: norm(t), spaced: ' ' + toks.join(' ') + ' ', promo };
 }
 const numKey = x => String(x || '').toUpperCase().replace(/^([A-Z]*)0+(?=\d)/, '$1');
 // Rank cards from the lists against what was read: number match first, then how much of the name appears in the text
 async function scanMatches(read, nameHint, numHint) {
   const lists = S.game === 'onepiece' ? ['onepiece'] : ['pokemon', 'pokemon-jp'];
   const text = ' ' + (read.raw || norm(read.words.join(' '))) + ' ' + norm(nameHint || '') + ' ';
+  const spaced = (read.spaced || ' ') + String(nameHint || '').split(/[^A-Za-zÀ-ÿ0-9]+/).map(norm).filter(Boolean).join(' ') + ' ';
   const wordSet = new Set([...read.words, ...String(nameHint || '').split(/\s+/)].map(w => norm(w)).filter(w => w.length >= 3));
   let nums = read.nums.slice();
   if (numHint) nums = parseScan(numHint).nums.concat(/^\d+$/.test(numHint.trim()) ? [{ n: numHint.trim(), tot: '' }] : []).concat(nums);
@@ -3647,14 +3668,22 @@ async function scanMatches(read, nameHint, numHint) {
       let numScore = 0;
       for (const x of nums) {
         if (x.op && String(e[2]).toUpperCase().replace(/\s/g, '') === x.op) numScore = Math.max(numScore, 3);
-        else if (x.n && n === numKey(x.n)) numScore = Math.max(numScore, x.tot && tot && numKey(x.tot) === tot ? 3 : x.tot ? 1 : 2);
+        else if (x.n && n === numKey(x.n)) numScore = Math.max(numScore, x.tot && tot && numKey(x.tot) === tot ? 3 : x.tot ? 1 : x.promo ? (/promo/i.test(L.groups[e[3]] || '') ? (x.loose ? 1 : 3) : 0.5) : 2);
       }
-      const bare = norm(String(e[1]).replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/\s+-\s+.*$/, ''));
-      const toks = String(e[1]).replace(/\s*[([][^)\]]*[)\]]/g, '').split(/[^A-Za-zÀ-ÿ0-9]+/).map(norm).filter(w => w.length >= 3);
+      const clean = String(e[1]).replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/\s+-\s+.*$/, '');
+      const bare = norm(clean), all = clean.split(/[^A-Za-zÀ-ÿ0-9]+/).map(norm).filter(Boolean), toks = all.filter(w => w.length >= 3);
       let nameScore = 0;
-      if (bare.length >= 3 && text.includes(bare)) nameScore = 2 + Math.min(1, bare.length / 12) + (read.top && read.top.includes(bare) ? 1.5 : 0);   // the name printed at the top counts most
-      else if (toks.length && toks.some(w => wordSet.has(w))) nameScore = toks.filter(w => wordSet.has(w)).length / toks.length;
+      // the whole name as separate words ("portgas d ace"), or run together when it's long enough not to be a fluke
+      const at = all.length ? spaced.indexOf(' ' + all.join(' ') + ' ') : -1;
+      // a card's name is printed above its other text, so the name read first gets a little more
+      if (at >= 0 && bare.length >= 3) nameScore = 2 + Math.min(0.4, bare.length / 30) + 0.5 * (1 - at / spaced.length);
+      else if (bare.length >= 7 && text.includes(bare)) nameScore = 2 + Math.min(0.4, bare.length / 30) + 0.5 * (1 - text.indexOf(bare) / text.length);
+      else if (toks.length) {   // part of the name: long, distinctive words count
+        const hit = toks.filter(w => wordSet.has(w)), len = hit.reduce((a, w) => a + w.length, 0), tot = toks.reduce((a, w) => a + w.length, 0);
+        nameScore = hit.some(w => w.length >= 6) ? 1 + len / tot : hit.length / toks.length;
+      }
       if (!numScore && nameScore < 1.5) continue;
+      if (read.promo && /promo/i.test(L.groups[e[3]] || '')) nameScore += 0.5;   // a promo code was read: promo printings first
       out.push({ pid, list, L, score: numScore * 2 + nameScore + (e[0] != null ? 0.05 : 0) + (+e[3] || 0) / 1e7, numScore, nameScore });   // ties go to the newer set
     }
   }
@@ -3674,10 +3703,17 @@ async function scanFile(input) {
     status(tessWorker ? '🔎 Reading the card…' : '⏳ Getting the card reader ready (first time only)…');
     const w = await loadTess();
     status('🔎 Reading the card…');
-    const cv = scanCanvases(img), texts = [];
-    for (const c of [cv.full, cv.bottom, cv.top]) { const r = await w.recognize(c); texts.push(r.data.text || ''); }
+    const texts = [];
+    for (const [i, ps] of SCAN_PASSES.entries()) {
+      status(`🔎 Reading the card… (${i + 1} of ${SCAN_PASSES.length})`);
+      await w.setParameters({ tessedit_pageseg_mode: ps.psm });
+      const r = await w.recognize(scanCanvas(img, ps.base, ps.scale, ps.top)); texts.push(r.data.text || '');
+      if (i >= 1) {   // stop early when the name and the full number agree on one card
+        const best = (await scanMatches(parseScan(texts.join('\n')), '', ''))[0];
+        if (best && best.numScore >= 3 && best.nameScore >= 2) break;
+      }
+    }
     scanRead = parseScan(texts.join('\n'));
-    scanRead.top = norm(texts[2] || '');
     const num = scanRead.nums[0];
     $('scan-num').value = num ? (num.op || `${num.n}${num.tot ? '/' + num.tot : ''}`) : '';
     await scanLookup(true);
@@ -3692,7 +3728,7 @@ async function scanLookup(auto) {
     $('results').innerHTML = '<div class="col-span-full text-center py-8 text-zinc-500 text-sm">No matching cards yet.</div>'; return;
   }
   const top = hits[0];
-  if (auto && !name && top.nameScore > 0) $('scan-name').value = String(top.L.p[top.pid][1]).replace(/\s+-\s+.*$/, '').replace(/\s*[([].*$/, '');
+  if (auto && !name && top.nameScore >= 2) $('scan-name').value = String(top.L.p[top.pid][1]).replace(/\s+-\s+.*$/, '').replace(/\s*[([].*$/, '');
   const sure = top.numScore >= 3 && top.nameScore >= 2;
   status(sure ? '✅ Found it — it\'s first below. Tap it to add (other printings follow).' : `Best ${Math.min(hits.length, 30)} match${hits.length === 1 ? '' : 'es'} — tap the right card to add it. Not right? Fix the name or number and tap Look up.`);
   pending = { items: hits, shown: 0, make: async h => { const c = h.list === 'onepiece' ? cardFromTcg(h.pid, 'onepiece', h.L) : cardFromTcg(h.pid, 'pokemon', h.L); if (c && h.list === 'pokemon-jp') c.lang = 'ja'; return c; } };
