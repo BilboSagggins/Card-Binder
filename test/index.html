@@ -192,6 +192,10 @@
   .tt.has-raffle { overflow: visible; }
   .nw-card.unseen { border-color: #f59e0b; box-shadow: 0 0 0 1px rgba(245,158,11,.5); }
   .nw-alerts { border-color: #7c3aed; }
+  .nw-vid { appearance: none; position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; }
+  .nw-vid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .nw-vid span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 3.4rem; height: 2.4rem; border-radius: 12px; background: rgba(220,38,38,.92); color: #fff; font: 900 1.1rem/2.4rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+  .nw-player { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; background: #000; display: block; }
   .nw-toggles { display: flex; flex-wrap: wrap; gap: .35rem; }
   .nw-toggles button { appearance: none; display: inline-flex; align-items: center; gap: .3rem; border: 1px solid #3f3f46; background: #09090b; color: #a1a1aa; border-radius: 999px; padding: .5rem .7rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
   .nw-toggles button span { display: inline-block; width: .95rem; height: .95rem; border-radius: 4px; border: 1px solid #52525b; font-size: .65rem; line-height: .9rem; text-align: center; }
@@ -4169,6 +4173,15 @@ async function openNewsPage() {
   if (!NW.tab) NW.tab = nwUnseen().some(r => nwPick(r.game)) ? 'raffles' : nwLiveRaffles().some(r => nwPick(r.game)) ? 'raffles' : 'soon';
   nwPaint();
 }
+// Play an official video right in the list (YouTube's privacy-enhanced player)
+function nwPlay(btn, id) {
+  document.querySelectorAll('#nw-list iframe.nw-player').forEach(f => { const b = document.createElement('button'); b.type = 'button'; b.className = 'nw-vid'; const v = f.dataset.vid; b.setAttribute('onclick', `nwPlay(this,'${v}')`); b.innerHTML = `<img src="https://i.ytimg.com/vi/${v}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><span>▶</span>`; f.replaceWith(b); });
+  const f = document.createElement('iframe');
+  f.className = 'nw-player'; f.dataset.vid = id;
+  f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+  f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true; f.title = 'Video';
+  btn.replaceWith(f);
+}
 // Lotteries / drawings someone can still enter: open now, or opening soon
 function nwLiveRaffles() {
   return ((NW.data && NW.data.raffles) || []).filter(r => nwStatus(r).k !== 'closed');   // official only, so a fresh announcement without dates counts too
@@ -4177,11 +4190,11 @@ function nwLiveRaffles() {
 const nwKey = r => [r.url || r.title, r.opens || '', r.closes || ''].join('|');
 function nwSeen() { try { return new Set(JSON.parse(localStorage.getItem('cardBinder.rafflesSeen') || '[]')); } catch (e) { return new Set(); } }
 function nwUnseen() { const seen = nwSeen(), on = nwAlertGames(); return nwLiveRaffles().filter(r => !seen.has(nwKey(r)) && on.has(r.game === 'pokemon-jp' ? 'pokemon' : r.game)); }
-// Which games' raffles light up the News button, on this phone (all of them until changed)
+// Which games' raffles light up the News button, on this phone (none until the person picks some)
 const NW_ALERT_GAMES = NW_GAMES.filter(([k]) => k !== 'all').map(([k]) => k);
 function nwAlertGames() {
   try { const v = JSON.parse(localStorage.getItem('cardBinder.raffleAlerts')); if (Array.isArray(v)) return new Set(v); } catch (e) {}
-  return new Set(NW_ALERT_GAMES);
+  return new Set();
 }
 function setAlertGames(list) {
   try { localStorage.setItem('cardBinder.raffleAlerts', JSON.stringify(list)); } catch (e) { toast('This phone couldn\u2019t save the setting', 'error'); }
@@ -4195,7 +4208,7 @@ function nwAlertsPanel() {
     <p class="nw-p">The News button lights up when an official lottery or drawing opens for the games picked here. Raffles still lists every game.</p>
     <div class="nw-toggles">${NW_ALERT_GAMES.map(g => `<button type="button" aria-pressed="${on.has(g)}" onclick="toggleAlertGame('${g}')"><span>${on.has(g) ? '✓' : ''}</span>${esc(NW_LABELS[g])}</button>`).join('')}</div>
     <div class="nw-links"><a href="#" class="alt" onclick="event.preventDefault();setAlertGames(NW_ALERT_GAMES)">All on</a><a href="#" class="alt" onclick="event.preventDefault();setAlertGames([])">Turn all off</a></div>
-    ${none ? '<p class="nw-p" style="color:#fbbf24">Raffle alerts are off. You can still check the Raffles tab any time.</p>' : ''}
+    ${none ? '<p class="nw-p" style="color:#fbbf24">Raffle alerts are off. Tick the games you want alerts for. You can still check the Raffles tab any time.</p>' : ''}
   </div>`;
 }
 function markRaffleSeen(i) {
@@ -4288,14 +4301,16 @@ function nwPaint() {
     const items = (d.items || []).filter(x => nwPick(x.game) && (NW.tab !== 'previews' || x.kind === 'preview'));
     const KIND = { preview: '🃏 Preview', release: '📦 Release', raffle: '🎟️ Drawing', news: '' };
     h += items.slice(0, 150).map(x => {
-      const big = NW.tab === 'previews' && x.imgs && x.imgs.length;
+      const vid = x.video && /^[\w-]{6,20}$/.test(x.video) ? x.video : '';
+      const big = vid || (NW.tab === 'previews' && x.imgs && x.imgs.length);
       const thumb = x.imgs && x.imgs[0] && !big ? `<img class="nw-thumb" loading="lazy" src="${esc(x.imgs[0])}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'nw-thumb',textContent:'${NW_EMOJI[x.game] || '📰'}'}))">` : `<div class="nw-thumb">${NW_EMOJI[x.game] || '📰'}</div>`;
       return `<div class="nw-card">
         ${big ? '' : `<div class="nw-item">${thumb}<div style="min-width:0;display:flex;flex-direction:column;gap:.35rem">`}
         <div class="nw-top">${nwBadge(x.game)}${KIND[x.kind] ? `<span>${KIND[x.kind]}</span>` : ''}<span>${esc(x.src || '')} · ${esc(nwAgo(x.date))}</span></div>
         <h3 class="nw-t">${esc(x.title)}</h3>
-        ${big ? `<div class="nw-imgs">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`).join('')}</div>` : ''}
-        <div class="nw-links">${nwLink(x.url, 'Read ↗', 'alt')}</div>
+        ${vid ? `<button type="button" class="nw-vid" onclick="nwPlay(this,'${vid}')" aria-label="Play video"><img loading="lazy" src="https://i.ytimg.com/vi/${vid}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><span>▶</span></button>`
+          : big ? `<div class="nw-imgs">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`).join('')}</div>` : ''}
+        <div class="nw-links">${nwLink(x.url, vid ? 'Open on YouTube ↗' : 'Read ↗', 'alt')}</div>
         ${big ? '' : '</div></div>'}
       </div>`;
     }).join('') || `<p class="pc-note">${NW.tab === 'previews' ? 'No card previews for this game in the last few weeks.' : 'No news for this game yet.'}</p>`;
