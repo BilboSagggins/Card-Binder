@@ -4264,7 +4264,7 @@ function nwTabsPaint() {
   if (!tabs.some(t => t[0] === NW.tab)) NW.tab = 'soon';
   $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
   const live = nwUnseen().filter(r => nwPick(r.game)).length;
-  $('nw-tabs').innerHTML = tabs.map(([k, ic, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()"><span>${ic}${n ? `<i>${n}</i>` : ''}</span>${l}</button>`).join('');
+  $('nw-tabs').innerHTML = tabs.map(([k, ic, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}"${k === 'raffles' && live ? ' class="hot"' : ''} onclick="NW.tab='${k}';nwPaint()"><span>${ic}</span>${l}</button>`).join('');
   paintNewsBadge();
 }
 const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}">${esc(NW_LABELS[g] || g)}</span>`;
