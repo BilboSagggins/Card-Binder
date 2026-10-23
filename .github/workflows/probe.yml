@@ -2,7 +2,7 @@ name: news probe
 on:
   push:
     branches: [news-probe]
-    paths: [scripts/build-news.py, .github/workflows/probe.yml]
+    paths: [backtest.py, .github/workflows/probe.yml]
 permissions:
   contents: write
 jobs:
@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/build-news.py > probe-report.txt 2>&1 || true
+      - run: python3 backtest.py || true
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add probe-report.txt news && git commit -m "probe report" && git push
+          git add probe-report.txt && git commit -m "probe report" && git push
