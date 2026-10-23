@@ -454,7 +454,7 @@ def youtube_videos():
             g = game or bandai_game(title)
             if not vid or not g or VIDEO_SKIP_RE.search(title):
                 continue
-            if g == "pokemon" and not re.search(r"\bTCG\b|trading card", title, re.I):
+            if g == "pokemon" and (not re.search(r"\bTCG\b|trading card", title, re.I) or re.search(r"pocket|\blive\b", title, re.I)):
                 continue      # the main Pokémon channel: games, anime... only card game videos
             pub = tag(e, "published")
             try:
