@@ -14,6 +14,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 
@@ -403,14 +404,63 @@ def riftbound_drawing(title, url, d, desc, banner=()):
         r["summary"] = " ".join((dated or sents)[:4])[:600] or desc
         for a in re.finditer(r'"(https?://[^"\s]+)"', nd.group(1) if nd else page):
             u = a.group(1).replace("\\u002F", "/").replace("\\/", "/").rstrip("\\")
-            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
+            if re.search(r"draw|raffle|enter|form|regist|signup|sign-up|queue", u, re.I) and "cmsassets" not in u and not re.search(r"youtube|youtu\.be|twitter|x\.com|facebook|instagram|tiktok|discord|twitch|reddit|publishing-content|/api/|\.(js|json|css|png|jpe?g|webp)(\?|$)", u) and not re.search(r"(playriftbound|riftbound\.leagueoflegends)\.com/[a-z-]+/news/", u):
                 if u not in [e[1] for e in r["entries"]]:
                     r["entries"].append([re.sub(r"^https?://(www\.)?", "", u).split("/")[0], u])
         r["opens"], r["closes"] = window(dated, d.year)
+        # only a drawing if its dates are after the article went up (not an old date mentioned in passing)
+        if r["drawing"] and not any(x and dt.date.fromisoformat(x) >= d.date() - dt.timedelta(days=2) for x in (r["opens"], r["closes"])):
+            r["drawing"] = False
     except Exception as e:
         errors.append(f"riftbound drawing {url}: {e}")
     r["entries"] = r["entries"][:6] or [["Open the drawing page", url]]
     return r
+
+
+# Official YouTube channels (the same reveal videos the publishers post on X, which can't be read without a paid API)
+YOUTUBE = [
+    ("UCT5u6XqA2oaSqxsXKp3zubw", "Bandai Card Games (official)", None),          # One Piece, Fusion World, DB Masters...
+    ("UCZVYjENKJSXMke-dYUxCLvw", "NARUTO CARD GAME (official)", "naruto"),
+    ("UCjrU2FHeEIQFP3GOcCOiuVw", "Riftbound (official)", "riftbound"),
+]
+VIDEO_PREVIEW_RE = re.compile(r"reveal|preview|spoiler|new cards?|card list|trailer|\bPV\b|promotion video|introduc|showcase|first look|booster|starter deck|extra booster|premium|set\b|product|collection|leader|legend|champion|unbox|opening", re.I)
+VIDEO_SKIP_RE = re.compile(r"\blive\b|stream|tournament|championship|finals?\b|top \d|regional|how to play|tutorial|rules|gameplay|match|vs\.?\b", re.I)
+
+
+def bandai_game(title):
+    if re.search(r"one ?piece", title, re.I):
+        return "onepiece"
+    if re.search(r"fusion ?world", title, re.I):
+        return "fusionworld"
+    if re.search(r"dragon ?ball", title, re.I):
+        return "dbmasters"
+    if re.search(r"naruto", title, re.I):
+        return "naruto"
+    return None          # Digimon, Gundam, Union Arena... not followed here
+
+
+def youtube_videos():
+    items = []
+    for cid, src, game in YOUTUBE:
+        try:
+            xml = get(f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}", browser=True)
+        except Exception as e:
+            errors.append(f"youtube {src}: {e}")
+            continue
+        for e in re.findall(r"<entry>(.*?)</entry>", xml, re.S):
+            vid = tag(e, "yt:videoId")
+            title = text(tag(e, "title"))
+            g = game or bandai_game(title)
+            if not vid or not g or VIDEO_SKIP_RE.search(title):
+                continue
+            pub = tag(e, "published")
+            try:
+                when = dt.datetime.fromisoformat(pub.replace("Z", "+00:00"))
+            except ValueError:
+                when = None
+            items.append({"game": g, "title": title, "url": f"https://www.youtube.com/watch?v={vid}", "date": iso(when), "src": src,
+                          "kind": "preview" if VIDEO_PREVIEW_RE.search(title) else "news", "imgs": [f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"], "video": vid})
+    return items
 
 
 GOOGLE = [
@@ -432,14 +482,25 @@ CARDISH_RE = re.compile(r"card|tcg|booster|deck|\bpack|\bbox\b|promo|riftbound|\
 SKIP_SRC = re.compile(r"reddit|youtube|facebook|instagram|tiktok|ebay|amazon|walmart|press release|einpresswire|globenewswire|prnewswire", re.I)
 
 
+FAILED_GOOGLE = set()
+
+
 def google_news():
     items = []
-    for game, q in GOOGLE:
+    for n, (game, q) in enumerate(GOOGLE):
         url = "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": q + " when:30d", "hl": "en-US", "gl": "US", "ceid": "US:en"})
-        try:
-            xml = get(url, browser=True)
-        except Exception as e:
-            errors.append(f"google {game}: {e}")
+        xml = None
+        for attempt in range(3):
+            time.sleep(1.5 if n or attempt else 0)
+            try:
+                xml = get(url, browser=True)
+                break
+            except Exception as e:
+                err = e
+                time.sleep(6 * (attempt + 1))
+        if xml is None:
+            errors.append(f"google {game}: {err}")
+            FAILED_GOOGLE.add(game)
             continue
         for it in rss_items(xml)[:25]:
             full = text(tag(it, "title"))
@@ -449,8 +510,23 @@ def google_news():
                     or game in ("fusionworld", "dbmasters") and not re.search(r"card|tcg|fusion world|booster|masters", title, re.I):
                 continue
             items.append({"game": game, "title": title, "url": text(tag(it, "link")), "date": iso(rss_date(tag(it, "pubDate"))),
-                          "src": src, "kind": kind_of(title), "imgs": []})
+                          "src": src, "kind": kind_of(title), "imgs": [], "via": "google"})
     return items
+
+
+OFFICIAL_SRC = re.compile(r"^(Riftbound|League of Legends|Riot Games|Pok[eé]mon(\.com| Center| TCG)?|The Pok[eé]mon Company.*|One Piece Card Game.*|ONE PIECE CARD GAME.*|Bandai.*|BANDAI.*|Dragon Ball Super Card Game.*|DRAGON BALL SUPER CARD GAME.*|Naruto Card Game.*|NARUTO CARD GAME.*)$|\(official\)$|^Bandai Namco Shops$", re.I)
+
+
+def merge_raffles(raffles):
+    """One card per drawing: the same game with the same opening date is the same drawing (keep the most complete one)."""
+    score = lambda r: (bool(r.get("closes")), len([e for e in r.get("entries", []) if e[0] != "Open the drawing page"]),
+                       bool(re.search(r"drawing|lottery|raffle", r["title"], re.I)), len(r.get("summary", "")))
+    best = {}
+    for r in raffles:
+        k = (r["game"], r.get("opens") or norm_title(r["title"]))
+        if k not in best or score(r) > score(best[k]):
+            best[k] = r
+    return list(best.values())
 
 
 def norm_title(t):
@@ -469,17 +545,28 @@ def main():
     r, i = riftbound_official(); raffles += r; items += i
     items += pokebeach()
     items += onepiece_official()
+    items += youtube_videos()
     items += google_news()
-    # news about a drawing / lottery also goes on the raffle list (linked to the article)
+    # a Google search that failed this time: keep what the last run found for that game
+    if FAILED_GOOGLE:
+        try:
+            with open(OUT, encoding="utf-8") as f:
+                prev = json.load(f)
+            items += [x for x in prev.get("items", []) if x.get("via") == "google" and x["game"] in FAILED_GOOGLE]
+            raffles += [x for x in prev.get("raffles", []) if x.get("via") == "google" and x["game"] in FAILED_GOOGLE]
+        except Exception as e:
+            errors.append(f"previous news: {e}")
+    # a drawing / lottery posted by the official publisher or store (found through news search) also goes on the raffle
+    # list; drawings reported by other sites stay in the news only
     have = {norm_title(x["title"]) for x in raffles}
     for it in items:
-        if it["kind"] == "raffle" and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
+        if it["kind"] == "raffle" and OFFICIAL_SRC.search(it.get("src", "")) and norm_title(it["title"]) not in have and it.get("date") and not re.search(r"\bfaq\b", it["title"], re.I) and \
                 dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00")) > NOW - dt.timedelta(days=45):
             posted = dt.datetime.fromisoformat(it["date"].replace("Z", "+00:00"))
             o, c = window([it["title"]] + re.split(r"(?<=[.!?])\s+", it.get("summary", "")), posted.year)
             if o and dt.date.fromisoformat(o) < posted.date() - dt.timedelta(days=2):
                 o, c = "", ""       # a date from before the post: not the entry window
-            raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"],
+            raffles.append({"game": it["game"], "title": it["title"], "url": it["url"], "posted": it["date"], "src": it["src"], "via": it.get("via", ""),
                             "opens": o, "closes": c, "period": "", "event": "", "entries": [], "summary": it.get("summary", "")})
             have.add(norm_title(it["title"]))
     # newest first; drop near-duplicate headlines (keep the copy with pictures / from the official source)
@@ -494,6 +581,7 @@ def main():
     cutoff = iso(NOW - dt.timedelta(days=60))
     uniq = [x for x in uniq if (x.get("date") or "") >= cutoff or x["src"].endswith("(official)")]
     uniq.sort(key=lambda x: x.get("date") or "", reverse=True)
+    raffles = merge_raffles([r for r in raffles if OFFICIAL_SRC.search(r.get("src", ""))])
     raffles.sort(key=lambda x: x.get("posted") or "", reverse=True)
     data["raffles"] = raffles[:40]
     data["items"] = uniq[:250]
