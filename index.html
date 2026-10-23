@@ -183,6 +183,42 @@
   .pc-acts { display: flex; flex-direction: column; gap: .35rem; }
   .pc-acts a, .pc-acts button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; text-align: center; white-space: nowrap; }
   .pc-acts a { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
+  .nw-games button { flex: 0 0 auto; }
+  .nw-games button[aria-selected="true"] { background: #7c3aed; border-color: #a78bfa; }
+  .nw-list { max-width: 44rem; margin: 0 auto; padding: .7rem .7rem 3rem; display: flex; flex-direction: column; gap: .6rem; }
+  .nw-h { margin: .6rem .2rem 0; font: 800 .68rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #a1a1aa; }
+  .nw-card { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: .75rem; display: flex; flex-direction: column; gap: .45rem; color: #f4f4f5; text-decoration: none; }
+  .nw-card.dim { opacity: .55; }
+  .nw-top { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font: 600 .66rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .nw-g { padding: .18rem .45rem; border-radius: 999px; font: 800 .6rem/1 Inter, system-ui, sans-serif; color: #fff; background: var(--g, #52525b); }
+  .nw-pill { padding: .2rem .5rem; border-radius: 999px; font: 800 .62rem/1 Inter, system-ui, sans-serif; }
+  .nw-pill.open { background: #059669; color: #fff; }
+  .nw-pill.soon { background: #d97706; color: #111; }
+  .nw-pill.closed { background: #3f3f46; color: #d4d4d8; }
+  .nw-pill.out { background: #4f46e5; color: #fff; }
+  .nw-t { margin: 0; font: 800 .92rem/1.3 Inter, system-ui, sans-serif; color: #fff; }
+  .nw-p { margin: 0; font: 500 .74rem/1.45 Inter, system-ui, sans-serif; color: #d4d4d8; }
+  .nw-p b { color: #fff; }
+  .nw-sum { margin: 0; font: 500 .7rem/1.45 Inter, system-ui, sans-serif; color: #a1a1aa; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .nw-sum.full { -webkit-line-clamp: unset; display: block; }
+  .nw-links { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .nw-links a { display: inline-flex; align-items: center; gap: .25rem; padding: .5rem .65rem; border-radius: 10px; background: #4f46e5; color: #fff; font: 700 .7rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
+  .nw-links a.alt { background: #27272a; color: #e4e4e7; border: 1px solid #3f3f46; }
+  .nw-rel { display: grid; grid-template-columns: 3.4rem 1fr; gap: .65rem; align-items: start; }
+  .nw-date { text-align: center; background: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: .4rem .2rem; }
+  .nw-date b { display: block; font: 800 1.15rem/1 Inter, system-ui, sans-serif; color: #fff; }
+  .nw-date span { display: block; font: 700 .58rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; text-transform: uppercase; }
+  .nw-prods { display: flex; gap: .45rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .1rem; }
+  .nw-prods::-webkit-scrollbar { display: none; }
+  .nw-prods a { flex: 0 0 5.2rem; text-decoration: none; color: #d4d4d8; font: 600 .56rem/1.2 Inter, system-ui, sans-serif; }
+  .nw-prods img { width: 5.2rem; height: 5.2rem; object-fit: contain; background: #fff; border-radius: 8px; display: block; margin-bottom: .2rem; }
+  .nw-prods span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nw-item { display: grid; grid-template-columns: 4.6rem 1fr; gap: .65rem; align-items: start; }
+  .nw-thumb { width: 4.6rem; height: 4.6rem; border-radius: 10px; object-fit: cover; background: #09090b; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid #27272a; }
+  .nw-imgs { display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; }
+  .nw-imgs::-webkit-scrollbar { display: none; }
+  .nw-imgs img { height: 9.5rem; border-radius: 8px; background: #09090b; flex: none; }
+  .nw-more { appearance: none; border: 0; background: none; color: #a5b4fc; font: 700 .68rem/1 Inter, system-ui, sans-serif; padding: 0; align-self: flex-start; }
   .pc-note { text-align: center; color: #71717a; font: 500 .72rem/1.5 Inter, system-ui, sans-serif; padding: 1rem; }
   /* Card scanner */
   .scan-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
@@ -588,6 +624,7 @@
           <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
           <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
           <button type="button" id="who-prices" onclick="openPricePage()" class="btn !py-1" title="Look up any card or sealed price">💲 Prices</button>
+          <button type="button" id="who-news" onclick="openNewsPage()" class="btn !py-1" title="Upcoming sets, store lotteries and card previews">📰 News</button>
         </div>
         <!-- Kept for older code paths; filled from the people list -->
         <select id="user-select" class="hidden" aria-hidden="true" tabindex="-1"></select>
@@ -620,6 +657,7 @@
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
         <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
+        <button type="button" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
 
       <!-- General Utility Buttons -->
@@ -864,6 +902,17 @@
   <div id="pc-list" class="pc-list"></div>
 </div>
 
+<!-- News: upcoming sets & products, store lotteries / drawings with entry links, news and card previews (news/news.json, rebuilt every few hours) -->
+<div id="news-page" class="np nw" hidden role="dialog" aria-modal="true" aria-labelledby="nw-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeNewsPage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="nw-title">TCG News</h2><p id="nw-sub">Loading…</p></div>
+    <div class="tk-tabs nw-games" id="nw-games" role="tablist" aria-label="Game"></div>
+    <div class="tk-tabs" id="nw-tabs" role="tablist" aria-label="Section"></div>
+  </div>
+  <div id="nw-list" class="nw-list"></div>
+</div>
+
 <!-- Trade picker: tap your own cards, collection or sealed to add several at once -->
 <div id="trade-pick" class="np tk" hidden role="dialog" aria-modal="true" aria-labelledby="tk-title">
   <div class="np-head">
@@ -982,7 +1031,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.33';
+const APP_VERSION = '2026-10-23.37';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4074,6 +4123,114 @@ const PC_SOURCES = [
 ];
 const PC_TABS = [['all', 'All'], ['pokemon', 'Pokémon'], ['jp', 'Japanese'], ['zh', 'Chinese'], ['op', 'One Piece'], ['sealed', 'Sealed']];
 let PC = { tab: 'all', ready: false, open: null }, pcTimer = null;
+/* ===== News: upcoming sets & products, store lotteries / drawings, news and card previews ===== */
+const NW = { data: null, game: 'all', tab: null, loading: null };
+const NW_GAMES = [['all', 'All'], ['pokemon', 'Pokémon'], ['onepiece', 'One Piece'], ['fusionworld', 'Fusion World'], ['dbmasters', 'DB Masters'], ['naruto', 'Naruto'], ['riftbound', 'Riftbound']];
+const NW_COLORS = { pokemon: '#ca8a04', 'pokemon-jp': '#b45309', onepiece: '#dc2626', fusionworld: '#ea580c', dbmasters: '#2563eb', naruto: '#f97316', riftbound: '#0891b2' };
+const NW_LABELS = { pokemon: 'Pokémon', 'pokemon-jp': 'Pokémon JP', onepiece: 'One Piece', fusionworld: 'Fusion World', dbmasters: 'DB Masters', naruto: 'Naruto', riftbound: 'Riftbound' };
+const NW_EMOJI = { pokemon: '⚡', 'pokemon-jp': '🇯🇵', onepiece: '🏴‍☠️', fusionworld: '🐉', dbmasters: '🐉', naruto: '🍥', riftbound: '⚔️' };
+function loadNews(force) {
+  if (NW.data && !force) return Promise.resolve(NW.data);
+  if (NW.loading) return NW.loading;
+  const urls = ['https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/news/news.json?t=' + Math.floor(Date.now() / 600000), 'https://bilbosagggins.github.io/Card-Binder/news/news.json'];
+  NW.loading = (async () => {
+    for (const u of urls) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) { NW.data = await r.json(); break; } } catch (e) {} }
+    NW.loading = null; return NW.data;
+  })();
+  return NW.loading;
+}
+async function openNewsPage() {
+  $('news-page').hidden = false; document.body.style.overflow = 'hidden';
+  $('nw-list').innerHTML = '<p class="pc-note">⏳ Loading news…</p>';
+  const d = await loadNews();
+  if (!d) { $('nw-sub').textContent = 'Couldn\u2019t load the news'; $('nw-list').innerHTML = '<p class="pc-note">The news list couldn\u2019t be loaded. Check your connection and try again.</p>'; return; }
+  const when = d.updated ? new Date(d.updated) : null;
+  $('nw-sub').textContent = when ? `Updated ${when.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · refreshed every few hours` : '';
+  if (!NW.tab) NW.tab = nwRaffles().some(r => nwStatus(r).k !== 'closed') ? 'raffles' : 'soon';
+  nwPaint();
+}
+function closeNewsPage() { const p = $('news-page'); if (p) p.hidden = true; document.body.style.overflow = ''; }
+const nwPick = g => NW.game === 'all' || g === NW.game || (NW.game === 'pokemon' && g === 'pokemon-jp');
+const nwDay = s => { if (!s) return null; const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+const nwShort = d => d ? d.toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+function nwAgo(iso) {
+  if (!iso) return ''; const ms = Date.now() - new Date(iso).getTime(), h = ms / 3600000;
+  return h < 1 ? 'just now' : h < 24 ? `${Math.floor(h)}h ago` : h < 24 * 7 ? `${Math.floor(h / 24)}d ago` : new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+function nwRaffles() { return ((NW.data && NW.data.raffles) || []).filter(r => nwPick(r.game)); }
+function nwStatus(r) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const o = nwDay(r.opens), c = nwDay(r.closes);
+  if (c && today > c) return { k: 'closed', t: `Closed ${nwShort(c)}` };
+  if (o && today < o) return { k: 'soon', t: `Opens ${nwShort(o)}${c && +c !== +o ? ` · closes ${nwShort(c)}` : ''}` };
+  if (c) return { k: 'open', t: `Open now · closes ${nwShort(c)}` };
+  const age = r.posted ? (Date.now() - new Date(r.posted)) / 86400000 : 99;
+  return age > 30 ? { k: 'closed', t: `Posted ${nwAgo(r.posted)}` } : { k: 'soon', t: `Announced ${nwAgo(r.posted)} · check dates` };
+}
+function nwTabsPaint() {
+  const d = NW.data || {}, items = (d.items || []).filter(x => nwPick(x.game));
+  const open = nwRaffles().filter(r => nwStatus(r).k !== 'closed').length;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const soon = (d.releases || []).filter(r => nwPick(r.game) && nwDay(r.date) >= today).length;
+  const tabs = [['raffles', `🎟️ Raffles`, open], ['soon', '📅 Coming soon', soon], ['previews', '🃏 Previews', items.filter(x => x.kind === 'preview').length], ['news', '📰 All news', items.length]];
+  $('nw-games').innerHTML = NW_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === NW.game}" onclick="NW.game='${k}';nwPaint()">${l}</button>`).join('');
+  $('nw-tabs').innerHTML = tabs.map(([k, l, n]) => `<button type="button" role="tab" aria-selected="${k === NW.tab}" onclick="NW.tab='${k}';nwPaint()">${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
+}
+const nwBadge = g => `<span class="nw-g" style="--g:${NW_COLORS[g] || '#52525b'}">${esc(NW_LABELS[g] || g)}</span>`;
+const nwLink = (u, label, cls) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer"${cls ? ` class="${cls}"` : ''}>${label}</a>`;
+function nwPaint() {
+  nwTabsPaint();
+  const d = NW.data || {}, box = $('nw-list'); let h = '';
+  if (NW.tab === 'raffles') {
+    const order = { open: 0, soon: 1, closed: 2 };
+    const list = nwRaffles().map(r => ({ r, s: nwStatus(r) })).sort((a, b) => order[a.s.k] - order[b.s.k] || String(b.r.posted).localeCompare(String(a.r.posted)));
+    h = list.length ? list.map(({ r, s }, i) => `<div class="nw-card${s.k === 'closed' ? ' dim' : ''}">
+        <div class="nw-top">${nwBadge(r.game)}<span class="nw-pill ${s.k}">${esc(s.t)}</span><span>${esc(r.src || '')}</span></div>
+        <h3 class="nw-t">${esc(r.title)}</h3>
+        ${r.period ? `<p class="nw-p"><b>Entry period:</b> ${esc(r.period)}</p>` : ''}
+        ${r.event ? `<p class="nw-p"><b>Event / release:</b> ${esc(r.event)}</p>` : ''}
+        ${r.summary ? `<p class="nw-sum" id="nw-s${i}">${esc(r.summary)}</p><button type="button" class="nw-more" onclick="const p=$('nw-s${i}');p.classList.toggle('full');this.textContent=p.classList.contains('full')?'Less':'More'">More</button>` : ''}
+        <div class="nw-links">${(r.entries || []).map(([l, u]) => nwLink(u, '🎟️ ' + esc(l))).join('')}${nwLink(r.url, 'Full details ↗', 'alt')}</div>
+      </div>`).join('') : '<p class="pc-note">No store lotteries or drawings right now. New ones show up here within a few hours of being announced.</p>';
+  } else if (NW.tab === 'soon') {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const all = (d.releases || []).filter(r => nwPick(r.game)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const rel = [...all.filter(r => nwDay(r.date) >= today), ...all.filter(r => nwDay(r.date) < today).reverse()];   // upcoming first, just released after
+    let month = '';
+    h = rel.map(r => {
+      const day = nwDay(r.date), days = Math.round((day - today) / 86400000);
+      const m = days < 0 ? 'Just released' : day.toLocaleDateString([], { month: 'long', year: 'numeric' });
+      const head = m !== month ? `<p class="nw-h">${esc(m)}</p>` : ''; month = m;
+      const when = days > 1 ? `in ${days} days` : days === 1 ? 'tomorrow' : days === 0 ? 'today' : `out ${-days} day${days === -1 ? '' : 's'} ago`;
+      return head + `<div class="nw-card${days < 0 ? ' dim' : ''}"><div class="nw-rel">
+          <div class="nw-date"><span>${esc(day.toLocaleDateString([], { month: 'short' }))}</span><b>${day.getDate()}</b><span>${esc(day.toLocaleDateString([], { weekday: 'short' }))}</span></div>
+          <div style="min-width:0;display:flex;flex-direction:column;gap:.4rem">
+            <div class="nw-top">${nwBadge(r.game)}<span class="nw-pill ${days < 0 ? 'out' : days <= 14 ? 'open' : 'closed'}">${esc(when)}</span>${r.special ? '<span class="nw-pill soon">Special product</span>' : ''}${r.abbr ? `<span>${esc(r.abbr)}</span>` : ''}</div>
+            <h3 class="nw-t">${esc(r.set)}</h3>
+            ${r.cards ? `<p class="nw-p">${r.cards} cards listed so far</p>` : ''}
+            ${r.products && r.products.length ? `<div class="nw-prods">${r.products.map(([pid, name]) => `<a href="https://www.tcgplayer.com/product/${pid}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${tcgImg(pid, true)}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><span>${esc(name)}</span></a>`).join('')}</div>` : ''}
+            <div class="nw-links">${nwLink(r.url, 'See on TCGplayer ↗', 'alt')}</div>
+          </div></div></div>`;
+    }).join('') || '<p class="pc-note">No upcoming releases listed for this game yet.</p>';
+  } else {
+    const items = (d.items || []).filter(x => nwPick(x.game) && (NW.tab !== 'previews' || x.kind === 'preview'));
+    const KIND = { preview: '🃏 Preview', release: '📦 Release', raffle: '🎟️ Drawing', news: '' };
+    h = items.slice(0, 150).map(x => {
+      const big = NW.tab === 'previews' && x.imgs && x.imgs.length;
+      const thumb = x.imgs && x.imgs[0] && !big ? `<img class="nw-thumb" loading="lazy" src="${esc(x.imgs[0])}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'nw-thumb',textContent:'${NW_EMOJI[x.game] || '📰'}'}))">` : `<div class="nw-thumb">${NW_EMOJI[x.game] || '📰'}</div>`;
+      return `<div class="nw-card">
+        ${big ? '' : `<div class="nw-item">${thumb}<div style="min-width:0;display:flex;flex-direction:column;gap:.35rem">`}
+        <div class="nw-top">${nwBadge(x.game)}${KIND[x.kind] ? `<span>${KIND[x.kind]}</span>` : ''}<span>${esc(x.src || '')} · ${esc(nwAgo(x.date))}</span></div>
+        <h3 class="nw-t">${esc(x.title)}</h3>
+        ${big ? `<div class="nw-imgs">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`).join('')}</div>` : ''}
+        <div class="nw-links">${nwLink(x.url, 'Read ↗', 'alt')}</div>
+        ${big ? '' : '</div></div>'}
+      </div>`;
+    }).join('') || `<p class="pc-note">${NW.tab === 'previews' ? 'No card previews for this game in the last few weeks.' : 'No news for this game yet.'}</p>`;
+  }
+  box.innerHTML = h; box.scrollTop = 0;
+}
+
 async function openPricePage() {
   $('price-page').hidden = false; document.body.style.overflow = 'hidden';
   if (!PC.ready) {
@@ -4771,7 +4928,7 @@ function renderShelf() {
   });
 }
 function showLanding() {
-  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage();
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray(); if (selMode) toggleSelectMode(false);
   closePeerViewer(true);
