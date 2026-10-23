@@ -1,12 +1,20 @@
 
-=== As of 2026-08-05: Google News 'Riftbound' (job's query, past 30 days) -> 25 items; raffle-type:
+=== As of 2026-08-05: Google News, the job's two Riftbound searches (past 30 days) -> 31 items; raffle-type:
+   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
+   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
 
-=== As of 2026-08-13: Google News 'Riftbound' (job's query, past 30 days) -> 25 items; raffle-type:
+=== As of 2026-08-13: Google News, the job's two Riftbound searches (past 30 days) -> 33 items; raffle-type:
    2026-08-12 opens=2026-08-14 closes=- alert=YES | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 (Resell Calendar)
+   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
+   2026-08-13 opens=- closes=- alert=no | Everything you need to know about the T1 Raffle in Riftbound (The Escapist)
+   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
 
-=== As of 2026-08-15: Google News 'Riftbound' (job's query, past 30 days) -> 25 items; raffle-type:
+=== As of 2026-08-15: Google News, the job's two Riftbound searches (past 30 days) -> 33 items; raffle-type:
    2026-08-12 opens=2026-08-14 closes=- alert=YES | Riftbound x T1 Worlds Signature Edition Lottery Opens August 14 (Resell Calendar)
+   2026-08-03 opens=2026-08-14 closes=2026-08-17 alert=YES | Ready Your Wallets, The Riftbound T1 Worlds Signature Set English Drawing Runs August 14-17 (GameFragger.com)
+   2026-08-13 opens=- closes=- alert=no | Everything you need to know about the T1 Raffle in Riftbound (The Escapist)
+   2026-08-04 opens=- closes=- alert=no | Riftbound team rolls out new drawing system following Spiritforged preorder meltdown (Dot Esports)
 
-=== Riot's T1 article: counts as a drawing: True | opens 2026-08-03 closes  | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/']]
+=== Riot's T1 article: counts as a drawing: True | opens  closes  | entries [['Open the drawing page', 'https://playriftbound.com/en-us/news/announcements/the-riftbound-x-t1-2025-worlds-champion-collection/']]
    summary: Announced  on August 3, 2026 : The  T1 2025 Worlds Champion Signature Edition drawing will open on Friday, August.
 errors: []
