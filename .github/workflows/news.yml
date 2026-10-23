@@ -1,0 +1,38 @@
+name: Update TCG news
+
+# Builds news/news.json (upcoming releases, store lotteries / drawings, news and card previews)
+# for the binder app's News tab, a few times a day.
+on:
+  schedule:
+    - cron: "17 */4 * * *"   # every 4 hours
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-news.py
+      - .github/workflows/news.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the news list
+        run: python3 scripts/build-news.py
+      - name: Save it to the site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news
+          if git diff --cached --quiet; then echo "No news changes"; exit 0; fi
+          git commit -m "Update TCG news"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push
