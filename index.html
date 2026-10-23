@@ -982,7 +982,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.31';
+const APP_VERSION = '2026-10-23.32';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2433,15 +2433,40 @@ async function search() {
       && (!name || lc(c.name).includes(lc(name)))
       && (!number || sameNum(c.localId, number))
       && (!prefix || lc(c.localId).startsWith(prefix)));
+    // TCGdex leaves out TCGplayer's "Alternate Art Promos" (e.g. 143a/236): add matching ones from the price list,
+    // each right after its regular printing
+    if (!setVal && name && lang === 'en' && !rar) {
+      for (const x of await altArtExtras(name, number)) {
+        let at = -1;
+        items.forEach((c, i) => { if (lc(c.name) === lc(x.name) && String(c.localId).replace(/^0+/, '') === x.base) at = i; });
+        if (at >= 0) items.splice(at + 1, 0, x); else items.push(x);
+      }
+    }
     if (!items.length) {
       box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching cards found.</div>`;
       return;
     }
-    pending = { items, shown: 0, make: c => c.raw ? ptcgCard(c.raw) : fetchCard(c, lang, meta) };
+    pending = { items, shown: 0, make: c => c.tcg ? cardFromTcg(c.tcg, 'pokemon', c.L) : c.raw ? ptcgCard(c.raw) : fetchCard(c, lang, meta) };
     await loadBatch(false);
   } catch (e) {
     box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t reach the card database (${esc(errText(e))}).</div>`;
   }
+}
+
+async function altArtExtras(name, number) {
+  const L = await loadTcgList('pokemon').catch(() => null); if (!L || !L.p) return [];
+  const gids = new Set(Object.entries(L.groups || {}).filter(([, g]) => /alternate art promos/i.test(g)).map(([id]) => +id));
+  if (!gids.size) return [];
+  const q = lc(name), out = [];
+  for (const [pid, e] of Object.entries(L.p)) {
+    if (!gids.has(+e[3])) continue;
+    const nm = String(e[1]).replace(/\s+-\s+[A-Z]*\d+[a-z]?\/\w+.*$/i, '').trim();
+    if (!lc(nm).includes(q)) continue;
+    const num = lc(String(e[2] || '').split('/')[0]).replace(/^0+(?=\d)/, ''), base = num.replace(/[a-z]+$/, '');
+    if (number && !(sameNum(num, number) || sameNum(base, number))) continue;
+    out.push({ tcg: pid, L, name: nm, base, id: 'tcg-' + pid });
+  }
+  return out;
 }
 
 async function loadBatch(append) {
