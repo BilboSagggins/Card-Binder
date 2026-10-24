@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu && pip install --quiet "transformers>=4.40,<5" pillow
-      - run: (time python3 scripts/build-art-tags.py --trial 300 --sheets --out art-tags-trial.json) > probe-report.txt 2>&1 || true
+      - run: (time python3 scripts/build-art-tags.py --trial 600 --sheets --out art-tags-trial.json) > probe-report.txt 2>&1 || true
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -37,6 +37,9 @@ laboratory|machine|robot|gears|factory|power lines|electricity|neon lights|
 pink|purple|blue|green|red|orange|yellow|black and white|dark|bright colors|pastel colors|watercolor|pixel art|cartoon|realistic|3d render|
 reflection|shadow|silhouette|close-up|landscape|night|daytime|winter|spring|summer|autumn|heart|hearts|star shape|circle|stripes|polka dots|patterns|map|flag|sign|letters|numbers""".replace("\n", "")
 VOCAB = [v.strip() for v in VOCAB.split("|") if v.strip()]
+# words that matched almost anything in the trial (people's jobs, colours, drawing styles): left out
+DROP = set("""3d render|baby|backpack|ball|baseball|basketball|black and white|blue|bowl|boy|bright colors|cartoon|chef|child|circle|close-up|crowd|crown|dark|daytime|desk|doctor|family|flag|friends|girl|glasses|green|hat|heart|hearts|landscape|letters|light beams|map|medal|numbers|nurse|old man|orange|pastel colors|patterns|pink|pixel art|police|polka dots|purple|race|realistic|red|reflection|running|scarf|scientist|shadow|sign|soccer ball|sparkles|sports|star shape|stripes|swimming|tennis|trainer|watercolor|yellow""".split("|"))
+VOCAB = [v for v in VOCAB if v not in DROP]
 PROMPTS = ["a trading card illustration with {}", "artwork showing {}", "a picture of {}"]
 
 
@@ -135,9 +138,9 @@ def main():
     for i, pid in enumerate(pids):
         z = Z[i]; s = S[i]
         rank = torch.argsort(s, descending=True)[:25].tolist()     # what this card is most like overall
-        keep = [(j, float(z[j])) for j in rank if z[j] > 2.0]
+        keep = [(j, float(z[j])) for j in rank[:20] if z[j] > 2.3]
         keep.sort(key=lambda x: -x[1])
-        tags[pid] = [[j, round(v, 1)] for j, v in keep[:10]]
+        tags[pid] = [[j, round(v, 1)] for j, v in keep[:8]]
     done.update(tags)
     out = {"model": MODEL, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "vocab": VOCAB, "done": len(done),
            "total": len(lst), "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "t": done}
@@ -150,7 +153,7 @@ def main():
         from PIL import Image, ImageDraw
         os.makedirs("sheets", exist_ok=True)
         thumbs = {}
-        for name in ["moon", "night sky", "beach", "snow", "food", "rain", "city", "flowers", "fire", "ocean", "sun", "cake", "forest", "underwater", "sleeping", "christmas tree", "halloween", "music"]:
+        for name in ["moon", "night", "beach", "snow", "food", "rain", "city", "flowers", "fire", "ocean", "sun", "cake", "forest", "underwater", "sleeping", "christmas tree", "halloween", "music", "person", "stars"]:
             j = VOCAB.index(name)
             best = sorted(((float(Z[i][j]), pids[i]) for i in range(len(pids)) if any(t[0] == j for t in tags[pids[i]])), reverse=True)[:12]
             sheet = Image.new("RGB", (6 * 150, 2 * 210 + 30), (20, 20, 24)); d = ImageDraw.Draw(sheet)
