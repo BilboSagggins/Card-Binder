@@ -133,6 +133,13 @@
   .np.locked .np-card:active { transform: scale(.97); }
   .np-card.got .np-img img { filter: grayscale(1) brightness(.6); }
   .np-card.got { background: #121214; border-color: #1f1f23; }
+  .np-views { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
+  .np-views button { appearance: none; border: 0; border-radius: 9px; padding: .5rem; background: none; color: #a1a1aa; font: 800 .74rem/1 Inter, system-ui, sans-serif; }
+  .np-views button[aria-selected="true"] { background: #e11d48; color: #fff; }
+  .np-bucket { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin: .5rem 0 -.1rem; padding: .45rem .7rem; border-radius: 10px; background: #18181b; border: 1px solid #27272a; }
+  .np-bucket b { font: 900 .9rem/1 Inter, system-ui, sans-serif; color: #fff; }
+  .np-bucket span { font: 600 .66rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; text-align: right; }
+  .np-bucket span i { font-style: normal; color: #34d399; font-weight: 800; }
   /* hold to select (locked list): selected cards and the running total of what to bring */
   .np-card.sel { border-color: #818cf8; box-shadow: 0 0 0 2px #6366f1; background: #1e1b4b; }
   .np-card.sel .np-img::after { content: '✓'; position: absolute; top: .3rem; right: .3rem; z-index: 3; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #6366f1; color: #fff; font: 900 .85rem/1.5rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
@@ -546,6 +553,10 @@
   .ctray-item .q { right: 3px; background: rgba(0,0,0,.8); color: #fff; }
   .ctray-item .in { left: 3px; background: #4f46e5; color: #fff; }
   .ctray-item.lifted { opacity: .3; }
+  #pg-lock[aria-pressed="true"] { background: #b45309; border-color: #f59e0b; color: #fff; }
+  .lock-note { margin: 0 0 .6rem; padding: .45rem .7rem; border-radius: 10px; background: rgba(180,83,9,.15); border: 1px solid rgba(245,158,11,.45); color: #fcd34d; font: 600 .7rem/1.3 Inter, system-ui, sans-serif; text-align: center; }
+  .lock-note[hidden] { display: none; }
+  #grid.page-locked [data-slot] { cursor: default; }
   #sel-btn[aria-pressed="true"] { background: #e11d48; border-color: #e11d48; color: #fff; }
   body.sel-mode #grid .act { pointer-events: none; }
   body.sel-mode #grid [data-slot] .group-hover\:opacity-100 { opacity: 0 !important; }
@@ -732,6 +743,7 @@
       <span class="text-xs text-zinc-400 whitespace-nowrap">Title:</span>
       <input type="text" id="page-title-input" oninput="updatePageTitle(this.value)" placeholder="e.g. Charizard Collection" class="field !py-1 !text-xs w-full">
       <button type="button" id="sel-btn" onclick="toggleSelectMode()" class="btn !py-1 whitespace-nowrap" aria-pressed="false" title="Select several cards to remove">☑ Select</button>
+      <button type="button" id="pg-lock" onclick="toggleLockPage()" class="btn !py-1 !px-2.5" aria-pressed="false" title="Lock this page so nothing on it changes">🔓</button>
     </div>
   </div>
 
@@ -746,6 +758,8 @@
       <div class="h-6 rounded-r-lg ring"></div>
     </div>
     <!-- Card Grid Area -->
+    <div id="load-note" class="hidden text-center text-[11px] text-zinc-400 mb-2">⏳ Loading your latest cards…</div>
+    <div id="lock-note" class="lock-note" hidden>🔒 This page is locked. Cards stay put, and Sort by name skips it.</div>
     <div id="grid" class="w-full gap-3 sm:gap-4"></div>
   </div>
 
@@ -753,6 +767,7 @@
   <div id="page-controls" class="flex gap-3">
     <button onclick="addPage()" class="btn-p">➕ Add Page</button>
     <button onclick="delPage()" class="btn px-4 py-2">➖ Delete Page</button>
+    <button onclick="sortByName()" class="btn px-4 py-2" title="Group the same Pokémon together on all unlocked pages">🔤 Sort by name</button>
   </div>
 </main>
 
@@ -1008,6 +1023,7 @@
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
     <div class="np-acts"><span id="np-hint"></span><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
+    <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
   <div id="np-grid" class="np-grid"></div>
@@ -1076,7 +1092,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.50';
+const APP_VERSION = '2026-10-23.58';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1821,6 +1837,7 @@ function fillBinder(cards, start) {
   cards.forEach(card => {
     for (;;) {
       if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
+      if (pages[p].locked) { s = 0; p++; continue; }
       if (!pages[p].cards[s]) break;
       if (++s >= n) { s = 0; p++; }
     }
@@ -1918,6 +1935,7 @@ async function addWholeSet(it, at) {
     list.forEach(f => {
       for (;;) {
         if (!pages[p]) pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) });
+        if (pages[p].locked) { s = 0; p++; continue; }
         if (!pages[p].cards[s]) break;
         next();
       }
@@ -2044,7 +2062,7 @@ function trayMove(e) {
   }
   e.preventDefault(); moveTrayGhost(); trayHover();
 }
-function emptySlotEl(slot) { return slot && !getPagesArray()[S.cur].cards[+slot.dataset.slot] ? slot : null; }
+function emptySlotEl(slot) { const pg = getPagesArray()[S.cur]; return slot && !pg.locked && !pg.cards[+slot.dataset.slot] ? slot : null; }
 function trayHover() {
   const d = trayDrag; if (!d || !d.active) return;
   const { hit, slot } = slotUnder(d.x, d.y), target = emptySlotEl(slot);
@@ -2848,7 +2866,9 @@ function normCards(c) {
 function normPage(p, idx) {
   const title = (p && !Array.isArray(p) && p.title) || `Page ${idx + 1}`;
   const rawCards = Array.isArray(p) ? p : (p && p.cards);
-  return { title, cards: normCards(rawCards) };
+  const out = { title, cards: normCards(rawCards) };
+  if (p && !Array.isArray(p) && p.locked) out.locked = true;     // a page you've locked: no changes, and sorting leaves it alone
+  return out;
 }
 
 function normPages(raw) {
@@ -2901,6 +2921,7 @@ function buildUpdates(pages) {
   pages.forEach((p, pi) => {
     const b = before[pi];
     if (!b || b.title !== p.title) up[`pages/${pi}/title`] = p.title;
+    if (!!p.locked !== !!(b && b.locked)) up[`pages/${pi}/locked`] = p.locked ? true : null;
     p.cards.forEach((c, si) => {
       const bc = (b && b.cards[si]) || null;
       if (canon(c) !== canon(bc)) up[`pages/${pi}/cards/${si}`] = c || null;
@@ -3099,7 +3120,7 @@ function render() {
 
     el.onclick = e => {
       if (selMode) { if (c) toggleSel(S.cur, i, el); return; }
-      if (suppressClick || e.target.closest('.act')) return; c ? openInspect(S.cur, i) : (!peerUser && openSearch(S.cur, i));
+      if (suppressClick || e.target.closest('.act')) return; c ? openInspect(S.cur, i) : (!peerUser && (pages[S.cur].locked ? lockedToast(S.cur) : openSearch(S.cur, i)));
     };
     if (selMode && c && selSlots.has(S.cur + '|' + i)) el.classList.add('sel');
     
@@ -3119,6 +3140,9 @@ function render() {
   });
   
   $('pg').textContent = S.cur + 1; $('pgs').textContent = pages.length;
+  const lk = !!pages[S.cur].locked, lb = $('pg-lock');
+  if (lb) { lb.textContent = lk ? '🔒' : '🔓'; lb.setAttribute('aria-pressed', lk); lb.title = lk ? 'Page locked. Tap to unlock it.' : 'Lock this page so nothing on it changes'; lb.hidden = !!peerUser; }
+  $('lock-note').hidden = !lk || !!peerUser; g.classList.toggle('page-locked', lk);
   $('prev').disabled = S.cur === 0; $('next').disabled = S.cur === pages.length - 1;
   
   let total = 0, own = 0, need = 0;
@@ -3140,6 +3164,7 @@ function toggleStatus(p, s, e) {
 }
 function removeCard(p, s, e) { 
   if (peerUser) return;
+  if (pageLocked(p)) { e.stopPropagation(); return lockedToast(p); }
   e.stopPropagation(); 
   const pages = getPagesArray();
   const gone = pages[p].cards[s];
@@ -3167,8 +3192,56 @@ function addPage() {
   render(); 
   toast('Added page'); 
 }
+/* Sort by name: every card on the unlocked pages, grouped by Pokémon (all Mew together, then Mewtwo, ...),
+   refilled into those pages from the first slot. Locked pages stay exactly as they are. Undo puts everything back. */
+function sortKey(name) {
+  let n = String(name || '').toLowerCase()
+    .replace(/\s+-\s+[a-z]*\d+[a-z]?\/\w+.*$/, '')        // "Mew - 151/165"
+    .replace(/\s*[([][^)\]]*[)\]]/g, '')                   // "(Secret)", "[Holo]"
+    .replace(/^[\w.\-]+[’']s\s+/, '')                       // "Misty's Psyduck", "Team Rocket's Mewtwo" (last word before 's)
+    .replace(/^team rocket[’']s\s+/, '')
+    .replace(/^(radiant|shining|dark|light|alolan|galarian|hisuian|paldean|mega|primal|shadow|ultra|origin forme|crystal)\s+/g, '')
+    .replace(/^m\s+(?=\w)/, '');                             // "M Charizard EX"
+  n = n.split(/\s*(?:&|\bwith\b)\s*/)[0];                     // tag teams group under the first Pokémon
+  n = n.replace(/(\s+(ex|gx|v|vmax|vstar|v-union|break|lv\.?\s*x|prime|legend|star|δ|☆|★|delta species|tag team|sp|g|gl|fb|c|4|e4|lv\.?\s*\d+))+$/g, '');
+  return n.replace(/[^a-z0-9.' é-]+/g, ' ').replace(/\s+/g, ' ').trim() || String(name || '').toLowerCase();
+}
+function sortByName() {
+  if (peerUser) return;
+  const pages = getPagesArray(), n = cap(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
+  if (!open.length) return toast('Every page is locked. Unlock a page to sort it.', 'error');
+  const cards = open.flatMap(i => pages[i].cards.slice(0, n).filter(Boolean));
+  if (cards.length < 2) return toast('Nothing to sort yet', 'error');
+  const num = c => String(c.number || '').split('/')[0];
+  const sorted = cards.map((c, i) => ({ c, i, k: sortKey(c.name) }))
+    .sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }) || String(a.c.name).localeCompare(String(b.c.name)) || String(a.c.set || '').localeCompare(String(b.c.set || '')) || num(a.c).localeCompare(num(b.c), undefined, { numeric: true }) || a.i - b.i)
+    .map(x => x.c);
+  const locked = pages.length - open.length;
+  if (!confirm(`Sort ${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} by name?${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  const before = JSON.parse(JSON.stringify(pages));
+  let k = 0;
+  open.forEach(i => { pages[i].cards = Array.from({ length: n }, () => k < sorted.length ? sorted[k++] : null); });
+  S.pages = pages; saveActivePages(pages); render();
+  const binder = currentUser;
+  toastUndo(`Sorted ${cards.length} cards by name`, () => {
+    if (currentUser !== binder) return;
+    S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
+  });
+}
+/* Locked pages: nothing moves in or out, nothing is added or removed, and "Sort by name" leaves them where they are */
+const pageLocked = p => { const pg = getPagesArray()[p]; return !!(pg && pg.locked); };
+function lockedToast(p) { toast(`Page ${p + 1} is locked. Tap 🔒 next to its title to unlock it.`, 'error'); return true; }
+function toggleLockPage() {
+  if (peerUser) return;
+  const pages = getPagesArray(), pg = pages[S.cur]; if (!pg) return;
+  if (pg.locked) delete pg.locked; else pg.locked = true;
+  if (selMode) toggleSelectMode(false);
+  S.pages = pages; saveActivePages(pages); render();
+  toast(pg.locked ? `🔒 Page ${S.cur + 1} locked` : `🔓 Page ${S.cur + 1} unlocked`);
+}
 function delPage() { 
   if (peerUser) return;
+  if (pageLocked(S.cur)) return lockedToast(S.cur);
   const pages = getPagesArray();
   if (pages.length <= 1) return toast('Cannot delete the only page', 'error'); 
   const inPage = pages[S.cur].cards.filter(Boolean).length;
@@ -3212,7 +3285,7 @@ function markSource() {
 }
 
 function slotPress(e, i) {
-  if (peerUser || selMode || dragSt || e.button > 0 || e.target.closest('.act')) return;
+  if (peerUser || selMode || pageLocked(S.cur) || dragSt || e.button > 0 || e.target.closest('.act')) return;
   const card = getPagesArray()[S.cur].cards[i];
   if (!card) return;
   dragSt = { p: S.cur, s: i, card, id: e.pointerId, touch: e.pointerType === 'touch',
@@ -3327,6 +3400,7 @@ function dragEnd(e) {
 // Remove a card dropped on the remove spot, with a few seconds to undo
 function dropToTrash(p, s) {
   if (peerUser) return;
+  if (pageLocked(p)) return lockedToast(p);
   const pages = getPagesArray(), gone = pages[p] && pages[p].cards[s]; if (!gone) return;
   pages[p].cards[s] = null; saveActivePages(pages); render();
   const binder = currentUser;
@@ -3369,6 +3443,7 @@ function toggleSelectMode(on) {
   render(); paintSelBar();
 }
 function toggleSel(p, s, el) {
+  if (pageLocked(p)) return lockedToast(p);
   const k = p + '|' + s;
   if (selSlots.has(k)) selSlots.delete(k); else selSlots.add(k);
   if (el) el.classList.toggle('sel', selSlots.has(k));
@@ -3409,6 +3484,8 @@ function deleteSelected() {
 function moveCard(from, to, slide) {
   if (peerUser || (from.p === to.p && from.s === to.s)) return;
   const pages = getPagesArray(), n = cap();
+  if (pages[from.p] && pages[from.p].locked) return lockedToast(from.p);
+  if (pages[to.p] && pages[to.p].locked) return lockedToast(to.p);
   if (!pages[from.p] || !pages[to.p]) return;
   const card = pages[from.p].cards[from.s]; if (!card) return;
   if (!pages[to.p].cards[to.s]) {
@@ -3428,7 +3505,7 @@ function moveCard(from, to, slide) {
   let line;
   if (from.p === to.p && from.s % cols === to.s % cols) { const c = from.s % cols; line = []; for (let k = c; k < n; k += cols) line.push([from.p, k]); }
   else if (from.p === to.p && Math.floor(from.s / cols) === Math.floor(to.s / cols)) { const r = Math.floor(from.s / cols) * cols; line = []; for (let k = r; k < r + cols; k++) line.push([from.p, k]); }
-  else { line = []; pages.forEach((pg, i) => { for (let k = 0; k < n; k++) line.push([i, k]); }); }
+  else { line = []; pages.forEach((pg, i) => { if (!pg.locked || i === from.p || i === to.p) for (let k = 0; k < n; k++) line.push([i, k]); }); }   // locked pages are stepped over
   const at = ([pp, ss]) => pages[pp].cards[ss] || null;
   const a = line.findIndex(([pp, ss]) => pp === from.p && ss === from.s), b = line.findIndex(([pp, ss]) => pp === to.p && ss === to.s);
   const seq = line.map(at); seq.splice(a, 1); seq.splice(b, 0, card);
@@ -3478,6 +3555,7 @@ function inspStatus(st) {
 }
 function delInspect() { 
   if (peerUser) return;
+  if (pageLocked(insp.p)) return lockedToast(insp.p);
   const pages = getPagesArray();
   pages[insp.p].cards[insp.s] = null; 
   saveActivePages(pages); 
@@ -4619,7 +4697,7 @@ function openNeedPage() {
 /* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
 let npDrag = null;
 function npDown(e) {
-  const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag || npLocked) return;
+  const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag || npLocked || npView === 'price') return;
   npDrag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', active: false };
   if (npDrag.touch) npDrag.timer = setTimeout(npBegin, 320);
   addEventListener('pointermove', npMove, { passive: false }); addEventListener('pointerup', npUp); addEventListener('pointercancel', npCancel);
@@ -4755,6 +4833,23 @@ function clearAcquired() {
   saveActivePages(pages); render(); toast(`Cleared ${n} acquired card${n === 1 ? '' : 's'} from the list`);
 }
 document.addEventListener('DOMContentLoaded', () => { const g = $('np-grid'); if (g) g.addEventListener('click', npTap); });
+// Second view: the same cards grouped by price, cheapest first (drag to reorder only works in Priority)
+const NP_VIEW_KEY = 'cardBinder.needView';
+let npView = (() => { try { return localStorage.getItem(NP_VIEW_KEY) === 'price' ? 'price' : 'priority'; } catch (e) { return 'priority'; } })();
+function setNeedView(v) { npView = v === 'price' ? 'price' : 'priority'; try { localStorage.setItem(NP_VIEW_KEY, npView); } catch (e) {} renderNeedPage(); $('need-page').scrollTop = 0; }
+const NP_BUCKETS = [[0, 5, '$0 – $5'], [5, 10, '$5 – $10'], [10, 25, '$10 – $25'], [25, 50, '$25 – $50'], [50, 100, '$50 – $100'], [100, 250, '$100 – $250'], [250, Infinity, '$250+']];
+function needByPriceHTML(all) {
+  const price = x => Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : null;
+  const ranked = all.map((x, i) => ({ ...x, rank: i }));
+  const groups = NP_BUCKETS.map(([lo, hi, label]) => ({ label, items: ranked.filter(x => price(x) != null && price(x) >= lo && price(x) < hi) }));
+  groups.push({ label: 'No price', items: ranked.filter(x => price(x) == null) });
+  return groups.filter(g => g.items.length).map(g => {
+    g.items.sort((a, b) => (price(a) ?? 0) - (price(b) ?? 0) || a.rank - b.rank);
+    const need = g.items.filter(x => x.c.status === 'needed'), sum = need.reduce((a, x) => a + (price(x) || 0), 0);
+    return `<div class="np-bucket"><b>${esc(g.label)}</b><span>${need.length} needed${g.items.length > need.length ? ` · ${g.items.length - need.length} acquired` : ''}${sum ? ` · <i>${fmt(sum)}</i>` : ''}</span></div>`
+      + g.items.map(x => needCardHTML(x, x.rank)).join('');
+  }).join('');
+}
 function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; }
 function renderNeedPage() {
   const page = $('need-page'); if (!page || page.hidden || npDrag) return;
@@ -4766,8 +4861,9 @@ function renderNeedPage() {
   $('np-bar').hidden = !got; $('np-bar-text').textContent = `${got} acquired`;
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
-  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : 'Hold and drag to set priority';
-  $('np-grid').innerHTML = all.length ? all.map(needCardHTML).join('')
+  $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
+  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
+  $('np-grid').innerHTML = all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join(''))
     : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
   paintNpSel();
 }
