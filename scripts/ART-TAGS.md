@@ -1,0 +1,26 @@
+# Art tags: status (for picking this up later)
+
+**What it is:** search cards by what's in the artwork ("moon", "beach", "snow"…). A free open-source AI model
+(CLIP, `openai/clip-vit-base-patch16`) looks at each English Pokémon card picture once on GitHub's runner and
+tags it with everyday concepts. No paid AI service or key.
+
+**Where things are**
+- `scripts/build-art-tags.py`: the scanner. Resumable: results go to `prices/art-tags.json`, and each run only
+  does cards not tagged yet (newest first), `--limit N` per run. `--trial N --sheets` = random sample + picture grids.
+- Trial page: `test/art-trial.html` (+ `test/art-trial.json`, 580 random cards), at
+  https://bilbosagggins.github.io/Card-Binder/test/art-trial.html
+- Library note: pin `transformers>=4.40,<5` (v5 changed `get_text_features`). Install torch from the CPU index.
+
+**Settings after the trial**
+- Two views per card (whole card letterboxed + the artwork window), averaged.
+- A tag is kept when its score is 2.3+ standard deviations above that concept's average and it's among the card's
+  top 20 matches; at most 8 tags per card. Noisy words (jobs, colours, drawing styles) are dropped (see `DROP`).
+- Per-concept averages are saved in the output (`stats`) so later runs score new cards the same way.
+- Speed: about 4 cards/second on a standard runner, so ~28,000 English cards ≈ 2 hours (split over runs).
+
+**Status (2026-10-24)**
+- [x] Trial: 580 cards. Snow and beach very accurate, moon good, a few misses on small details.
+- [ ] Waiting on Kyle's verdict on the trial page.
+- [ ] Next: `.github/workflows/art-tags.yml` (daily, `--limit 6000`, caches the model), then an "In the art" search
+      filter in the app (tags matched by word, so "moon" includes "full moon" and "crescent moon"; works offline once
+      the tag file is saved).
