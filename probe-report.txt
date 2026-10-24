@@ -1,14 +1,14 @@
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
 28068 cards in the list, 0 already tagged, doing 300
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 33820.24it/s]
+looked at 291 cards in 122s
 Traceback (most recent call last):
   File "/home/runner/work/Card-Binder/Card-Binder/scripts/build-art-tags.py", line 175, in <module>
     main()
-  File "/home/runner/work/Card-Binder/Card-Binder/scripts/build-art-tags.py", line 104, in main
-    T.append(t / t.norm(dim=-1, keepdim=True))
-                 ^^^^^^
-AttributeError: 'BaseModelOutputWithPooling' object has no attribute 'norm'
+  File "/home/runner/work/Card-Binder/Card-Binder/scripts/build-art-tags.py", line 144, in main
+    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+  File "<frozen os>", line 225, in makedirs
+FileNotFoundError: [Errno 2] No such file or directory: ''
 
-real	0m16.072s
-user	0m8.859s
-sys	0m2.458s
+real	2m21.988s
+user	5m59.824s
+sys	0m16.047s
