@@ -860,7 +860,8 @@
       <!-- Narrow results by rarity (options depend on the game) -->
       <div id="op-rar-row" class="flex items-center gap-2 panel px-3 py-2">
         <span id="rar-label" class="text-xs text-zinc-400 whitespace-nowrap">Rarity:</span>
-        <select id="op-rarity" onchange="if($('q').value.trim() || $('set').value || this.value) search()" class="field !py-1.5 !text-xs w-full">
+        <button type="button" id="rar-btn" onclick="openRarPicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="rar-btn-text" class="truncate text-zinc-400">Any rarity</span><span class="text-zinc-500">▾</span></button>
+        <select id="op-rarity" class="hidden" aria-hidden="true" tabindex="-1">
           <option value="">Any rarity</option>
         </select>
       </div>
@@ -1122,7 +1123,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.47';
+const APP_VERSION = '2026-10-23.51';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1422,11 +1423,11 @@ async function opFillRarities() {
     dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(opRarLabel(r))}</option>`).join('')
       + '<option value="parallel">Parallel / alt art only</option>';
     if (S.game !== 'onepiece') return;
-    dd.value = keep; dd.dataset.ready = 'onepiece';
+    dd.value = keep; dd.dataset.ready = 'onepiece'; paintRarBtn();
   } catch (e) {}
 }
 async function opSearch() {
-  const setVal = $('set').value, box = $('results'), text = $('q').value.trim(), rar = $('op-rarity').value;
+  const setVal = $('set').value, box = $('results'), text = $('q').value.trim(), rars = rarPick(), rar = rars.length;
   // Any one of: words in the box, a set, or a rarity is enough to search
   if (!setVal && !text && !rar) return toast(mode === 'num' ? 'Type a card ID like OP01-001, or choose a set or rarity' : mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
   box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
@@ -1438,7 +1439,7 @@ async function opSearch() {
       const cid = String(r.card_set_id || '').toUpperCase();
       // DON!! cards have no card number; they belong to a set by its id (OP-14)
       if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x))) return false;
-      if (rar && (rar === 'parallel' ? !opParallel(r) : String(r.rarity || '').trim() !== rar)) return false;
+      if (rar && !rars.some(v => v === 'parallel' ? opParallel(r) : String(r.rarity || '').trim() === v)) return false;
       if (!text) return true;
       if (mode === 'num') return cid === idq || cid.startsWith(idq);
       return lc(r.card_name).includes(lc(text)) || (mode === 'set' && cid.includes(text.toUpperCase()));
@@ -1467,7 +1468,7 @@ async function jpList() { return (await loadTcgList('pokemon-jp')) || (await loa
 function setPkLang(l) {
   pkLang = PK_LANGS[l] ? l : 'en'; remember(PK_LANG_KEY, pkLang);
   paintPkLang();
-  const rd = $('op-rarity'); rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; rd.value = '';
+  const rd = $('op-rarity'); rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; rd.value = ''; setRar([]);
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
   $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
@@ -1514,6 +1515,53 @@ function paintSetBtn() {
   t.textContent = o && o.value ? o.textContent.replace(/\s*\((\d+)\)$/, '') : (dd.options[0] ? dd.options[0].textContent : 'Any set');
   t.classList.toggle('text-zinc-400', !(o && o.value));
 }
+/* Rarity filter: pick one or several (the hidden #op-rarity dropdown holds the choices for the current game / list) */
+let RAR = [];
+const rarPick = () => RAR.filter(Boolean);
+function rarOptions() { return [...$('op-rarity').options].filter(o => o.value).map(o => ({ value: o.value, label: o.textContent })); }
+function rarLabel() {
+  const opts = rarOptions(), names = rarPick().map(v => (opts.find(o => o.value === v) || { label: v }).label);
+  const any = ($('op-rarity').options[0] || {}).textContent || 'Any rarity';
+  return !names.length ? any : names.length <= 2 ? names.join(' + ') : `${names[0]} + ${names.length - 1} more`;
+}
+function paintRarBtn() {
+  const opts = rarOptions();
+  if (opts.length) RAR = RAR.filter(v => opts.some(o => o.value === v));      // choices from another game / list drop off
+  const t = $('rar-btn-text'); if (!t) return;
+  t.textContent = rarLabel(); t.classList.toggle('text-zinc-400', !RAR.length);
+}
+function setRar(list) { RAR = [...new Set(list)]; paintRarBtn(); }
+async function openRarPicker() {
+  let opts = rarOptions();
+  if (!opts.length) { $('rar-btn-text').textContent = 'Loading…'; await fillRaritiesNow(); opts = rarOptions(); paintRarBtn(); }
+  if (!opts.length) return toast('Rarities couldn\'t load. Try again in a moment.', 'error');
+  const sealed = mode === 'sealed', on = new Set(rarPick());
+  sheet(`<h2 id="lb-sheet-title">${sealed ? 'Choose product types' : 'Choose rarities'}</h2>
+    <p class="sub" style="margin:.35rem 0 0">Tick as many as you like.</p>
+    <input type="search" class="sp-find" id="rp-find" placeholder="${sealed ? 'Find a type' : 'Find a rarity'}" autocomplete="off">
+    <div class="sp-list" id="rp-list"></div>
+    <div class="lb-row"><button type="button" class="lb-btn" id="rp-done"></button><button type="button" class="lb-btn quiet" id="rp-clear">Clear</button></div>`);
+  $('lb-sheet').querySelector('.lb-card').classList.add('sp-card');
+  const draw = () => {
+    const q = lc($('rp-find').value.trim());
+    $('rp-list').innerHTML = opts.filter(o => !q || lc(o.label).includes(q)).map(o => `<button type="button" class="sp-row" data-v="${esc(o.value)}" data-on="${on.has(o.value) ? 'all' : 'none'}"><span class="sp-box"></span><span style="flex:1;text-align:left">${esc(o.label)}</span></button>`).join('') || '<p class="sub">Nothing matches.</p>';
+    $('rp-done').textContent = on.size ? `Done · ${on.size} ${sealed ? 'type' : 'rarit'}${on.size === 1 ? (sealed ? '' : 'y') : (sealed ? 's' : 'ies')}` : `Done · ${sealed ? 'any type' : 'any rarity'}`;
+  };
+  $('rp-list').onclick = e => { const b = e.target.closest('.sp-row'); if (!b) return; const v = b.dataset.v; on.has(v) ? on.delete(v) : on.add(v); draw(); };
+  $('rp-find').oninput = draw;
+  $('rp-clear').onclick = () => { on.clear(); draw(); };
+  $('rp-done').onclick = () => { closeSheet(); setRar(opts.map(o => o.value).filter(v => on.has(v))); if ($('q').value.trim() || $('set').value || RAR.length) search(); };
+  draw();
+}
+async function fillRaritiesNow() {
+  try {
+    if (mode === 'sealed') return await sealedLoadSets();
+    if (S.game === 'onepiece') return await opFillRarities();
+    if (pkLang === 'ja') return await jpFillRarities();
+    if (pkLang === 'zh') return await zhFillRarities();
+    return await pkFillRarities();
+  } catch (e) {}
+}
 async function openSetPicker() {
   const dd = $('set');
   if (!setGroups().length) { $('set-btn-text').textContent = 'Loading sets…'; await loadSets(); paintSetBtn(); }
@@ -1551,7 +1599,7 @@ async function openSetPicker() {
       dd.prepend(o); dd.value = o.value;
     }
     paintSetBtn();
-    if (dd.value || $('q').value.trim() || $('op-rarity').value) search();
+    if (dd.value || $('q').value.trim() || rarPick().length) search();
   };
   $('sp-list').onclick = e => {
     const b = e.target.closest('.sp-row'); if (!b) return;
@@ -1606,24 +1654,24 @@ async function jpFillRarities() {
   const found = [...new Set(Object.values(L.p).map(e => String(e[4] || '').trim()).filter(Boolean))].sort();
   const keep = dd.value;
   dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
-  dd.value = keep; dd.dataset.ready = 'pokemon-ja';
+  dd.value = keep; dd.dataset.ready = 'pokemon-ja'; paintRarBtn();
 }
 const sameRarity = (a, b) => lc(a).split(/\s+/).sort().join(' ') === lc(b).split(/\s+/).sort().join(' ');   // "Rare Holo" = "Holo Rare"
 async function jpSearch() {
-  const setVal = $('set').value, text = $('q').value.trim(), rar = $('op-rarity').value;
+  const setVal = $('set').value, text = $('q').value.trim(), rar = rarPick();
   const gid = setVal.startsWith('jp:') ? setVal.slice(3) : '';
-  if (!gid && !text && !rar) return toast(mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
+  if (!gid && !text && !rar.length) return toast(mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
   $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching Japanese cards…</div>';
   return listSearch(await jpList(), gid, 'ja', text, rar);
 }
 async function listSearch(L, gid, lang, text, rar, make) {
-  const box = $('results');
+  const box = $('results'), rars = Array.isArray(rar) ? rar : rar ? [rar] : [];
   if (!L) { box.innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the card list. Try again in a moment.</div>'; return; }
   const parsed = mode === 'num' ? parseQ(text) : { name: mode === 'set' ? '' : text, number: '' };
   const q = lc(parsed.name || (mode === 'set' ? text : '')), num = parsed.number, order = gid ? String(gid).split(',') : null;
   const items = Object.entries(L.p).filter(([pid, e]) => {
     if (order && !order.includes(String(e[3]))) return false;
-    if (rar && !sameRarity(String(e[4] || '').trim(), rar)) return false;
+    if (rars.length && !rars.some(v => sameRarity(String(e[4] || '').trim(), v))) return false;
     if (q && !lc(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
@@ -1685,12 +1733,12 @@ async function zhFillRarities() {
   const found = [...new Set(Object.values(L.p).map(e => String(e[4] || '').trim()).filter(Boolean))].sort();
   const keep = dd.value;
   dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
-  dd.value = keep; dd.dataset.ready = 'pokemon-zh';
+  dd.value = keep; dd.dataset.ready = 'pokemon-zh'; paintRarBtn();
 }
 async function zhSearch() {
-  const setVal = $('set').value, text = $('q').value.trim(), rar = $('op-rarity').value;
+  const setVal = $('set').value, text = $('q').value.trim(), rar = rarPick();
   const gid = setVal.startsWith('zh:') ? setVal.slice(3) : '';
-  if (!gid && !text && !rar) return toast(mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
+  if (!gid && !text && !rar.length) return toast(mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
   $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching Chinese cards…</div>';
   const L = await zhList();
   return listSearch(L, gid, 'zh', text, rar, id => cardFromCT(id, L));
@@ -1704,7 +1752,7 @@ function applyGameUI() {
   // Same Rarity picker for both games; its choices are refilled for the binder's game
   const rd = $('op-rarity');
   if (rd.dataset.ready && rd.dataset.ready !== S.game) { rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; }
-  rd.value = '';
+  rd.value = ''; setRar([]);
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
   paintPkLang();
@@ -2471,7 +2519,7 @@ const ptcgCard = c => ({
 function collapseSearch() {
   if (mode === 'custom' || mode === 'coll') return;
   const pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; };
-  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), pick('op-rarity'), S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
+  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), rarPick().length ? rarLabel() : '', S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
   $('s-sum-text').textContent = parts.join(' · ') || 'Search';
   $('s-filters').classList.add('hidden'); $('s-sum').classList.remove('hidden');
 }
@@ -2534,7 +2582,7 @@ async function pkFillRarities() {
   if (S.game !== 'pokemon' || pkLang !== 'en') return;
   const keep = dd.value;
   dd.innerHTML = '<option value="">Any rarity</option>' + list.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
-  dd.value = keep; dd.dataset.ready = 'pokemon';
+  dd.value = keep; dd.dataset.ready = 'pokemon'; paintRarBtn();
 }
 async function pkCardsOfRarity(lang, rar) {
   const k = lang + '|' + rar;
@@ -2544,13 +2592,23 @@ async function pkCardsOfRarity(lang, rar) {
   }
   return pkRarityCards[k];
 }
+// every card with any of these rarities (in the order TCGdex lists them, oldest first)
+async function pkCardsOfRarities(lang, rars) {
+  const lists = await Promise.all(rars.map(r => pkCardsOfRarity(lang, r)));
+  if (lists.length === 1) return lists[0];
+  const seen = new Set(), out = [];
+  lists.flat().forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); out.push(c); } });
+  const setOrder = c => String(c.id).slice(0, String(c.id).lastIndexOf('-'));
+  const firstIdx = new Map(); lists.forEach(l => l.forEach((c, i) => { const k = setOrder(c); if (!firstIdx.has(k) || i < firstIdx.get(k)) firstIdx.set(k, i); }));
+  return out.sort((a, b) => (firstIdx.get(setOrder(a)) - firstIdx.get(setOrder(b))) || String(a.localId).localeCompare(String(b.localId), undefined, { numeric: true }));
+}
 async function search() {
   if (mode === 'sealed') return sealedSearch();
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
   if (pkLang === 'zh') return zhSearch();
   if ($('set').value.startsWith('tcg:')) {   // a TCGplayer set: its exact cards and prices
-    const text = $('q').value.trim(), rar = $('op-rarity').value;
+    const text = $('q').value.trim(), rar = rarPick();
     $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
     return listSearch(await loadTcgList('pokemon'), $('set').value.slice(4), 'en', text, rar);
   }
@@ -2558,7 +2616,7 @@ async function search() {
   const parsed = mode === 'name' ? { name: text, number: '' } : parseQ(text);
   const prefix = mode === 'set' && /^[a-z]{1,3}\d*$/i.test(text) ? lc(text) : '';
   const name = prefix ? '' : parsed.name, number = prefix ? '' : parsed.number;
-  const rar = $('op-rarity').value;
+  const rars = rarPick(), rar = rars.length;
   if (mode === 'set' && !setVal && !rar) return toast('Choose a set or a rarity', 'error');
   if (!setVal && !name && !rar) return toast('Type a card name, or choose a set or rarity', 'error');
   box.innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
@@ -2566,18 +2624,18 @@ async function search() {
     let meta = null, items;
     if (setVal.startsWith('ptcg:')) {
       const r = (await fetchJSON(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent('set.id:' + setVal.slice(5))}&pageSize=250&select=id,name,number,rarity,images,set,tcgplayer`, 15000)).data || [];
-      items = r.filter(c => !rar || lc(c.rarity) === lc(rar)).sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true })).map(c => ({ id: c.id, name: c.name, localId: c.number, raw: c }));
+      items = r.filter(c => !rar || rars.some(v => lc(c.rarity) === lc(v))).sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true })).map(c => ({ id: c.id, name: c.name, localId: c.number, raw: c }));
     } else if (setVal) {
       meta = await fetchJSON(`${API}${lang}/sets/${encodeURIComponent(setVal)}`, 12000); items = meta.cards || [];
     } else if (name) {
       const l = await fetchJSON(`${API}${lang}/cards?name=${encodeURIComponent(name)}`, 10000);
       items = Array.isArray(l) ? l : [];
     } else {
-      items = (await pkCardsOfRarity(lang, rar)).slice().reverse();   // rarity only: newest sets first
+      items = (await pkCardsOfRarities(lang, rars)).slice().reverse();   // rarity only: newest sets first
     }
     // A rarity narrows a set or name search to the cards TCGdex lists for that rarity
     if (rar && !setVal.startsWith('ptcg:') && (setVal || name)) {
-      const ids = new Set((await pkCardsOfRarity(lang, rar)).map(c => c.id));
+      const ids = new Set((await pkCardsOfRarities(lang, rars)).map(c => c.id));
       items = items.filter(c => ids.has(c.id));
     }
     items = items.filter(c => !isPocket(c)
@@ -4057,10 +4115,11 @@ async function sealedLoadSets() {
     rd.innerHTML = '<option value="">Any type</option>' + SEALED_ORDER.filter(t => have.has(t)).map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
     rd.dataset.ready = 'sealed:' + list;
   }
+  paintRarBtn();
 }
 async function sealedSearch() {
   const list = sealedListName(); if (!list) return toast('There\'s no Chinese sealed product list yet. Switch to English or Japanese.', 'error');
-  const setVal = $('set').value, text = $('q').value.trim(), type = $('op-rarity').value;
+  const setVal = $('set').value, text = $('q').value.trim(), types = rarPick(), type = types.length;
   const ids = setVal.startsWith('sd:') ? setVal.slice(3).split(',') : null;
   if (!ids && !text && !type) return toast('Type a product name, or choose a set or type', 'error');
   $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching sealed product…</div>';
@@ -4068,7 +4127,7 @@ async function sealedSearch() {
   if (!L) { $('results').innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the sealed list. Try again in a moment.</div>'; return; }
   const words = lc(text).split(/\s+/).filter(Boolean);
   const hay = e => lc(e[1] + ' ' + (L.groups[e[2]] || ''));
-  const items = Object.entries(L.p).filter(([, e]) => (!ids || ids.includes(String(e[2]))) && (!type || e[3] === type) && words.every(w => hay(e).includes(w)))
+  const items = Object.entries(L.p).filter(([, e]) => (!ids || ids.includes(String(e[2]))) && (!type || types.includes(e[3])) && words.every(w => hay(e).includes(w)))
     .sort((a, b) => (ids ? ids.indexOf(String(a[1][2])) - ids.indexOf(String(b[1][2])) : b[1][2] - a[1][2]) || SEALED_ORDER.indexOf(a[1][3]) - SEALED_ORDER.indexOf(b[1][3]) || String(a[1][1]).localeCompare(String(b[1][1])));
   if (!items.length) { $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching sealed product found.</div>'; return; }
   pending = { items, shown: 0, make: async ([pid]) => cardFromSealed(pid, L, list) };
