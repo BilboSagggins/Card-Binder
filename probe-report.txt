@@ -1,58 +1,15 @@
-videos kept 21 errors []
-2026-10-04 onepiece    preview | ONE PIECE CARD GAME Extra Booster: -ONE PIECE Heroines Edition vol. 2- [EB-05] Trailer 3 | Bandai Card Games (official)
-2026-09-24 onepiece    preview | ONE PIECE CARD GAME BOOSTER: -THE DOMINANCE OF GOD- [OP-18] Trailer 2 | Bandai Card Games (official)
-2026-09-24 onepiece    preview | ONE PIECE CARD GAME Extra Booster: -ONE PIECE Heroines Edition vol. 2- [EB-05] Trailer 2 | Bandai Card Games (official)
-2026-09-11 fusionworld preview | DRAGON BALL SUPER CARD GAME FUSION WORLD Booster Pack -BRIGHTNESS OF HOPE- [FB11] Official Trailer | Bandai Card Games (official)
-2026-08-28 onepiece    preview | ONE PIECE CARD GAME OP-17 New Leader Battle 3 | Bandai Card Games (official)
-2026-10-10 naruto      preview | 【Official】NARUTO CARD GAME Special Animated Trailer | NARUTO CARD GAME (official)
-2026-07-29 naruto      preview | 【Official】 NARUTO CARD GAME Overview Trailer | NARUTO CARD GAME (official)
-2026-07-29 naruto      preview | 【Official】 NARUTO CARD GAME First Look Trailer | NARUTO CARD GAME (official)
-2026-10-23 riftbound   news    | The stage is Yours. #RBRadiance is available TODAY! | Riftbound (official)
-2026-10-21 riftbound   preview | Bring the Heat: Riftbound x K/DA Couture Collection Cards, Featuring Art by Fortiche | Riftbound (official)
-2026-10-20 riftbound   news    | Would YOU be able to guess this card in 60 seconds? #Riftbound | Riftbound (official)
-2026-10-15 riftbound   news    | Never trust a Yordle with the aux #RBRadiance | Riftbound (official)
-2026-10-15 riftbound   news    | Riftbound's NEW Mechanic: Show Off #RBRadiance | Riftbound (official)
-2026-10-14 riftbound   news    | Riftbound's NEW Mechanic: Disarm #RBRadiance | Riftbound (official)
-2026-10-13 riftbound   news    | Riftbound's NEW Mechanic: Deploy #RBRadiance | Riftbound (official)
-2026-10-09 riftbound   news    | A Festival of Brilliance Begins in Radiance! | Riftbound (official)
-2026-10-09 riftbound   news    | I am not in danger. I am the danger. 🪰 #RBRadiance | Riftbound (official)
-2026-10-09 riftbound   preview | Just one day left of #RBRadiance previews! | Riftbound (official)
-2026-10-09 riftbound   news    | Not quite our tempo, but good enough to make a raucous. #RBRadiance | Riftbound (official)
-2026-10-08 riftbound   news    | There's something fishy about these top decks. #RBRadiance | Riftbound (official)
-2026-10-06 riftbound   news    | Ekko, The Boy Who Shattered Time is back in #RBRadiance. | Riftbound (official)
---- Bandai Card Games (official): channel title Official Bandai Card Games Channel
-   skip 2026-10-22 DIGIMON CARD BATTLE - CHIVALROUS XIII Royal Knights Battle!
-   skip 2026-10-15 DIGICA TIMES | Oct. 2026
-   KEEP 2026-10-04 ONE PIECE CARD GAME Extra Booster: -ONE PIECE Heroines Edition vol. 2- [EB-05] Trailer 3
-   skip 2026-10-01 DIGIMON CARD BATTLE - CHIVALROUS XIII New Booster First look Battle!
-   KEEP 2026-09-24 ONE PIECE CARD GAME BOOSTER: -THE DOMINANCE OF GOD- [OP-18] Trailer 2
-   KEEP 2026-09-24 ONE PIECE CARD GAME Extra Booster: -ONE PIECE Heroines Edition vol. 2- [EB-05] Trailer 2
-   skip 2026-09-24 Yuuki's Digimon News! | Sep. 24, 2026
-   skip 2026-09-18 [EX-13] Royal Knights Deck Buffs! Part. 2 | Digimon Card Battle
-   skip 2026-09-17 DIGIMON CARD GAME Extra Booster CHIVALROUS XIII [EX-13] Trailer
-   KEEP 2026-09-11 DRAGON BALL SUPER CARD GAME FUSION WORLD Booster Pack -BRIGHTNESS OF HOPE- [FB11] Official Trailer
-   skip 2026-09-10 [EX-13] Royal Knights Deck Buffs! Part. 1 | Digimon Card Battle
-   skip 2026-09-03 Digimon Card Battle - DIGICA QUIZ DELIVERY - TIMELESS BONDS
-   skip 2026-08-30 Pirates Party 2on2 Battle Rules!
-   KEEP 2026-08-28 ONE PIECE CARD GAME OP-17 New Leader Battle 3
-   skip 2026-08-27 DIGIMON CARD BATTLE - TIMELESS BONDS Climax Battle!!
---- NARUTO CARD GAME (official): channel title 【OFFICIAL】NARUTO CARD GAME English Version
-   KEEP 2026-10-10 【Official】NARUTO CARD GAME Special Animated Trailer
-   KEEP 2026-07-29 【Official】 NARUTO CARD GAME Overview Trailer
-   KEEP 2026-07-29 【Official】 NARUTO CARD GAME First Look Trailer
---- Riftbound (official): channel title Riftbound
-   KEEP 2026-10-23 The stage is Yours. #RBRadiance is available TODAY!
-   KEEP 2026-10-21 Bring the Heat: Riftbound x K/DA Couture Collection Cards, Featuring Art by Fortiche
-   KEEP 2026-10-20 Would YOU be able to guess this card in 60 seconds? #Riftbound
-   KEEP 2026-10-15 Never trust a Yordle with the aux #RBRadiance
-   KEEP 2026-10-15 Riftbound's NEW Mechanic: Show Off #RBRadiance
-   KEEP 2026-10-14 Riftbound's NEW Mechanic: Disarm #RBRadiance
-   KEEP 2026-10-13 Riftbound's NEW Mechanic: Deploy #RBRadiance
-   KEEP 2026-10-09 A Festival of Brilliance Begins in Radiance!
-   KEEP 2026-10-09 I am not in danger. I am the danger. 🪰 #RBRadiance
-   KEEP 2026-10-09 Just one day left of #RBRadiance previews!
-   KEEP 2026-10-09 Not quite our tempo, but good enough to make a raucous. #RBRadiance
-   KEEP 2026-10-08 There's something fishy about these top decks. #RBRadiance
-   skip 2026-10-08 We’re in the final days of #RBRadiance previews!
-   skip 2026-10-07 The final tracks are making their way onto #RBRadiance!
-   KEEP 2026-10-06 Ekko, The Boy Who Shattered Time is back in #RBRadiance.
+200 ACAO=* type=image/jpeg len=173318 cache=None | https://tcgplayer-cdn.tcgplayer.com/product/200353_in_1000x1000.jpg
+200 ACAO=* type=image/jpeg len=27869 cache=None | https://tcgplayer-cdn.tcgplayer.com/product/200353_200w.jpg
+200 ACAO=None type=image/jpeg len=83386 cache=max-age=31536000,public | https://product-images.tcgplayer.com/fit-in/437x610/200353.jpg
+200 ACAO=* type=image/webp len=118626 cache=max-age=31536000 | https://assets.tcgdex.net/en/sm/sm12/143/high.webp
+200 ACAO=* type=image/webp len=29060 cache=max-age=31536000 | https://assets.tcgdex.net/en/sm/sm12/143/low.webp
+200 ACAO=* type=image/png len=754402 cache=public, max-age=31536000 | https://images.pokemontcg.io/sm12/143_hires.png
+200 ACAO=* type=image/png len=186855 cache=public, max-age=31536000 | https://images.pokemontcg.io/sm12/143.png
+200 ACAO=* type=image/jpeg len=8858 cache=public, max-age=300 | https://i.ytimg.com/vi/x0rJ5v2yDps/hqdefault.jpg
+200 ACAO=None type=image/png len=153213 cache=None | https://en.onepiece-cardgame.com/images/cardlist/card/OP01-001.png
+200 ACAO=None type=image/jpeg len=423652 cache=max-age=1800 | https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg
+ERR HTTP Error 403: Forbidden | https://cardtrader.com/uploads/blueprints/image/12345/show_x.jpg
+200 ACAO=* type=text/plain; charset=utf-8 len=1700514 cache=max-age=300 | https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/pokemon.json
+200 ACAO=None type=text/javascript len=407279 cache=max-age=31536000 | https://cdn.tailwindcss.com/
+200 ACAO=* type=text/javascript; charset=UTF-8 len=28949 cache=public, max-age=31536000 | https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js
+200 ACAO=* type=text/css; charset=utf-8 len=2632 cache=private, max-age=86400, stale-while-revalidate=604800 | https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap
