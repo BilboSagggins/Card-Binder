@@ -854,6 +854,11 @@
           <option value="">Any rarity</option>
         </select>
       </div>
+      <!-- Narrow results by market price, in the same ranges as the Need List -->
+      <div id="price-row" class="flex items-center gap-2 panel px-3 py-2">
+        <span class="text-xs text-zinc-400 whitespace-nowrap">Price:</span>
+        <button type="button" id="price-btn" onclick="openPriceRangePicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="price-btn-text" class="truncate text-zinc-400">Any price</span><span class="text-zinc-500">▾</span></button>
+      </div>
       </div>
       <div class="flex items-center justify-between panel px-3 py-2">
         <span class="text-xs text-zinc-400">Add selected card as:</span>
@@ -1101,7 +1106,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.58';
+const APP_VERSION = '2026-10-23.62';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1418,6 +1423,7 @@ async function opSearch() {
       // DON!! cards have no card number; they belong to a set by its id (OP-14)
       if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x))) return false;
       if (rar && !rars.some(v => v === 'parallel' ? opParallel(r) : String(r.rarity || '').trim() === v)) return false;
+      if (!priceOk(r.market_price)) return false;
       if (!text) return true;
       if (mode === 'num') return cid === idq || cid.startsWith(idq);
       return lc(r.card_name).includes(lc(text)) || (mode === 'set' && cid.includes(text.toUpperCase()));
@@ -1529,6 +1535,33 @@ async function openRarPicker() {
   $('rp-find').oninput = draw;
   $('rp-clear').onclick = () => { on.clear(); draw(); };
   $('rp-done').onclick = () => { closeSheet(); setRar(opts.map(o => o.value).filter(v => on.has(v))); if ($('q').value.trim() || $('set').value || RAR.length) search(); };
+  draw();
+}
+/* Price filter for search results: the Need List's ranges ($0–5 … $250+), several at once. Cards without a price are left out while it's on. */
+const PRICE_RANGES = [[0, 5, '$0 – $5'], [5, 10, '$5 – $10'], [10, 25, '$10 – $25'], [25, 50, '$25 – $50'], [50, 100, '$50 – $100'], [100, 250, '$100 – $250'], [250, Infinity, '$250+']];
+let PRICE_SEL = [];
+const priceOk = p => !PRICE_SEL.length || (p != null && Number.isFinite(+p) && PRICE_SEL.some(i => +p >= PRICE_RANGES[i][0] && +p < PRICE_RANGES[i][1]));
+function priceLabel() {
+  const r = [...PRICE_SEL].sort((a, b) => a - b);
+  if (!r.length) return 'Any price';
+  const runs = []; r.forEach(i => { const last = runs[runs.length - 1]; if (last && last[1] === i - 1) last[1] = i; else runs.push([i, i]); });   // neighbours join up: $5 – $25
+  return runs.map(([a, b]) => b === PRICE_RANGES.length - 1 ? `$${PRICE_RANGES[a][0]}+` : `$${PRICE_RANGES[a][0]} – $${PRICE_RANGES[b][1]}`).join(', ');
+}
+function paintPriceBtn() { const t = $('price-btn-text'); if (!t) return; t.textContent = priceLabel(); t.classList.toggle('text-zinc-400', !PRICE_SEL.length); }
+function openPriceRangePicker() {
+  const on = new Set(PRICE_SEL);
+  sheet(`<h2 id="lb-sheet-title">Choose price ranges</h2>
+    <p class="sub" style="margin:.35rem 0 0">TCGplayer market price. Tick as many as you like.</p>
+    <div class="sp-list" id="pp-list" style="margin-top:.7rem"></div>
+    <div class="lb-row"><button type="button" class="lb-btn" id="pp-done"></button><button type="button" class="lb-btn quiet" id="pp-clear">Clear</button></div>`);
+  $('lb-sheet').querySelector('.lb-card').classList.add('sp-card');
+  const draw = () => {
+    $('pp-list').innerHTML = PRICE_RANGES.map(([, , l], i) => `<button type="button" class="sp-row" data-i="${i}" data-on="${on.has(i) ? 'all' : 'none'}"><span class="sp-box"></span><span style="flex:1;text-align:left">${esc(l)}</span></button>`).join('');
+    $('pp-done').textContent = on.size ? `Done · ${on.size} range${on.size === 1 ? '' : 's'}` : 'Done · any price';
+  };
+  $('pp-list').onclick = e => { const b = e.target.closest('.sp-row'); if (!b) return; const i = +b.dataset.i; on.has(i) ? on.delete(i) : on.add(i); draw(); };
+  $('pp-clear').onclick = () => { on.clear(); draw(); };
+  $('pp-done').onclick = () => { closeSheet(); PRICE_SEL = [...on].sort((a, b) => a - b); paintPriceBtn(); if ($('q').value.trim() || $('set').value || rarPick().length) search(); };
   draw();
 }
 async function fillRaritiesNow() {
@@ -1650,6 +1683,7 @@ async function listSearch(L, gid, lang, text, rar, make) {
   const items = Object.entries(L.p).filter(([pid, e]) => {
     if (order && !order.includes(String(e[3]))) return false;
     if (rars.length && !rars.some(v => sameRarity(String(e[4] || '').trim(), v))) return false;
+    if (!priceOk(e[0])) return false;
     if (q && !lc(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
@@ -2498,7 +2532,7 @@ const ptcgCard = c => ({
 function collapseSearch() {
   if (mode === 'custom' || mode === 'coll') return;
   const pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; };
-  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), rarPick().length ? rarLabel() : '', S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
+  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), rarPick().length ? rarLabel() : '', PRICE_SEL.length ? priceLabel() : '', S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
   $('s-sum-text').textContent = parts.join(' · ') || 'Search';
   $('s-filters').classList.add('hidden'); $('s-sum').classList.remove('hidden');
 }
@@ -2658,9 +2692,27 @@ async function altArtExtras(name, number) {
 }
 
 async function loadBatch(append) {
-  const batch = pending.items.slice(pending.shown, pending.shown + PAGE); pending.shown += batch.length;
-  const cards = await pool(batch, 8, pending.make);
-  renderResults(cards, append); fillMissing(cards);
+  if (!PRICE_SEL.length) {
+    const batch = pending.items.slice(pending.shown, pending.shown + PAGE); pending.shown += batch.length;
+    const cards = await pool(batch, 8, pending.make);
+    renderResults(cards, append); fillMissing(cards); return;
+  }
+  const run = pending, kept = [];
+  for (let tries = 0; tries < 8 && kept.length < PAGE && run.shown < run.items.length; tries++) {
+    const batch = run.items.slice(run.shown, run.shown + PAGE); run.shown += batch.length;
+    const cards = (await pool(batch, 8, run.make)).filter(Boolean);
+    await pool(cards.filter(c => c.price == null && c.source !== 'ptcg' && c.game !== 'onepiece' && !c.sealed), 4, async c => {   // price first, so it can be filtered
+      const r = await tcgByNameNumber(c).catch(() => null); if (r) { c.price = r.price; if (r.url && !c.url) c.url = r.url; }
+    });
+    kept.push(...cards.filter(c => priceOk(c.price)));
+    if (pending !== run) return;        // a newer search started
+  }
+  const hasCards = !!$('results').querySelector('div.panel');
+  if (!kept.length && (!append || !hasCards)) {
+    $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No cards in ${esc(priceLabel())}${run.shown < run.items.length ? ' among the first ' + run.shown + ' results. <button class="btn-p mt-3" onclick="showMore(this)">Keep looking</button>' : '.'}</div>`;
+    return;
+  }
+  renderResults(kept, append && hasCards);
 }
 
 async function showMore(btn) {
@@ -4163,7 +4215,7 @@ async function sealedSearch() {
   if (!L) { $('results').innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the sealed list. Try again in a moment.</div>'; return; }
   const words = lc(text).split(/\s+/).filter(Boolean);
   const hay = e => lc(e[1] + ' ' + (L.groups[e[2]] || ''));
-  const items = Object.entries(L.p).filter(([, e]) => (!ids || ids.includes(String(e[2]))) && (!type || types.includes(e[3])) && words.every(w => hay(e).includes(w)))
+  const items = Object.entries(L.p).filter(([, e]) => (!ids || ids.includes(String(e[2]))) && (!type || types.includes(e[3])) && priceOk(e[0]) && words.every(w => hay(e).includes(w)))
     .sort((a, b) => (ids ? ids.indexOf(String(a[1][2])) - ids.indexOf(String(b[1][2])) : b[1][2] - a[1][2]) || SEALED_ORDER.indexOf(a[1][3]) - SEALED_ORDER.indexOf(b[1][3]) || String(a[1][1]).localeCompare(String(b[1][1])));
   if (!items.length) { $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching sealed product found.</div>'; return; }
   pending = { items, shown: 0, make: async ([pid]) => cardFromSealed(pid, L, list) };
