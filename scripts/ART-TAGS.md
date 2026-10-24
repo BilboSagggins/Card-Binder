@@ -20,7 +20,8 @@ tags it with everyday concepts. No paid AI service or key.
 
 **Status (2026-10-24)**
 - [x] Trial: 580 cards. Snow and beach very accurate, moon good, a few misses on small details.
-- [ ] Waiting on Kyle's verdict on the trial page.
-- [ ] Next: `.github/workflows/art-tags.yml` (daily, `--limit 6000`, caches the model), then an "In the art" search
-      filter in the app (tags matched by word, so "moon" includes "full moon" and "crescent moon"; works offline once
-      the tag file is saved).
+- [x] Kyle approved (2026-10-24). Full scan: `.github/workflows/art-tags.yml`, every 3 hours, 9,000 new cards per run
+      (newest first) until all ~28,000 are done, then only new cards. Progress = `done` / `total` in `prices/art-tags.json`.
+- [x] App: "🎨 In the art" filter in card search (English Pokémon), word match so "moon" includes "full moon" and
+      "crescent moon"; the tag file is saved for offline.
+- [ ] Later, if wanted: Japanese / One Piece cards, more words, looser matching.
