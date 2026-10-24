@@ -133,6 +133,17 @@
   .np.locked .np-card:active { transform: scale(.97); }
   .np-card.got .np-img img { filter: grayscale(1) brightness(.6); }
   .np-card.got { background: #121214; border-color: #1f1f23; }
+  /* hold to select (locked list): selected cards and the running total of what to bring */
+  .np-card.sel { border-color: #818cf8; box-shadow: 0 0 0 2px #6366f1; background: #1e1b4b; }
+  .np-card.sel .np-img::after { content: '✓'; position: absolute; top: .3rem; right: .3rem; z-index: 3; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #6366f1; color: #fff; font: 900 .85rem/1.5rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .np-card.holding { transform: scale(.96); transition: transform .3s; }
+  .np-selbar { position: fixed; left: .7rem; right: .7rem; bottom: calc(.7rem + env(safe-area-inset-bottom)); z-index: 40; max-width: 36rem; margin: 0 auto; display: flex; align-items: center; gap: .45rem; padding: .6rem .6rem .6rem .9rem; border-radius: 14px; background: rgba(30,27,75,.97); border: 1px solid #6366f1; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+  .np-selbar[hidden] { display: none; }
+  .np-sel-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+  .np-sel-t b { font: 900 1.05rem/1 Inter, system-ui, sans-serif; color: #fff; }
+  .np-sel-t span { font: 600 .64rem/1.25 Inter, system-ui, sans-serif; color: #c7d2fe; }
+  .np-selbar button { appearance: none; flex: none; border: 1px solid #6366f1; background: #312e81; color: #e0e7ff; border-radius: 10px; padding: .55rem .65rem; font: 800 .7rem/1 Inter, system-ui, sans-serif; }
+  .np.selecting .np-grid { padding-bottom: 6rem; }
   .np-card.got .np-name, .np-card.got .np-meta span, .np-card.got .np-conds span, .np-card.got .np-conds b, .np-card.got .np-conds b.nm { color: #52525b; }
   .np-card.got .np-name { text-decoration: line-through; text-decoration-color: #3f3f46; }
   .np-card.got .np-conds { background: #0c0c0e; border-color: #1f1f23; opacity: .4; filter: grayscale(1); }
@@ -1046,6 +1057,10 @@
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
   <div id="np-grid" class="np-grid"></div>
+  <div id="np-selbar" class="np-selbar" hidden>
+    <div class="np-sel-t"><b id="np-sel-total"></b><span id="np-sel-sub"></span></div>
+    <button type="button" onclick="npSelectAll()">All needed</button><button type="button" onclick="npClearSel()">Clear</button>
+  </div>
 </div>
 <div id="drag-trash" aria-hidden="true"><span style="font-size:1.1rem">🗑️</span><span>Drop here to remove</span></div>
 <div id="toasts" class="fixed bottom-4 right-4 flex flex-col gap-2 pointer-events-none" style="z-index:95"></div>
@@ -1107,7 +1122,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.43';
+const APP_VERSION = '2026-10-23.47';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4794,10 +4809,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Locked: no reordering; tapping a card stamps it Acquired (Owned in the binder), tapping again takes it back
 const NP_LOCK_KEY = 'cardBinder.needLocked';
 let npLocked = (() => { try { return localStorage.getItem(NP_LOCK_KEY) !== '0'; } catch (e) { return true; } })();
-function toggleNeedLock() { npLocked = !npLocked; try { localStorage.setItem(NP_LOCK_KEY, npLocked ? '1' : '0'); } catch (e) {} renderNeedPage(); }
+function toggleNeedLock() { npLocked = !npLocked; npSel.clear(); try { localStorage.setItem(NP_LOCK_KEY, npLocked ? '1' : '0'); } catch (e) {} renderNeedPage(); }
 function npTap(e) {
   if (!npLocked) return;
   const el = e.target.closest('#np-grid .np-card'); if (!el) return;
+  if (npHeld) { npHeld = false; e.preventDefault(); return; }          // that tap was the end of a hold
+  if (npSel.size) { if (!e.target.closest('a')) { e.preventDefault(); toggleNpSel(el.dataset.key); } return; }   // selecting: taps add / remove
   const pages = getPagesArray(), p = +el.dataset.p, s = +el.dataset.s, c = pages[p] && pages[p].cards[s]; if (!c) return;
   if (c.status === 'needed') {
     pages[p].cards[s] = { ...c, status: 'owned', acquired: Date.now() };
@@ -4809,6 +4826,46 @@ function npTap(e) {
   }
   saveActivePages(pages); render();
 }
+/* Locked list: hold a card to select it (then tap more), and see what the selected cards are worth in total */
+let npSel = new Set(), npHold = null, npHeld = false;
+function npHoldDown(e) {
+  if (!npLocked || e.button > 0 || e.target.closest('a')) return;
+  const el = e.target.closest('#np-grid .np-card'); if (!el) return;
+  npHoldEnd();
+  el.classList.add('holding');
+  npHold = { el, id: e.pointerId, x: e.clientX, y: e.clientY, timer: setTimeout(() => {
+    const h = npHold; if (!h || h.el !== el) return;
+    h.fired = true; npHeld = true; el.classList.remove('holding');
+    toggleNpSel(el.dataset.key); if (navigator.vibrate) navigator.vibrate(18);
+  }, 450) };
+  addEventListener('pointermove', npHoldMove); addEventListener('pointerup', npHoldEnd); addEventListener('pointercancel', npHoldEnd);
+}
+function npHoldMove(e) { const h = npHold; if (h && !h.fired && e.pointerId === h.id && Math.hypot(e.clientX - h.x, e.clientY - h.y) > 10) npHoldEnd(); }
+function npHoldEnd() {
+  const h = npHold; if (!h) return; npHold = null;
+  clearTimeout(h.timer); h.el.classList.remove('holding');
+  if (h.fired) setTimeout(() => { npHeld = false; }, 350);    // the click that may follow a hold is ignored, then taps work again
+  removeEventListener('pointermove', npHoldMove); removeEventListener('pointerup', npHoldEnd); removeEventListener('pointercancel', npHoldEnd);
+}
+function toggleNpSel(key) { if (!key) return; npSel.has(key) ? npSel.delete(key) : npSel.add(key); paintNpSel(); }
+function npSelectAll() { needCards().filter(x => x.c.status === 'needed').forEach(x => npSel.add(x.key)); paintNpSel(); }
+function npClearSel() { npSel.clear(); paintNpSel(); }
+function paintNpSel() {
+  const all = needCards(), have = new Set(all.map(x => x.key));
+  [...npSel].forEach(k => { if (!have.has(k)) npSel.delete(k); });      // cards that left the list
+  document.querySelectorAll('#np-grid .np-card').forEach(el => el.classList.toggle('sel', npSel.has(el.dataset.key)));
+  const sel = all.filter(x => npSel.has(x.key)), priced = sel.filter(x => Number.isFinite(+x.c.price) && x.c.price != null);
+  const nm = priced.reduce((a, x) => a + +x.c.price, 0), lp = nm * CONDITIONS[1][1];
+  $('np-selbar').hidden = !sel.length; $('need-page').classList.toggle('selecting', !!sel.length);
+  if (!sel.length) return;
+  $('np-sel-total').textContent = `${fmt(nm)} for ${sel.length} card${sel.length === 1 ? '' : 's'}`;
+  $('np-sel-sub').textContent = `NM market · about ${fmt(lp)} if LP${priced.length < sel.length ? ` · ${sel.length - priced.length} without a price` : ''} · tap cards to add or remove`;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const g = $('np-grid'); if (!g) return;
+  g.addEventListener('pointerdown', npHoldDown);
+  g.addEventListener('contextmenu', e => { if (npLocked && e.target.closest('.np-card')) e.preventDefault(); });
+});
 // Take acquired cards off the list (they stay Owned in the binder)
 function clearAcquired() {
   const pages = getPagesArray(); let n = 0;
@@ -4817,7 +4874,7 @@ function clearAcquired() {
   saveActivePages(pages); render(); toast(`Cleared ${n} acquired card${n === 1 ? '' : 's'} from the list`);
 }
 document.addEventListener('DOMContentLoaded', () => { const g = $('np-grid'); if (g) g.addEventListener('click', npTap); });
-function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; }
+function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; }
 function renderNeedPage() {
   const page = $('need-page'); if (!page || page.hidden || npDrag) return;
   const all = needCards(), list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
@@ -4828,9 +4885,10 @@ function renderNeedPage() {
   $('np-bar').hidden = !got; $('np-bar-text').textContent = `${got} acquired`;
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
-  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it' : 'Hold and drag to set priority';
+  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : 'Hold and drag to set priority';
   $('np-grid').innerHTML = all.length ? all.map(needCardHTML).join('')
     : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
+  paintNpSel();
 }
 
 // Export the Need List as it looks now: your priority order, condition prices, and Acquired stamps
