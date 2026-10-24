@@ -890,6 +890,12 @@
         <span class="text-xs text-zinc-400 whitespace-nowrap">Price:</span>
         <button type="button" id="price-btn" onclick="openPriceRangePicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="price-btn-text" class="truncate text-zinc-400">Any price</span><span class="text-zinc-500">▾</span></button>
       </div>
+      <!-- What's in the card's picture (English Pokémon): tags made by the art scan job, prices/art-tags.json -->
+      <div id="art-row" class="flex items-center gap-2 panel px-3 py-2">
+        <span class="text-xs text-zinc-400 whitespace-nowrap">🎨 In the art:</span>
+        <input id="art-q" type="text" list="art-words" autocomplete="off" onfocus="loadArtTags()" onkeydown="if(event.key==='Enter')search()" class="field !py-1.5 !text-xs w-full" placeholder="e.g. moon, beach, snow, cake">
+        <datalist id="art-words"></datalist>
+      </div>
       </div>
       <div class="flex items-center justify-between panel px-3 py-2">
         <span class="text-xs text-zinc-400">Add selected card as:</span>
@@ -1157,7 +1163,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.69';
+const APP_VERSION = '2026-10-24.72';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1509,9 +1515,11 @@ function setPkLang(l) {
   $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
   if (mode !== 'custom' && mode !== 'coll') loadSets();
 }
+function paintArtRow() { const r = $('art-row'); if (r) r.classList.toggle('hidden', !(S.game === 'pokemon' && pkLang === 'en' && mode !== 'sealed')); }
 function paintPkLang() {
   const box = $('pk-lang'); if (!box) return;
   box.classList.toggle('hidden', S.game !== 'pokemon');
+  paintArtRow();
   ['en', 'ja', 'zh'].forEach(k => $('pl-' + k).className = `px-3 py-1 text-xs font-semibold rounded-md ${k === pkLang ? ON : OFF}`);
 }
 // A set dropdown from a price list: TCGplayer's own sets, newest first, grouped by release year
@@ -1612,7 +1620,7 @@ function openPriceRangePicker() {
   };
   $('pp-list').onclick = e => { const b = e.target.closest('.sp-row'); if (!b) return; const i = +b.dataset.i; on.has(i) ? on.delete(i) : on.add(i); draw(); };
   $('pp-clear').onclick = () => { on.clear(); draw(); };
-  $('pp-done').onclick = () => { closeSheet(); PRICE_SEL = [...on].sort((a, b) => a - b); paintPriceBtn(); if ($('q').value.trim() || $('set').value || rarPick().length) search(); };
+  $('pp-done').onclick = () => { closeSheet(); PRICE_SEL = [...on].sort((a, b) => a - b); paintPriceBtn(); if ($('q').value.trim() || $('set').value || rarPick().length || artQuery()) search(); };
   draw();
 }
 async function fillRaritiesNow() {
@@ -1726,21 +1734,67 @@ async function jpSearch() {
   $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching Japanese cards…</div>';
   return listSearch(await jpList(), gid, 'ja', text, rar);
 }
+/* Search by what's in the art (English Pokémon). prices/art-tags.json is made by the "Tag card art" job with CLIP, a free
+   picture-and-words model: { vocab: [word...], done, total, t: { tcgplayerId: [[wordIndex, score], ...] } }.
+   Matching is by word, so "moon" finds "full moon" and "crescent moon", and "flower" finds "flowers". */
+let ART = null, artP = null, ART_ON = null;      // ART_ON: Map tcgplayerId -> best score, while an art search runs
+function loadArtTags() {
+  if (ART) return Promise.resolve(ART);
+  if (!artP) artP = (async () => {
+    for (const u of ['https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/art-tags.json', 'prices/art-tags.json']) {
+      try { const d = await fetchJSON(u, 25000); if (d && d.t && d.vocab) { ART = d; fillArtWords(); return d; } } catch (e) {}
+    }
+    artP = null; return null;
+  })();
+  return artP;
+}
+function fillArtWords() {
+  const dl = $('art-words'); if (!dl || !ART || dl.dataset.ready) return;
+  const n = new Array(ART.vocab.length).fill(0);
+  Object.values(ART.t).forEach(tags => tags.forEach(([j]) => n[j]++));
+  dl.innerHTML = ART.vocab.map((v, j) => [v, n[j]]).filter(x => x[1]).sort((a, b) => a[0].localeCompare(b[0])).map(([v]) => `<option value="${esc(v)}">`).join('');
+  dl.dataset.ready = '1';
+}
+const artStem = w => { w = lc(w); return w.length > 3 ? w.replace(/(ies)$/, 'y').replace(/(ches|shes|xes)$/, m => m.slice(0, -2)).replace(/s$/, '') : w; };
+function artWords(q) {          // the tag words that match what was typed
+  const want = lc(q).split(/[^a-z0-9]+/).filter(Boolean).map(artStem);
+  if (!want.length || !ART) return [];
+  return ART.vocab.map((v, j) => [v, j]).filter(([v]) => { const have = lc(v).split(/[^a-z0-9]+/).map(artStem); return want.every(w => have.includes(w)); }).map(x => x[1]);
+}
+const artQuery = () => S.game === 'pokemon' && pkLang === 'en' && mode !== 'sealed' && $('art-q') ? $('art-q').value.trim() : '';
+// Sets ART_ON for the search about to run; false when the search shouldn't go ahead
+async function startArtSearch(q) {
+  $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Looking through the card art…</div>';
+  const d = await loadArtTags();
+  if (!d) { $('results').innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Art search isn’t ready yet (or there’s no signal). Try again a little later.</div>'; return false; }
+  const words = artWords(q);
+  if (!words.length) {
+    const tips = ['moon', 'beach', 'snow', 'night sky', 'flowers', 'city', 'food', 'underwater', 'sleeping', 'rain'].filter(w => artWords(w).length).join(', ');
+    $('results').innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">No art word like “${esc(q)}”.<br>Try ${esc(tips)}, or pick one from the suggestions.</div>`; return false;
+  }
+  const want = new Set(words), on = new Map();
+  for (const [pid, tags] of Object.entries(d.t)) for (const [j, z] of tags) if (want.has(j) && !(on.get(pid) >= z)) on.set(pid, z);
+  ART_ON = on;
+  if (d.done < d.total) toast(`Card art is still being scanned: ${d.done.toLocaleString()} of ${d.total.toLocaleString()} cards so far (newest first)`);
+  return true;
+}
 async function listSearch(L, gid, lang, text, rar, make) {
   const box = $('results'), rars = Array.isArray(rar) ? rar : rar ? [rar] : [];
   if (!L) { box.innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the card list. Try again in a moment.</div>'; return; }
   const parsed = mode === 'num' ? parseQ(text) : { name: mode === 'set' ? '' : text, number: '' };
   const q = lc(parsed.name || (mode === 'set' ? text : '')), num = parsed.number, order = gid ? String(gid).split(',') : null;
+  const art = lang === 'en' ? ART_ON : null;
   const items = Object.entries(L.p).filter(([pid, e]) => {
+    if (art && !art.has(pid)) return false;
     if (order && !order.includes(String(e[3]))) return false;
     if (rars.length && !rars.some(v => sameRarity(String(e[4] || '').trim(), v))) return false;
     if (!priceOk(e[0])) return false;
     if (q && !lc(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
-  }).sort((a, b) => (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : b[1][3] - a[1][3])
+  }).sort((a, b) => (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : art ? art.get(b[0]) - art.get(a[0]) : b[1][3] - a[1][3])
     || String(a[1][2]).localeCompare(String(b[1][2]), undefined, { numeric: true }));   // a set reads in card-number order, its subset after it
-  if (!items.length) { box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching ${lang !== 'en' ? PK_LANGS[lang] + ' ' : ''}cards found.</div>`; return; }
+  if (!items.length) { box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching ${lang !== 'en' ? PK_LANGS[lang] + ' ' : ''}cards found${art ? ' with that in the art' : ''}.</div>`; return; }
   pending = { items, shown: 0, make: async ([pid]) => { if (make) return make(pid); const c = cardFromTcg(pid, 'pokemon', L); c.lang = lang; return c; } };
   await loadBatch(false);
 }
@@ -2583,7 +2637,7 @@ const ptcgCard = c => ({
 function collapseSearch() {
   if (mode === 'custom' || mode === 'coll') return;
   const pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; };
-  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), rarPick().length ? rarLabel() : '', PRICE_SEL.length ? priceLabel() : '', S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
+  const parts = [$('q').value.trim() && `“${$('q').value.trim()}”`, pick('set'), rarPick().length ? rarLabel() : '', PRICE_SEL.length ? priceLabel() : '', artQuery() && '🎨 ' + artQuery(), S.game === 'pokemon' && pkLang !== 'en' ? PK_LANGS[pkLang] : ''].filter(Boolean);
   $('s-sum-text').textContent = parts.join(' · ') || 'Search';
   $('s-filters').classList.add('hidden'); $('s-sum').classList.remove('hidden');
 }
@@ -2597,6 +2651,7 @@ function setMode(m) {
   $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
   ['name', 'num', 'set', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
   $('rar-label').textContent = m === 'sealed' ? 'Type:' : 'Rarity:';
+  paintArtRow();
   if (isColl) return openCollection();
   if (isCustom) return;
   if (m === 'sealed') { $('q').placeholder = 'Product name (e.g. Elite Trainer Box, 151)'; return loadSets(); }
@@ -2671,6 +2726,13 @@ async function search() {
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
   if (pkLang === 'zh') return zhSearch();
+  ART_ON = null;
+  const artQ = artQuery();
+  if (artQ) {     // what's in the art: searched in TCGplayer's card list, together with name, set, rarity and price
+    if (!(await startArtSearch(artQ))) return;
+    const sv = $('set').value;
+    return listSearch(await loadTcgList('pokemon'), sv.startsWith('tcg:') ? sv.slice(4) : '', 'en', $('q').value.trim(), rarPick());
+  }
   if ($('set').value.startsWith('tcg:')) {   // a TCGplayer set: its exact cards and prices
     const text = $('q').value.trim(), rar = rarPick();
     $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
@@ -3526,7 +3588,7 @@ async function refreshPeerPrices() {
 
 /* Offline: save the binders, their card pictures, the price lists and the news on this phone before going somewhere with
    no signal. The offline helper (sw.js) keeps what's fetched here; binders themselves are kept by the app. */
-const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes'];
+const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes', 'art-tags'];
 const OFFLINE_AT = 'cardBinder.offlineSavedAt';
 function offlineImageUrls() {
   const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
