@@ -561,6 +561,13 @@
   .ctray-item .in { left: 3px; background: #4f46e5; color: #fff; }
   .ctray-item.lifted { opacity: .3; }
   #pg-lock[aria-pressed="true"] { background: #b45309; border-color: #f59e0b; color: #fff; }
+  .off-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; margin: .7rem 0 .2rem; }
+  .off-stats div { background: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: .55rem .3rem; text-align: center; }
+  .off-stats b { display: block; font: 900 1.05rem/1.1 Inter, system-ui, sans-serif; color: #fff; }
+  .off-stats span { display: block; margin-top: .2rem; font: 600 .58rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .off-bar { height: .45rem; border-radius: 999px; background: #27272a; overflow: hidden; margin: .3rem 0 .5rem; }
+  .off-bar[hidden] { display: none; }
+  .off-bar i { display: block; height: 100%; width: 0; background: #14b8a6; transition: width .3s; }
   .lock-note { margin: 0 0 .6rem; padding: .45rem .7rem; border-radius: 10px; background: rgba(180,83,9,.15); border: 1px solid rgba(245,158,11,.45); color: #fcd34d; font: 600 .7rem/1.3 Inter, system-ui, sans-serif; text-align: center; }
   .lock-note[hidden] { display: none; }
   #grid.page-locked [data-slot] { cursor: default; }
@@ -714,6 +721,7 @@
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
         <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
+        <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
 
@@ -2670,6 +2678,11 @@ async function search() {
     pending = { items, shown: 0, make: c => c.tcg ? cardFromTcg(c.tcg, 'pokemon', c.L) : c.raw ? ptcgCard(c.raw) : fetchCard(c, lang, meta) };
     await loadBatch(false);
   } catch (e) {
+    // No signal: search the TCGplayer list saved on the phone instead (names, numbers, sets and prices; pictures you've seen before)
+    if (navigator.onLine === false || e.name === 'TypeError' || e.name === 'AbortError') {
+      const L = await loadTcgList('pokemon').catch(() => null);
+      if (L) { toast('No signal: searching the card list saved on this phone'); return listSearch(L, '', 'en', text, rarPick()); }
+    }
     box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t reach the card database (${esc(errText(e))}).</div>`;
   }
 }
@@ -2992,6 +3005,32 @@ function buildUpdates(pages) {
   return up;
 }
 
+/* Outbox: every change is also written down on the phone until the cloud confirms it. If the app is closed with no
+   signal, the next time it opens with signal the leftover changes are sent (in order). */
+const OUTBOX = 'cardBinder.outbox', SESSION = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let outboxSeq = 0, outboxReplayed = false;
+function outboxRead() { try { const b = JSON.parse(localStorage.getItem(OUTBOX) || '[]'); return Array.isArray(b) ? b : []; } catch (e) { return []; } }
+function outboxWrite(b) { try { localStorage.setItem(OUTBOX, JSON.stringify(b)); return true; } catch (e) { return false; } }
+function outboxAdd(path, up) {
+  const id = SESSION + '-' + (++outboxSeq), box = outboxRead();
+  box.push({ id, s: SESSION, path, up, at: Date.now() });
+  return outboxWrite(box.slice(-400)) ? id : null;
+}
+function outboxDone(id) { if (!id) return; const box = outboxRead(), rest = box.filter(x => x.id !== id); if (rest.length !== box.length) outboxWrite(rest); }
+async function outboxReplay() {
+  if (outboxReplayed) return; outboxReplayed = true;
+  const old = outboxRead().filter(x => x.s !== SESSION);
+  if (!old.length) return;
+  let sent = 0;
+  for (const x of old) {
+    try { await db.ref(x.path).update(x.up); outboxDone(x.id); sent++; } catch (e) { console.warn('Outbox entry not sent', e); }
+  }
+  if (sent) toast(`Synced ${sent} change${sent === 1 ? '' : 's'} made while offline`);
+}
+function cloudUpdate(path, up) {
+  const clean = JSON.parse(JSON.stringify(up)), id = outboxAdd(path, clean);
+  return db.ref(path).update(clean).then(r => { outboxDone(id); return r; });
+}
 function saveActivePages(pages) {
   if (peerUser) return;
   if (S.loadedFor !== currentUser || !S.cloud) {
@@ -3003,9 +3042,13 @@ function saveActivePages(pages) {
     const up = buildUpdates(pages);
     if (!Object.keys(up).length) return;
     if (countCards(pages) < countCards(S.cloud.pages)) backupNow('before removal');
-    db.ref('binders/' + currentUser).update(JSON.parse(JSON.stringify(up)))
+    cloudUpdate('binders/' + currentUser, up)
       .then(() => { if (bannerKind === 'error') dbOk(); })
       .catch(e => { console.error(e); dbProblem('⚠️ Could not save to the cloud (' + (e.code || e.message) + '). Your latest change may be lost.'); });
+    // show the change right away, and keep this phone's copy current (it's what opens when there's no signal)
+    S.pages = pages;
+    if (S.fromPhone) S.cloud = { layout: S.layout, pages: JSON.parse(JSON.stringify(pages)) };
+    writeBinderCache(currentUser, { layout: S.layout, pages, needOrder: S.needOrder });
   } catch (e) { console.error('Firebase save error:', e); dbProblem('⚠️ Save failed: ' + e.message); }
 }
 
@@ -3087,9 +3130,17 @@ function setupFirebaseListener(username) {
   S.loadedFor = null; S.cloud = null;   // block saves until this binder has really been loaded
   // Show this phone's saved copy right away (read-only until the cloud answers), or a loading note
   const cached = readBinderCache(username);
-  if (cached) { S.layout = cached.layout || '4x3'; S.pages = normPages(cached.pages); }
+  S.fromPhone = false;
+  if (cached) { S.layout = cached.layout || '4x3'; S.pages = normPages(cached.pages); S.needOrder = cached.needOrder || []; }
   else { S.pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }]; }
   S.cover = null; render();
+  // No signal: after a moment, let this phone's copy be edited. Changes go in the outbox and sync when you're back online.
+  if (cached) setTimeout(() => {
+    if (activeListener !== username || S.loadedFor === username || (navigator.onLine !== false && S.connected)) return;
+    S.cloud = { layout: S.layout, pages: JSON.parse(JSON.stringify(S.pages)) };
+    S.loadedFor = username; S.fromPhone = true; render();
+    dbProblem('📴 No signal. You\'re using the copy saved on this phone. Changes are kept here and sync when you\'re back online.', 'offline');
+  }, 2500);
 
   db.ref('binders/' + username).on('value', snapshot => {
     const data = snapshot.val();
@@ -3106,7 +3157,7 @@ function setupFirebaseListener(username) {
       S.pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }];
       S.cloud = { layout: null, pages: [] };
     }
-    S.loadedFor = username;
+    S.loadedFor = username; S.fromPhone = false;
     writeBinderCache(username, data);
     render();
     if (!peerUser && !dailyChecked[username]) { dailyChecked[username] = true; maybeDailyBackup(); }
@@ -3122,7 +3173,7 @@ function readBinderCache(u) { try { const d = JSON.parse(localStorage.getItem(BC
 function writeBinderCache(u, data) {
   try {
     if (!data) return localStorage.removeItem(BCACHE + u);
-    const txt = JSON.stringify({ layout: data.layout || '4x3', pages: data.pages || [] });
+    const txt = JSON.stringify({ layout: data.layout || '4x3', pages: data.pages || [], needOrder: data.needOrder || [], at: Date.now() });
     if (txt.length > 1500000) return;   // very large binders (lots of photos) just load from the cloud
     localStorage.setItem(BCACHE + u, txt);
   } catch (e) { try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE) && k !== BCACHE + u).forEach(k => localStorage.removeItem(k)); } catch (e2) {} }
@@ -3306,6 +3357,70 @@ function sortByName() {
     if (currentUser !== binder) return;
     S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
   });
+}
+/* Offline: save the binders, their card pictures, the price lists and the news on this phone before going somewhere with
+   no signal. The offline helper (sw.js) keeps what's fetched here; binders themselves are kept by the app. */
+const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes'];
+const OFFLINE_AT = 'cardBinder.offlineSavedAt';
+function offlineImageUrls() {
+  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
+  const binders = [];
+  try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE)).forEach(k => { const d = JSON.parse(localStorage.getItem(k) || 'null'); if (d && d.pages) binders.push(d.pages); }); } catch (e) {}
+  binders.forEach(pages => normPages(pages).forEach(pg => pg.cards.forEach(add)));
+  if (currentUser) getPagesArray().forEach(pg => pg.cards.forEach(add));
+  Object.values(COLLECTIONS).forEach(d => d && d.items && Object.values(d.items).forEach(it => it && it.image && /^https?:/.test(it.image) && urls.add(it.image)));
+  return [...urls];
+}
+async function offlineStatus() {
+  let pics = 0, used = null;
+  try { pics = (await (await caches.open('cb-img-v1')).keys()).length; } catch (e) {}
+  try { const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null; used = est && est.usage; } catch (e) {}
+  const at = +recall(OFFLINE_AT, 0) || 0;
+  return { pics, used, at, ready: !!(navigator.serviceWorker && navigator.serviceWorker.controller) };
+}
+async function openOfflineSheet() {
+  const st = await offlineStatus(), binders = (() => { try { return Object.keys(localStorage).filter(k => k.startsWith(BCACHE)).length; } catch (e) { return 0; } })();
+  sheet(`<h2 id="lb-sheet-title">📴 Offline</h2>
+    <p class="sub">Card show with no signal? Open the app here once with signal, tap <b>Save for offline</b>, and it will open and work with no service: your binders, pictures, prices and Need List. Changes you make offline are kept on the phone and sync when you're back online.</p>
+    <div class="off-stats">
+      <div><b>${binders}</b><span>binder${binders === 1 ? '' : 's'} kept on this phone</span></div>
+      <div><b id="off-pics">${st.pics}</b><span>card pictures saved</span></div>
+      <div><b>${st.at ? new Date(st.at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '—'}</b><span>last saved for offline</span></div>
+    </div>
+    <p class="sub" id="off-msg">${!st.ready ? 'Getting the offline helper ready. If this stays, close and reopen the app once with signal.' : st.used ? `Using about ${(st.used / 1048576).toFixed(0)} MB on this phone.` : ''}</p>
+    <div class="off-bar" id="off-bar" hidden><i id="off-fill"></i></div>
+    <p class="sub" style="font-size:.68rem;color:#71717a">Only the binders you've opened on this phone are kept. Searching new English cards uses the saved card list while offline, and News, links and "Refresh prices" need signal.</p>
+    <div class="lb-row"><button type="button" class="lb-btn" id="off-go">Save for offline</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`);
+  $('off-go').onclick = saveForOffline;
+}
+async function saveForOffline() {
+  const go = $('off-go'), msg = $('off-msg'), bar = $('off-bar'), fill = $('off-fill');
+  if (navigator.onLine === false) { msg.textContent = 'No signal right now. Do this somewhere with signal before you go.'; return; }
+  if (!(navigator.serviceWorker && navigator.serviceWorker.controller)) {
+    try { await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; } catch (e) {}
+    if (!navigator.serviceWorker.controller) { msg.textContent = 'The offline helper starts next time: close the app, open it again with signal, then tap Save for offline.'; return; }
+  }
+  go.disabled = true; bar.hidden = false;
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}   // ask the phone not to clear it
+  msg.textContent = 'Saving price lists and news…'; fill.style.width = '4%';
+  let li = 0;
+  for (const g of OFFLINE_LISTS) {   // fetched through the offline helper, which keeps the newest copy of each list
+    try { const r = await fetch(`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/${g}.json`, { cache: 'no-store' }); if (!r.ok) throw 0; }
+    catch (e) { try { await fetch(`prices/${g}.json`, { cache: 'no-store' }); } catch (e2) {} }   // the site's own copy
+    fill.style.width = (4 + 16 * ++li / OFFLINE_LISTS.length) + '%';
+  }
+  try { const r = await fetch('https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/news/news.json', { cache: 'no-store' }); if (!r.ok) throw 0; }
+  catch (e) { try { await fetch('news/news.json', { cache: 'no-store' }); } catch (e2) {} }
+  const urls = offlineImageUrls(); let done = 0, bad = 0;
+  await pool(urls, 6, async u => {
+    try { await fetch(u, { mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer' }); } catch (e) { bad++; }
+    done++;
+    if (done % 5 === 0 || done === urls.length) { msg.textContent = `Saving card pictures… ${done} of ${urls.length}`; fill.style.width = (20 + 80 * done / Math.max(1, urls.length)) + '%'; }
+  });
+  remember(OFFLINE_AT, Date.now());
+  const st = await offlineStatus(); $('off-pics').textContent = st.pics;
+  msg.innerHTML = `✅ Ready for offline: ${urls.length - bad} card picture${urls.length - bad === 1 ? '' : 's'}, all price lists and the news${bad ? ` (${bad} picture${bad === 1 ? '' : 's'} couldn't be saved)` : ''}.${st.used ? ` About ${(st.used / 1048576).toFixed(0)} MB.` : ''}`;
+  fill.style.width = '100%'; go.disabled = false; go.textContent = 'Save again';
 }
 /* Locked pages: nothing moves in or out, nothing is added or removed, and "Sort by name" leaves them where they are */
 const pageLocked = p => { const pg = getPagesArray()[p]; return !!(pg && pg.locked); };
@@ -4751,7 +4866,8 @@ function needCards() {
 }
 function saveNeedOrder(keys) {
   S.needOrder = keys;
-  db.ref('binders/' + currentUser + '/needOrder').set(keys).catch(() => toast('Couldn\'t save the order. Check your connection.', 'error'));
+  cloudUpdate('binders/' + currentUser, { needOrder: keys }).catch(() => toast('Couldn\'t save the order. Check your connection.', 'error'));
+  writeBinderCache(currentUser, { layout: S.layout, pages: getPagesArray(), needOrder: keys });
 }
 // Prices by condition, worked out from the Near Mint market price (the same rates as the Need export)
 const CONDITIONS = [['NM', 1], ['LP', 0.85], ['MP', 0.65], ['HP', 0.45], ['DMG', 0.30]];
@@ -5362,7 +5478,7 @@ function flyPlace(cx, cy, k, depth) {
 }
 function pickBinder(el) {
   if (staged || $('landing').classList.contains('opening')) return;
-  if (!peopleLoaded || !binfoLoaded) return toast('Still loading binders. Try again in a second.');
+  if ((!peopleLoaded || !binfoLoaded) && !recall(SHELF_KEY, null)) return toast('Still loading binders. Try again in a second.');   // the shelf saved on this phone is enough (no signal)
   const id = el.dataset.user; staged = id;
   const T = 50, H = 216, D = 158;
   // Lay out the stage first so we know where the binder should land
@@ -5983,8 +6099,8 @@ async function quietSignIn() {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   try {
     const a = firebase.auth();
-    await Promise.race([new Promise(r => { const off = a.onAuthStateChanged(u => { off(); r(u); }); }), wait(3000)]);   // a saved sign-in comes back
-    if (a.currentUser) return;
+    await Promise.race([new Promise(r => { const off = a.onAuthStateChanged(u => { off(); r(u); }); }), wait(navigator.onLine === false ? 1200 : 3000)]);   // a saved sign-in comes back
+    if (a.currentUser || navigator.onLine === false) return;
     await Promise.race([a.signInAnonymously(), wait(8000)]);
   } catch (e) { console.warn('Quiet sign-in skipped:', e && (e.code || e.message)); }
 }
@@ -5993,6 +6109,7 @@ async function quietSignIn() {
 window.addEventListener('DOMContentLoaded', async () => {
   // Wait for someone to pick a binder on the welcome screen before loading one
   loadShelfCache();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('Offline helper not started', e));
   const versionCheck = checkForNewVersion();
   await quietSignIn();   // before anything is read, so locked-down rules let the app in
   paintShelfToggle(); loadInvites(); inviteFromAddress();
@@ -6011,8 +6128,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!$('landing').hidden && !staged) renderShelf(); }, 200); });
   db.ref('.info/connected').on('value', s => {
     clearTimeout(offlineTimer);
-    if (s.val() === true) { if (bannerKind === 'offline') dbOk(); }
-    else offlineTimer = setTimeout(() => { if (!bannerKind) dbProblem('📡 Offline — changes will sync when you reconnect. Keep this page open until then.', 'offline'); }, 6000);
+    S.connected = s.val() === true;
+    if (S.connected) { if (bannerKind === 'offline') dbOk(); quietSignIn().then(outboxReplay).catch(() => {}); }
+    else offlineTimer = setTimeout(() => { if (!bannerKind) dbProblem('📴 No signal. Keep using your binder: changes are kept on this phone and sync when you\'re back online.', 'offline'); }, 6000);
   });
 });
 </script>
