@@ -1,15 +1,14 @@
-200 ACAO=* type=image/jpeg len=173318 cache=None | https://tcgplayer-cdn.tcgplayer.com/product/200353_in_1000x1000.jpg
-200 ACAO=* type=image/jpeg len=27869 cache=None | https://tcgplayer-cdn.tcgplayer.com/product/200353_200w.jpg
-200 ACAO=None type=image/jpeg len=83386 cache=max-age=31536000,public | https://product-images.tcgplayer.com/fit-in/437x610/200353.jpg
-200 ACAO=* type=image/webp len=118626 cache=max-age=31536000 | https://assets.tcgdex.net/en/sm/sm12/143/high.webp
-200 ACAO=* type=image/webp len=29060 cache=max-age=31536000 | https://assets.tcgdex.net/en/sm/sm12/143/low.webp
-200 ACAO=* type=image/png len=754402 cache=public, max-age=31536000 | https://images.pokemontcg.io/sm12/143_hires.png
-200 ACAO=* type=image/png len=186855 cache=public, max-age=31536000 | https://images.pokemontcg.io/sm12/143.png
-200 ACAO=* type=image/jpeg len=8858 cache=public, max-age=300 | https://i.ytimg.com/vi/x0rJ5v2yDps/hqdefault.jpg
-200 ACAO=None type=image/png len=153213 cache=None | https://en.onepiece-cardgame.com/images/cardlist/card/OP01-001.png
-200 ACAO=None type=image/jpeg len=423652 cache=max-age=1800 | https://www.pokebeach.com/news/2026/10/057-Mega-Lucario-Z-ex.jpg
-ERR HTTP Error 403: Forbidden | https://cardtrader.com/uploads/blueprints/image/12345/show_x.jpg
-200 ACAO=* type=text/plain; charset=utf-8 len=1700514 cache=max-age=300 | https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/pokemon.json
-200 ACAO=None type=text/javascript len=407279 cache=max-age=31536000 | https://cdn.tailwindcss.com/
-200 ACAO=* type=text/javascript; charset=UTF-8 len=28949 cache=public, max-age=31536000 | https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js
-200 ACAO=* type=text/css; charset=utf-8 len=2632 cache=private, max-age=86400, stale-while-revalidate=604800 | https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+28068 cards in the list, 0 already tagged, doing 300
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 33820.24it/s]
+Traceback (most recent call last):
+  File "/home/runner/work/Card-Binder/Card-Binder/scripts/build-art-tags.py", line 175, in <module>
+    main()
+  File "/home/runner/work/Card-Binder/Card-Binder/scripts/build-art-tags.py", line 104, in main
+    T.append(t / t.norm(dim=-1, keepdim=True))
+                 ^^^^^^
+AttributeError: 'BaseModelOutputWithPooling' object has no attribute 'norm'
+
+real	0m16.072s
+user	0m8.859s
+sys	0m2.458s
