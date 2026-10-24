@@ -141,7 +141,7 @@ def main():
     done.update(tags)
     out = {"model": MODEL, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "vocab": VOCAB, "done": len(done),
            "total": len(lst), "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "t": done}
-    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(out, f, separators=(",", ":"))
     print(f"saved {len(done)} tagged cards to {a.out}")
