@@ -5044,11 +5044,11 @@ function paintSlabSheet() {
     <div class="sl-chips">${Object.entries(SLAB_CO).map(([k, v]) => `<button type="button" style="--c:${v.c}" aria-pressed="${k === s.company}" onclick="SS.company='${k}';if(!SLAB_CO['${k}'].g.includes(SS.grade))SS.grade='10';paintSlabSheet()">${k}</button>`).join('')}</div>
     <div class="sl-lbl">Grade</div>
     <div class="sl-chips">${co.g.map(g => `<button type="button" style="--c:${co.c}" aria-pressed="${g === s.grade}" onclick="SS.grade='${g}';paintSlabSheet()">${esc(g)}</button>`).join('')}</div>
-    <div class="sl-row2"><div><div class="sl-lbl" style="margin-bottom:.35rem">Cert # (optional)</div><input class="sl-in" id="ss-cert" inputmode="numeric" autocomplete="off" value="${esc(s.cert)}" oninput="SS.cert=this.value.trim()" onchange="SS.value=$('ss-val').value;paintSlabSheet()"></div>
+    <div class="sl-row2"><div><div class="sl-lbl" style="margin-bottom:.35rem">Cert # (optional)</div><input class="sl-in" id="ss-cert" inputmode="numeric" autocomplete="off" value="${esc(s.cert)}" oninput="SS.cert=this.value.trim()" onchange="$('ss-links').innerHTML=slabLinks(SS.card,SS.company,SS.grade)+certLink(SS.company,SS.cert)"></div>
       <div><div class="sl-lbl" style="margin-bottom:.35rem">Your value $</div><input class="sl-in" id="ss-val" type="number" min="0" step="0.01" inputmode="decimal" placeholder="${pcv != null ? esc(pcv.toFixed(2)) : '0.00'}" value="${esc(s.value)}" oninput="SS.value=this.value"></div></div>
     ${pcv != null ? `<p style="margin:0;color:#a1a1aa;font-size:.7rem">PriceCharting ${esc(slabLabel(s.company, s.grade))}: <b style="color:#34d399">${fmt(pcv)}</b> (used when you leave your value blank)</p>` : ''}
     <div class="sl-lbl">Look up ${esc(slabLabel(s.company, s.grade))} prices</div>
-    <div class="sl-links">${slabLinks(c, s.company, s.grade)}${certLink(s.company, s.cert)}</div>
+    <div class="sl-links" id="ss-links">${slabLinks(c, s.company, s.grade)}${certLink(s.company, s.cert)}</div>
     <div class="sl-btns">${s.id ? '<button type="button" class="sl-del" onclick="deleteSlab()">🗑</button>' : ''}<button type="button" class="sl-save" onclick="saveSlab()">${s.id ? 'Save' : '＋ Add to my slabs'}</button></div>`;
 }
 function closeSlabSheet() { $('slab-sheet').hidden = true; SS = null; }
