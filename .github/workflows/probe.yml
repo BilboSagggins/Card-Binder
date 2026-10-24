@@ -16,5 +16,8 @@ jobs:
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A probe-report.txt art-tags-trial.json sheets || true
-          git commit -m "probe report" && git push
+          git add probe-report.txt
+          if [ -f art-tags-trial.json ]; then git add art-tags-trial.json; fi
+          if [ -d sheets ]; then git add sheets; fi
+          git commit -m "probe report"
+          git pull --rebase origin news-probe && git push
