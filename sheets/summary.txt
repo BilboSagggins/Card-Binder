@@ -1,323 +1,257 @@
    5  moon
-   5  full moon
-   3  crescent moon
-   7  sun
-   1  sunset
-   6  sunrise
-   0  night sky
+   8  full moon
+   6  crescent moon
+   8  sun
+   2  sunset
+   5  sunrise
+   3  night sky
    4  starry sky
-   4  stars
-   3  galaxy
-   0  outer space
-   7  planet
-   0  comet
-   4  rainbow
-   4  clouds
-   5  storm clouds
-  12  lightning
+   8  stars
+   6  galaxy
+   2  outer space
+   8  planet
+   4  comet
+   5  rainbow
+   5  clouds
+   3  storm clouds
+  10  lightning
    0  rain
-   7  snow
-   6  snowflakes
-   6  ice
-   5  icicles
-   5  blizzard
-   4  fog
+  14  snow
+  12  snowflakes
+  12  ice
+  13  icicles
+   8  blizzard
+   5  fog
    3  wind
-   5  tornado
-  10  fire
-  12  flames
-   9  lava
-   4  volcano
-   3  smoke
-   8  explosion
-   2  sparkles
-   8  light beams
-   6  aurora
-  10  eclipse
-   9  ocean
-   4  sea waves
-   8  underwater
+   7  tornado
+  18  fire
+  18  flames
+   7  lava
+   3  volcano
+   4  smoke
+  11  explosion
+   8  aurora
+  11  eclipse
+  12  ocean
+   8  sea waves
+  12  underwater
    6  beach
-   6  sand
-   3  island
-   6  lake
-   1  river
-   2  waterfall
-   5  pond
-   3  swamp
-   5  bubbles
-   6  coral reef
+   9  sand
+   4  island
+   9  lake
+   2  river
+   6  waterfall
+   7  pond
+   5  swamp
+   1  bubbles
+   5  coral reef
    5  seaweed
-   0  shipwreck
+   2  shipwreck
    2  boat
-   1  ship
+   3  ship
    7  surfboard
-   5  mountain
+   7  mountain
    3  cliff
-   4  cave
-   3  canyon
-   3  desert
+   3  cave
+   5  canyon
+   6  desert
    6  forest
-   6  jungle
-   4  trees
+   9  jungle
+   5  trees
    3  autumn leaves
-   5  cherry blossoms
-   4  flowers
-   5  flower field
+   9  cherry blossoms
+   6  flowers
+  12  flower field
    1  roses
-   0  sunflowers
+   1  sunflowers
    1  tulips
-   8  grass
-   5  meadow
-   1  garden
-   6  mushrooms
+  11  grass
+   8  meadow
+   4  garden
+   9  mushrooms
    9  vines
-   3  bamboo
-   2  cactus
-   2  palm trees
-   6  rocks
-   3  crystals
+   4  bamboo
+   3  cactus
+   3  palm trees
+   8  rocks
+   5  crystals
    3  gems
-   0  gold coins
-   3  treasure chest
-   0  city
-   2  city skyline
-   2  buildings
-   1  skyscrapers
-   0  street
-   2  road
-   2  bridge
-   2  train
+   1  gold coins
+   6  treasure chest
+   5  city
+   3  city skyline
+   3  buildings
+   2  skyscrapers
+   2  street
+   3  road
+   3  bridge
+   7  train
    0  train tracks
-   1  car
-   2  bicycle
-   1  airplane
-   2  hot air balloon
-   4  tower
-   1  castle
-   3  ruins
-   0  temple
+   4  car
+   4  bicycle
+   2  airplane
+   3  hot air balloon
+   6  tower
+   2  castle
+   5  ruins
+   1  temple
    1  shrine
-   0  torii gate
+   1  torii gate
    0  pagoda
    1  lighthouse
-   2  windmill
+   4  windmill
    0  house
    0  cabin
    6  tent
-   7  campfire
-   4  fence
-   0  stairs
-   0  kitchen
+  10  campfire
+   6  fence
+   1  stairs
+   1  kitchen
    0  restaurant
-   1  cafe
-   2  bakery
-   1  food
-   0  fruit
-   1  apples
-   3  berries
-   0  cake
-   3  cupcake
-   1  candy
-   2  ice cream
-   2  donut
-   1  cookies
-   0  bread
-   0  pizza
+   4  cafe
+   5  bakery
+   2  food
+   3  fruit
+   2  apples
+   4  berries
+   1  cake
+   5  cupcake
+   4  candy
+   4  ice cream
+   4  donut
+   4  cookies
+   2  bread
+   1  pizza
    2  noodles
    7  sushi
-   4  rice ball
-   3  tea
+   6  rice ball
+   8  tea
    0  coffee
-   2  bowl
-   2  picnic
-   3  toys
-   8  ball
-   3  balloons
-   6  kite
-   3  umbrella
-   6  hat
-   2  scarf
-   4  crown
-   5  glasses
-   3  backpack
-   2  book
-   0  books
-   0  library
-   0  school
-   3  classroom
-   3  desk
-   6  computer
-   4  television
-   1  phone
-   0  camera
+   3  picnic
+  13  toys
+   4  balloons
+   4  kite
+   4  umbrella
+   6  book
+   1  books
+   2  library
+   3  school
+   6  classroom
+   9  computer
+   5  television
+   3  phone
+   1  camera
    0  clock
-   6  lamp
-   8  lantern
+   9  lamp
+   4  lantern
    1  candles
-   1  mirror
-   0  window
-   2  bed
-   3  pillow
-   2  blanket
-   1  bath
-   3  bathtub
-   1  music
+   3  mirror
+   2  window
+   9  bed
+   5  pillow
+   5  blanket
+   3  bath
+   4  bathtub
+   2  music
    0  guitar
    1  piano
-   1  drum
-   3  microphone
-   3  stage
-   2  concert
-   0  dance
-   1  party
+   4  drum
+   4  microphone
+   4  stage
+   4  concert
+   1  dance
+   7  party
    0  festival
-   5  fireworks
-   2  confetti
-   2  gift box
+   4  fireworks
+   6  confetti
+   6  gift box
    0  christmas tree
-   9  pumpkin
-   3  halloween
-   7  ghost
-   6  spooky
-   2  graveyard
-   1  haunted house
-   0  cobwebs
-   0  skull
-   5  sports
-   8  soccer ball
-   5  baseball
-   5  basketball
-   5  tennis
-  13  swimming
-   2  running
-   2  race
-   7  trophy
-   2  medal
+   7  pumpkin
+   6  halloween
+  12  ghost
+   7  spooky
+   4  graveyard
+   6  haunted house
+   1  cobwebs
+   2  skull
+  11  trophy
    0  museum
    1  art gallery
    1  painting
-   1  sculpture
+   2  sculpture
    3  statue
-   2  playground
-   1  park
-   3  zoo
-   3  farm
-   0  barn
-   6  field
-   6  hay
-   5  sleeping
-   1  eating
-   7  swimming pokemon
+   6  playground
+   2  park
+   6  zoo
+   9  farm
+   3  barn
+   7  field
+   5  hay
+  13  sleeping
+   4  eating
+   6  swimming pokemon
   11  flying
-   3  jumping
+   7  jumping
    2  running pokemon
-   2  fighting
-   5  battle
-   1  hugging
-   0  friends
-   0  family
-   5  baby
-   7  egg
-   4  nest
-   7  trainer
-   6  person
-   2  child
-   6  girl
-   6  boy
-   3  old man
-   0  crowd
-   7  chef
-   9  doctor
-   5  nurse
-   4  police
-   8  scientist
-   2  laboratory
-   6  machine
+   3  fighting
+   3  battle
+   2  hugging
+   9  egg
+   3  nest
+  10  person
+   7  laboratory
+   9  machine
    9  robot
-   5  gears
-   1  factory
+   6  gears
+   3  factory
    3  power lines
-  13  electricity
-   1  neon lights
-   8  pink
-  14  purple
-   9  blue
-  12  green
-   7  red
-   9  orange
-   7  yellow
-   7  black and white
-   8  dark
-   4  bright colors
-   2  pastel colors
-   1  watercolor
-   0  pixel art
-   3  cartoon
-   2  realistic
-   6  3d render
-   2  reflection
-  13  shadow
-   2  silhouette
-   0  close-up
-   5  landscape
-   0  night
-   1  daytime
-   8  winter
-   3  spring
-   4  summer
+  17  electricity
+   5  neon lights
+   3  silhouette
+   1  night
+  11  winter
+   7  spring
+   9  summer
    1  autumn
-   1  heart
-   4  hearts
-   5  star shape
-   3  circle
-   1  stripes
-   3  polka dots
-   1  patterns
-   3  map
-   0  flag
-   1  sign
-   0  letters
-   3  numbers
 
 sample cards:
-208450 Zacian V (Secret) | lightning(2.0)
+208450 Zacian V (Secret) | 
 516693 Gyarados | 
-477974 Umbreon ex - 2006 (Jimmy Ballard) | trophy(2.3)
-86779 Lightning Energy (#23) | electricity(3.4), sun(2.7), power lines(2.6), tennis(2.5), light beams(2.5), eclipse(2.4), yellow(2.4), circle(2.3), lightning(2.2), television(2.1)
-654519 Mega Absol ex | ghost(2.6)
-632918 Arven's Toedscruel | noodles(2.2)
-213024 Salamence - 19/97 (e-League) [Winner] | flames(2.4), smoke(2.2)
-107132 Scatterbug | autumn leaves(3.1), autumn(2.8)
-589887 Castform Sunny Form | sun(3.0), clouds(3.0), hot air balloon(2.8), storm clouds(2.4), sunrise(2.4), mushrooms(2.4), orange(2.4), summer(2.2), starry sky(2.2), pumpkin(2.1)
-183782 Charmander (11) | fire(3.6), flames(3.3), campfire(2.9), orange(2.5), lava(2.1)
+477974 Umbreon ex - 2006 (Jimmy Ballard) | trophy(2.4)
+86779 Lightning Energy (#23) | electricity(3.5), sun(2.7), power lines(2.5), eclipse(2.3)
+654519 Mega Absol ex | ghost(2.5)
+632918 Arven's Toedscruel | 
+213024 Salamence - 19/97 (e-League) [Winner] | 
+107132 Scatterbug | autumn leaves(3.3), autumn(3.0)
+589887 Castform Sunny Form | clouds(3.1), sun(3.0), mushrooms(2.5), storm clouds(2.5), sunrise(2.5), summer(2.4)
+183782 Charmander (11) | fire(3.5), flames(3.1), campfire(2.9)
 89444 Spewpa | 
-642744 Throh (Poke Ball Pattern) | statue(2.3), sushi(2.0), chef(2.0)
-126197 Shelmet - 8/111 (Pokemon League) [4th Place] | hat(3.9), bowl(3.3), baseball(3.2), tent(2.9), jungle(2.8), mushrooms(2.6), picnic(2.6), planet(2.5), ball(2.3), rice ball(2.3)
-656432 Raging Bolt ex | lightning(3.0), tornado(2.8)
-662211 Pawmo | pumpkin(2.0)
-610467 Janine's Secret Art | art gallery(4.3), girl(4.2), treasure chest(4.0), painting(3.8), shrine(3.8), scarf(3.5), hearts(3.4), purple(3.3), pink(3.3), fence(3.2)
+642744 Throh (Poke Ball Pattern) | statue(2.5)
+126197 Shelmet - 8/111 (Pokemon League) [4th Place] | tent(3.0), jungle(2.8), mushrooms(2.7), picnic(2.6), planet(2.4), trophy(2.4), rice ball(2.4), nest(2.3)
+656432 Raging Bolt ex | tornado(2.9), lightning(2.9)
+662211 Pawmo | 
+610467 Janine's Secret Art | art gallery(4.6), treasure chest(4.2), shrine(4.0), painting(4.0), river(3.6), fence(3.3), silhouette(3.1), gems(2.6)
 481215 Landorus EX - 2015 (Rowan Stavenow) | 
-632834 Breloom | mushrooms(2.9), green(2.5), swamp(2.2)
-277020 Spark (Secret) | boy(3.9), sparkles(3.3), lightning(3.2), bright colors(3.1), rainbow(3.1), scarf(2.9), doctor(2.7), starry sky(2.7), sunrise(2.6), aurora(2.6)
-610624 Kieran - 113/131 (Poke Ball Pattern) | cafe(4.9), chef(4.6), nurse(4.2), boy(4.1), police(4.0), medal(3.9), gift box(3.8), girl(3.8), doctor(3.5), person(3.4)
+632834 Breloom | mushrooms(3.1)
+277020 Spark (Secret) | rainbow(3.2), lightning(3.1), person(2.9), starry sky(2.8), sunrise(2.7), aurora(2.7)
+610624 Kieran - 113/131 (Poke Ball Pattern) | cafe(5.1), street(4.4), train(4.0), school(4.0), classroom(4.0), gift box(4.0), book(3.6), person(3.6)
 191605 Tapu Fini GX - 39a/147 | 
 481903 Rescue Stretcher - 2017 (Naoto Suzuki) | 
-642121 Deerling | jumping(3.7), spring(3.5), running(3.4), vines(3.1), grass(3.1), swimming(2.7), running pokemon(2.7), flying(2.7), summer(2.7), sparkles(2.6)
+642121 Deerling | spring(3.7), jumping(3.6), grass(3.3), vines(3.1), summer(2.9), flying(2.8), running pokemon(2.7), meadow(2.6)
 84476 Croagunk | 
-542798 Electivire | electricity(3.1), lightning(2.9), yellow(2.4)
-451677 Snorunt | snow(4.4), winter(4.0), snowflakes(3.2), tent(3.0), blizzard(2.2), umbrella(2.1)
+542798 Electivire | electricity(3.2), lightning(2.8)
+451677 Snorunt | snow(4.7), winter(4.3), snowflakes(3.1), tent(3.1), blizzard(2.3)
 85611 Galvantula | 
-90263 Vanillish | ice cream(3.9), icicles(3.7), ice(3.6), winter(3.5), snow(3.4), snowflakes(3.3), ghost(3.1), clouds(2.5), fog(2.1)
-89695 Swellow | flying(2.6)
-642217 Oshawott | sleeping(3.4), bathtub(2.7), ocean(2.6), pillow(2.4), beach(2.4), summer(2.4), bamboo(2.3), surfboard(2.2), sushi(2.2), swimming(2.2)
-91233 Sacred Ash | hat(2.8), treasure chest(2.6)
+90263 Vanillish | ice cream(4.0), winter(3.7), ice(3.7), icicles(3.6), snow(3.6), snowflakes(3.3), ghost(3.0), clouds(2.6)
+89695 Swellow | flying(2.7)
+642217 Oshawott | sleeping(3.5), bathtub(2.7), ocean(2.7), beach(2.7), summer(2.5), bed(2.5), surfboard(2.4), pillow(2.4)
+91233 Sacred Ash | treasure chest(2.7)
 98734 Flygon EX | 
 479698 Jolteon ex - 2007 (Tom Roos) | 
-642423 Klinklang (Poke Ball Pattern) | gears(4.3), machine(4.1), toys(2.9), robot(2.8), circle(2.6), planet(2.5), kite(2.1), computer(2.1)
-704452 Psyduck - 039/217 (Cosmos Holo) | pond(4.9), reflection(3.7), swamp(3.7), bathtub(3.5), lake(2.8), bath(2.7), underwater(2.7), park(2.6), swimming pokemon(2.5), swimming(2.4)
+642423 Klinklang (Poke Ball Pattern) | gears(4.5), machine(4.1), toys(2.8), robot(2.7), planet(2.4)
+704452 Psyduck - 039/217 (Cosmos Holo) | pond(5.0), swamp(3.9), bathtub(3.5), garden(2.9), lake(2.9), park(2.8), bath(2.8), underwater(2.7)
 654463 Premium Power Pro | 
-534704 Tinkaton | pink(3.6), donut(2.1), gems(2.0)
-232515 Crobat VMAX | purple(2.3)
-481250 Shrine of Memories - 2015 (Alejandro Ng-Guzman) | trophy(3.7), graveyard(2.1), trees(2.0)
-523863 Medical Energy | star shape(3.5), electricity(2.9), light beams(2.4), stars(2.4)
+534704 Tinkaton | 
+232515 Crobat VMAX | 
+481250 Shrine of Memories - 2015 (Alejandro Ng-Guzman) | trophy(3.9)
+523863 Medical Energy | electricity(3.0), laboratory(2.6), stars(2.4), neon lights(2.3)
