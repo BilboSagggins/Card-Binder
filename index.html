@@ -136,7 +136,14 @@
   .np-views { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
   .np-views button { appearance: none; border: 0; border-radius: 9px; padding: .5rem; background: none; color: #a1a1aa; font: 800 .74rem/1 Inter, system-ui, sans-serif; }
   .np-views button[aria-selected="true"] { background: #e11d48; color: #fff; }
-  .np-bucket { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin: .5rem 0 -.1rem; padding: .45rem .7rem; border-radius: 10px; background: #18181b; border: 1px solid #27272a; }
+  .np-find { flex: 0 0 100%; font-size: 16px; }
+  .np-find[hidden] { display: none; }
+  .np-bucket { appearance: none; width: 100%; text-align: left; cursor: pointer; grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: .5rem 0 -.1rem; padding: .6rem .75rem; border-radius: 10px; background: #18181b; border: 1px solid #27272a; color: inherit; }
+  .np-bucket::after { content: '▾'; color: #71717a; font-size: .8rem; transition: transform .15s; }
+  .np-bucket.shut::after { transform: rotate(-90deg); }
+  .np-bucket span { flex: 1; }
+  .np-got { appearance: none; margin-top: .1rem; border: 1px solid #059669; background: #064e3b; color: #d1fae5; border-radius: 8px; padding: .45rem .3rem; font: 800 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .np-card.got .np-got { border-color: #3f3f46; background: #27272a; color: #d4d4d8; }
   .np-bucket b { font: 900 .9rem/1 Inter, system-ui, sans-serif; color: #fff; }
   .np-bucket span { font: 600 .66rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; text-align: right; }
   .np-bucket span i { font-style: normal; color: #34d399; font-weight: 800; }
@@ -1024,6 +1031,7 @@
     <div class="np-acts"><span id="np-hint"></span><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
     <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
+    <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
   <div id="np-grid" class="np-grid"></div>
@@ -4680,13 +4688,14 @@ function condRows(price) {
   const v = Number.isFinite(+price) && price != null ? +price : null;
   return `<div class="np-conds">${CONDITIONS.map(([k, f], i) => `<span>${k}</span><b${i ? '' : ' class="nm"'}>${v == null ? '—' : '$' + (v * f).toFixed(2)}</b>`).join('')}</div>`;
 }
-function needCardHTML(x, i) {
+function needCardHTML(x, i, opts) {
   return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-key="${esc(x.key)}">
       <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
       ${condRows(x.c.price)}
       <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+      ${opts && opts.gotBtn ? `<button type="button" class="np-got">${x.c.status === 'needed' ? '✓ Mark acquired' : '↩ Not acquired'}</button>` : ''}
     </div>`;
 }
 function openNeedPage() {
@@ -4769,11 +4778,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const NP_LOCK_KEY = 'cardBinder.needLocked';
 let npLocked = (() => { try { return localStorage.getItem(NP_LOCK_KEY) !== '0'; } catch (e) { return true; } })();
 function toggleNeedLock() { npLocked = !npLocked; npSel.clear(); try { localStorage.setItem(NP_LOCK_KEY, npLocked ? '1' : '0'); } catch (e) {} renderNeedPage(); }
-function npTap(e) {
-  if (!npLocked) return;
-  const el = e.target.closest('#np-grid .np-card'); if (!el) return;
-  if (npHeld) { npHeld = false; e.preventDefault(); return; }          // that tap was the end of a hold
-  if (npSel.size) { if (!e.target.closest('a')) { e.preventDefault(); toggleNpSel(el.dataset.key); } return; }   // selecting: taps add / remove
+function npToggleAcquired(el) {
   const pages = getPagesArray(), p = +el.dataset.p, s = +el.dataset.s, c = pages[p] && pages[p].cards[s]; if (!c) return;
   if (c.status === 'needed') {
     pages[p].cards[s] = { ...c, status: 'owned', acquired: Date.now() };
@@ -4785,10 +4790,22 @@ function npTap(e) {
   }
   saveActivePages(pages); render();
 }
+function npTap(e) {
+  const btn = e.target.closest('#np-grid .np-got');
+  if (btn) { e.preventDefault(); e.stopPropagation(); return npToggleAcquired(btn.closest('.np-card')); }   // the button works locked or not
+  const bucket = e.target.closest('#np-grid .np-bucket');
+  if (bucket) return toggleBucket(bucket.dataset.b);
+  if (!npLocked) return;
+  const el = e.target.closest('#np-grid .np-card'); if (!el) return;
+  if (npHeld) { npHeld = false; e.preventDefault(); return; }          // that tap was the end of a hold
+  if (npSel.size) { if (!e.target.closest('a')) { e.preventDefault(); toggleNpSel(el.dataset.key); } return; }   // selecting: taps add / remove
+  if (e.target.closest('a')) return;
+  npToggleAcquired(el);
+}
 /* Locked list: hold a card to select it (then tap more), and see what the selected cards are worth in total */
 let npSel = new Set(), npHold = null, npHeld = false;
 function npHoldDown(e) {
-  if (!npLocked || e.button > 0 || e.target.closest('a')) return;
+  if (!npLocked || e.button > 0 || e.target.closest('a, .np-got, .np-bucket')) return;
   const el = e.target.closest('#np-grid .np-card'); if (!el) return;
   npHoldEnd();
   el.classList.add('holding');
@@ -4837,17 +4854,31 @@ document.addEventListener('DOMContentLoaded', () => { const g = $('np-grid'); if
 const NP_VIEW_KEY = 'cardBinder.needView';
 let npView = (() => { try { return localStorage.getItem(NP_VIEW_KEY) === 'price' ? 'price' : 'priority'; } catch (e) { return 'priority'; } })();
 function setNeedView(v) { npView = v === 'price' ? 'price' : 'priority'; try { localStorage.setItem(NP_VIEW_KEY, npView); } catch (e) {} renderNeedPage(); $('need-page').scrollTop = 0; }
+let npFind = '';
+const NP_SHUT_KEY = 'cardBinder.needShut';
+function npShut() { try { return new Set(JSON.parse(localStorage.getItem(NP_SHUT_KEY) || '[]')); } catch (e) { return new Set(); } }
+function toggleBucket(label) {
+  if (npFind.trim()) return;           // while searching every range with a match stays open
+  const shut = npShut(); shut.has(label) ? shut.delete(label) : shut.add(label);
+  try { localStorage.setItem(NP_SHUT_KEY, JSON.stringify([...shut])); } catch (e) {}
+  renderNeedPage();
+}
 const NP_BUCKETS = [[0, 5, '$0 – $5'], [5, 10, '$5 – $10'], [10, 25, '$10 – $25'], [25, 50, '$25 – $50'], [50, 100, '$50 – $100'], [100, 250, '$100 – $250'], [250, Infinity, '$250+']];
 function needByPriceHTML(all) {
   const price = x => Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : null;
-  const ranked = all.map((x, i) => ({ ...x, rank: i }));
+  const q = lc(npFind.trim()), shut = q ? new Set() : npShut();
+  // "mew" shows Mew, Mew ex, Mew VMAX… (not Mewtwo) when some card is exactly that Pokémon; otherwise any name containing the words
+  const exact = q && all.some(x => sortKey(x.c.name) === q);
+  const ranked = all.map((x, i) => ({ ...x, rank: i })).filter(x => !q || (exact ? sortKey(x.c.name) === q : lc(x.c.name).includes(q) || sortKey(x.c.name).includes(q)));
+  if (q && !ranked.length) return `<p class="np-empty">No Need cards match “${esc(npFind.trim())}”.</p>`;
   const groups = NP_BUCKETS.map(([lo, hi, label]) => ({ label, items: ranked.filter(x => price(x) != null && price(x) >= lo && price(x) < hi) }));
   groups.push({ label: 'No price', items: ranked.filter(x => price(x) == null) });
   return groups.filter(g => g.items.length).map(g => {
     g.items.sort((a, b) => (price(a) ?? 0) - (price(b) ?? 0) || a.rank - b.rank);
     const need = g.items.filter(x => x.c.status === 'needed'), sum = need.reduce((a, x) => a + (price(x) || 0), 0);
-    return `<div class="np-bucket"><b>${esc(g.label)}</b><span>${need.length} needed${g.items.length > need.length ? ` · ${g.items.length - need.length} acquired` : ''}${sum ? ` · <i>${fmt(sum)}</i>` : ''}</span></div>`
-      + g.items.map(x => needCardHTML(x, x.rank)).join('');
+    const closed = shut.has(g.label);
+    return `<button type="button" class="np-bucket${closed ? ' shut' : ''}" data-b="${esc(g.label)}" aria-expanded="${!closed}"><b>${esc(g.label)}</b><span>${need.length} needed${g.items.length > need.length ? ` · ${g.items.length - need.length} acquired` : ''}${sum ? ` · <i>${fmt(sum)}</i>` : ''}</span></button>`
+      + (closed ? '' : g.items.map(x => needCardHTML(x, x.rank, { gotBtn: true })).join(''));
   }).join('');
 }
 function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; }
@@ -4862,6 +4893,7 @@ function renderNeedPage() {
   $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
   $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
+  $('np-find').hidden = npView !== 'price' || !all.length;
   $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
   $('np-grid').innerHTML = all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join(''))
     : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
