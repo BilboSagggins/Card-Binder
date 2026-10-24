@@ -133,6 +133,20 @@
   .np.locked .np-card:active { transform: scale(.97); }
   .np-card.got .np-img img { filter: grayscale(1) brightness(.6); }
   .np-card.got { background: #121214; border-color: #1f1f23; }
+  .gf .np-card.sel { border-color: #f472b6; box-shadow: 0 0 0 2px #ec4899; background: #3b0a24; }
+  .gf .np-card.sel .np-img::after { content: '🎁'; background: #ec4899; font-size: .8rem; }
+  .gf .np-card { cursor: pointer; }
+  .np-selbar.gf-bar { border-color: #ec4899; background: rgba(59,10,36,.97); }
+  .gf-bar button { border-color: #ec4899 !important; background: #831843 !important; color: #fce7f3 !important; }
+  .gf .np-grid { padding-bottom: 6rem; }
+  .gf-who { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin: .4rem 0 -.1rem; padding: .55rem .75rem; border-radius: 10px; background: #18181b; border: 1px solid #27272a; }
+  .gf-who b { font: 900 .92rem/1.1 Inter, system-ui, sans-serif; color: #fff; }
+  .gf-who span { font: 600 .66rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; text-align: right; }
+  .gf-who span i { font-style: normal; color: #f9a8d4; font-weight: 800; }
+  .gf-btns { display: grid; grid-template-columns: 1fr auto; gap: .3rem; }
+  .gf-btns button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .3rem; font: 800 .62rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .gf-btns .buy { border-color: #059669; background: #064e3b; color: #d1fae5; }
+  .np-card.got .gf-btns .buy { border-color: #3f3f46; background: #27272a; color: #d4d4d8; }
   .np-views { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
   .np-views button { appearance: none; border: 0; border-radius: 9px; padding: .5rem; background: none; color: #a1a1aa; font: 800 .74rem/1 Inter, system-ui, sans-serif; }
   .np-views button[aria-selected="true"] { background: #e11d48; color: #fff; }
@@ -451,7 +465,12 @@
   .pv-btn { pointer-events: auto; appearance: none; border: 1px solid rgba(63,63,70,.7); background: rgba(24,24,27,.85); color: #e4e4e7; border-radius: 999px; padding: .55rem .95rem;
     font: 600 .8rem/1 Inter, system-ui, sans-serif; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0,0,0,.5); cursor: pointer; }
   .pv-btn:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
-  .pv-new { margin-left: auto; border-color: rgba(129,140,248,.6); color: #c7d2fe; }
+  .pv-acts { margin-left: auto; display: flex; gap: .4rem; align-items: center; flex: none; }
+  .pv-bar .pv-btn { white-space: nowrap; flex: none; }
+  .pv-bar .pv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pv-acts .pv-btn { padding: .55rem .75rem; }
+  .pv-gift { border-color: rgba(244,114,182,.6); color: #fbcfe8; }
+  .pv-new { margin-left: 0; border-color: rgba(129,140,248,.6); color: #c7d2fe; }
   .pv-new[hidden] { display: none; }
   .pv-name { font: 700 .8rem/1 Cinzel, Georgia, serif; letter-spacing: .1em; text-transform: uppercase; color: #a1a1aa; text-shadow: 0 1px 4px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #lb-flylayer { position: fixed; inset: 0; z-index: 66; perspective: 1100px; perspective-origin: 50% 50%; pointer-events: none; }
@@ -651,7 +670,11 @@
   <div class="pv-bar">
     <button type="button" id="pv-back" class="pv-btn" onclick="closePeerViewer()" aria-label="Back to shelf">‹ Shelf</button>
     <span id="pv-name" class="pv-name"></span>
-    <button type="button" id="pv-refresh" class="pv-btn pv-new" onclick="refreshPeerViewer()" hidden>New changes · Refresh</button>
+    <div class="pv-acts">
+      <button type="button" id="pv-refresh" class="pv-btn pv-new" onclick="refreshPeerViewer()" hidden>New changes · Refresh</button>
+      <button type="button" id="pv-prices" class="pv-btn" onclick="refreshPeerPrices()" title="Update the prices in this binder">🔄 Prices</button>
+      <button type="button" class="pv-btn pv-gift" onclick="openGiftPicker(pvUser)" title="Pick cards from this binder to buy as gifts">🎁 Gifts</button>
+    </div>
   </div>
 </div>
 <div id="lb-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="lb-sheet-title"></div>
@@ -722,6 +745,7 @@
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
         <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
+        <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
@@ -1013,6 +1037,39 @@
   <div id="sp-grid" class="np-grid sp-grid"></div>
 </div>
 
+<!-- Gifts: cards from someone else's binder you plan to buy for them (your own private list) -->
+<div id="gift-pick" class="np gf" hidden role="dialog" aria-modal="true" aria-labelledby="gp-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeGiftPicker()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="gp-title">Gifts</h2><p id="gp-sub">Tap cards to add them to your gift list</p></div>
+    <div class="tk-tabs" id="gp-tabs" role="tablist"></div>
+    <input type="search" id="gp-find" class="tk-find np-find" placeholder="Find a card" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="renderGiftPicker()">
+  </div>
+  <div id="gp-grid" class="np-grid"></div>
+  <div class="np-selbar gf-bar"><div class="np-sel-t"><b id="gp-total"></b><span id="gp-count"></span></div><button type="button" onclick="openGiftList()">🎁 My gift list</button></div>
+</div>
+<div id="gift-page" class="np gf" hidden role="dialog" aria-modal="true" aria-labelledby="gl-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeGiftList()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="gl-title">🎁 Gift list</h2><p id="gl-sub"></p></div>
+    <div class="np-acts"><span class="sp-hint">Only you see this list</span><button type="button" class="np-lock" onclick="refreshGiftPrices()">🔄 Prices</button><button type="button" class="np-lock" onclick="clearBoughtGifts()">Clear bought</button></div>
+  </div>
+  <div id="gl-list" class="np-grid"></div>
+</div>
+
+<!-- Graded slabs you own: card + company + grade + cert + your value; one-tap price research -->
+<div id="slab-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="sl-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeSlabPage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="sl-title">Slabs</h2><p id="sl-sub"></p></div>
+    <div class="np-acts"><span class="sp-hint">PSA · BGS · CGC · SGC · TAG</span><button type="button" class="np-lock on" onclick="openSlabSearch()">＋ Add slab</button></div>
+  </div>
+  <div id="sl-grid" class="np-grid sp-grid sl-grid"></div>
+</div>
+<div id="slab-sheet" class="sl-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="ss-title">
+  <div class="sl-card" id="ss-body"></div>
+</div>
+
 <!-- Trade analyzer: what you give vs what you get, with a multiplier on each side -->
 <div id="trade-page" class="np tp" hidden role="dialog" aria-modal="true" aria-labelledby="tp-title">
   <div class="np-head">
@@ -1114,7 +1171,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-23.66';
+const APP_VERSION = '2026-10-23.69';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3359,6 +3416,128 @@ function sortByName() {
     S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
   });
 }
+/* Gifts: while viewing someone else's binder, pick cards to buy for them. Your own private list, kept at
+   collections/<you>/gifts/<their binder>/<card key> = { card, addedAt, bought }. Their binder is never changed. */
+let GIFTS = {}, giftRef = null, GP = { u: null, tab: 'need' };
+const giftMe = () => { const u = currentUser || recall(LAST_USER_KEY, ''); return u ? ownerOf(u) : ''; };
+const giftKey = c => String(c.id || (c.name + '|' + (c.number || ''))).replace(/[.#$/\[\]]/g, '_').slice(0, 200);
+function watchGifts() {
+  const me = giftMe(); if (!me) return false;
+  if (giftRef && giftRef.__me === me) return true;
+  if (giftRef) giftRef.off();
+  giftRef = db.ref(`collections/${me}/gifts`); giftRef.__me = me;
+  giftRef.on('value', v => { GIFTS = v.val() || {}; renderGiftPicker(); renderGiftList(); }, () => {});
+  return true;
+}
+function giftCard(c) {
+  return { id: c.id || '', name: c.name || 'Card', set: c.set || '', number: c.number || '', rarity: c.rarity || '', price: c.price ?? null, image: c.image || c.thumb || '', thumb: c.thumb || c.image || '',
+    alts: c.alts || [], game: c.game || 'pokemon', lang: c.lang || 'en', url: c.url || null, tcgPid: c.tcgPid || null, ctId: c.ctId || null, source: c.source || '' };
+}
+function peerCards(u) {
+  const d = u === pvUser ? pvData : null; if (!d) return [];
+  const keep = S.layout; S.layout = d.layout || '4x3';
+  try { return normPages(d.pages).flatMap((pg, p) => pg.cards.map((c, s) => c ? { c, p, s } : null)).filter(Boolean); } finally { S.layout = keep; }
+}
+function openGiftPicker(u) {
+  if (!u) return;
+  if (!watchGifts()) return toast('Open your own binder once first, so the app knows whose gift list this is.', 'error');
+  GP = { u, tab: peerCards(u).some(x => x.c.status === 'needed') ? 'need' : 'all' };
+  $('gp-title').textContent = `🎁 Gifts for ${titleOf(u)}`; $('gp-find').value = '';
+  $('gift-pick').hidden = false;
+  renderGiftPicker();
+}
+function closeGiftPicker() { $('gift-pick').hidden = true; }
+function renderGiftPicker() {
+  const page = $('gift-pick'); if (!page || page.hidden || !GP.u) return;
+  const all = peerCards(GP.u), need = all.filter(x => x.c.status === 'needed'), mine = GIFTS[GP.u] || {};
+  $('gp-tabs').innerHTML = [['need', `Their Need · ${need.length}`], ['all', `All cards · ${all.length}`]].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === GP.tab}" onclick="GP.tab='${k}';renderGiftPicker()">${l}</button>`).join('');
+  const q = lc($('gp-find').value.trim());
+  const list = (GP.tab === 'need' ? need : all).filter(x => !q || lc(x.c.name).includes(q) || sortKey(x.c.name).includes(q) || lc(x.c.set || '').includes(q));
+  $('gp-grid').innerHTML = list.length ? list.map(x => { const k = giftKey(x.c), on = !!mine[k]; return `<div class="np-card${on ? ' sel' : ''}" data-k="${esc(k)}" data-p="${x.p}" data-s="${x.s}" onclick="toggleGift(this)">
+      <div class="np-img">${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
+      <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span><b>${fmt(x.c.price)}</b></div>
+    </div>`; }).join('')
+    : `<p class="np-empty">${GP.tab === 'need' ? `${esc(titleOf(GP.u))} hasn't marked any cards as Need.<br>Switch to <b>All cards</b> to pick from everything.` : 'No cards match.'}</p>`;
+  const picked = Object.values(mine).filter(g => g && !g.bought), total = picked.reduce((a, g) => a + (+g.card.price || 0), 0);
+  $('gp-total').textContent = picked.length ? `${fmt(total)} for ${picked.length} gift${picked.length === 1 ? '' : 's'}` : 'No gifts picked yet';
+  $('gp-count').textContent = picked.length ? `on your list for ${titleOf(GP.u)} · tap a card again to take it off` : 'Tap cards to add them to your gift list';
+}
+function toggleGift(el) {
+  const me = giftMe(), u = GP.u; if (!me || !u) return;
+  const x = peerCards(u).find(y => y.p === +el.dataset.p && y.s === +el.dataset.s); if (!x) return;
+  const k = el.dataset.k, ref = db.ref(`collections/${me}/gifts/${u}/${k}`), on = !!(GIFTS[u] || {})[k];
+  el.classList.toggle('sel', !on);
+  (on ? ref.remove() : ref.set({ card: JSON.parse(JSON.stringify(giftCard(x.c))), addedAt: Date.now(), bought: false }))
+    .catch(() => { el.classList.toggle('sel', on); toast('Couldn\'t save. Check your connection.', 'error'); });
+  if (!on && navigator.vibrate) navigator.vibrate(12);
+}
+function openGiftList() {
+  if (!watchGifts()) return toast('Open your own binder once first, so the app knows whose gift list this is.', 'error');
+  $('gift-page').hidden = false; document.body.style.overflow = 'hidden';
+  renderGiftList();
+}
+function closeGiftList() { $('gift-page').hidden = true; if ($('peer-viewer').hidden) document.body.style.overflow = ''; }
+function renderGiftList() {
+  const page = $('gift-page'); if (!page || page.hidden) return;
+  const people = Object.entries(GIFTS).filter(([, g]) => g && Object.keys(g).length);
+  let count = 0, total = 0;
+  const html = people.map(([u, gifts]) => {
+    const items = Object.entries(gifts).filter(([, g]) => g && g.card).sort((a, b) => (a[1].bought - b[1].bought) || (+b[1].card.price || 0) - (+a[1].card.price || 0));
+    const left = items.filter(([, g]) => !g.bought), sum = left.reduce((a, [, g]) => a + (+g.card.price || 0), 0);
+    count += left.length; total += sum;
+    return `<div class="gf-who"><b>${esc(titleOf(u) || u)}</b><span>${left.length} to buy${items.length > left.length ? ` · ${items.length - left.length} bought` : ''}${sum ? ` · <i>${fmt(sum)}</i>` : ''}</span></div>`
+      + items.map(([k, g]) => { const c = g.card; return `<div class="np-card${g.bought ? ' got' : ''}">
+          <div class="np-img">${g.bought ? '<span class="np-stamp">Bought</span>' : ''}${imgTag(c.image || c.thumb, c.alts, c.name, '')}${langTag(c)}</div>
+          <div class="np-name" title="${esc(c.name)}">${esc(c.name)}</div>
+          <div class="np-meta"><span>${esc([c.set, c.number].filter(Boolean).join(' · '))}</span></div>
+          ${condRows(c.price)}
+          <a class="np-link" href="${esc(cardLink(c))}" target="_blank" rel="noopener noreferrer">${c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+          <div class="gf-btns"><button type="button" class="buy" onclick="giftBought('${esc(u)}','${esc(k)}')">${g.bought ? '↩ Not bought' : '✓ Bought'}</button><button type="button" onclick="giftRemove('${esc(u)}','${esc(k)}')" aria-label="Remove">✕</button></div>
+        </div>`; }).join('');
+  }).join('');
+  $('gl-sub').innerHTML = count ? `<b>${count}</b> gift${count === 1 ? '' : 's'} to buy · ${fmt(total)} at market (NM)` : people.length ? 'Everything on your list is bought!' : 'No gifts yet';
+  $('gl-list').innerHTML = html || '<p class="np-empty">Your gift list is empty.<br>Open someone\'s binder in <b>View</b> and tap <b>🎁 Gifts</b> to pick cards for them.</p>';
+}
+function giftBought(u, k) { const g = (GIFTS[u] || {})[k]; if (!g) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}/bought`).set(!g.bought).then(() => toast(g.bought ? `${g.card.name} is back on the list` : `🎁 ${g.card.name} bought`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error')); }
+function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !confirm(`Take ${g.card.name} off your gift list?`)) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
+function clearBoughtGifts() {
+  const up = {}; Object.entries(GIFTS).forEach(([u, gifts]) => Object.entries(gifts || {}).forEach(([k, g]) => { if (g && g.bought) up[`${u}/${k}`] = null; }));
+  const n = Object.keys(up).length; if (!n) return toast('Nothing marked bought yet');
+  db.ref(`collections/${giftMe()}/gifts`).update(up).then(() => toast(`Cleared ${n} bought gift${n === 1 ? '' : 's'}`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error'));
+}
+async function refreshGiftPrices() {
+  const me = giftMe(), up = {}, list = [];
+  Object.entries(GIFTS).forEach(([u, gifts]) => Object.entries(gifts || {}).forEach(([k, g]) => { if (g && g.card && g.card.source !== 'custom') list.push([u, k, g.card]); }));
+  if (!list.length) return toast('No gifts to price');
+  toast(`Refreshing ${list.length} price${list.length === 1 ? '' : 's'}…`);
+  await pool(list, 4, async ([u, k, c]) => { const r = await lookupPrice(c).catch(() => null); if (r && r.price != null && r.price !== c.price) up[`${u}/${k}/card/price`] = r.price; });
+  const n = Object.keys(up).length;
+  if (n) await db.ref(`collections/${me}/gifts`).update(up).catch(() => {});
+  toast(n ? `Updated ${n} price${n === 1 ? '' : 's'}` : 'Prices are up to date');
+}
+
+/* Refresh prices in someone else's binder while viewing it: only each card's price (and link) is written */
+async function refreshPeerPrices() {
+  const u = pvUser, d = pvData; if (!u || !d || !d.pages) return toast('This binder has no cards yet');
+  const btn = $('pv-prices'), list = [];
+  Object.entries(d.pages).forEach(([pi, pg]) => { const cards = (pg && (Array.isArray(pg) ? pg : pg.cards)) || {}; Object.entries(cards).forEach(([si, c]) => { if (c && c.source !== 'custom') list.push([pi, si, c]); }); });
+  if (!list.length) return toast('No cards to refresh');
+  btn.disabled = true; btn.textContent = '⏳ Prices…';
+  const up = {}; let done = 0;
+  await pool(list, 4, async ([pi, si, c]) => {
+    const r = await lookupPrice(c).catch(() => null);
+    if (r && r.price != null && r.price !== c.price) up[`pages/${pi}/cards/${si}/price`] = r.price;
+    if (r && r.url && !c.url) up[`pages/${pi}/cards/${si}/url`] = r.url;
+    if (++done % 10 === 0) btn.textContent = `⏳ ${done}/${list.length}`;
+  });
+  const n = Object.keys(up).filter(k => k.endsWith('/price')).length;
+  try { if (Object.keys(up).length) await db.ref('binders/' + u).update(up); } catch (e) { btn.disabled = false; btn.textContent = '🔄 Prices'; return toast('Couldn\'t save the prices. Check your connection.', 'error'); }
+  btn.disabled = false; btn.textContent = '🔄 Prices';
+  if (pvUser === u) setTimeout(refreshPeerViewer, 400);
+  toast(n ? `Updated ${n} of ${list.length} prices in ${titleOf(u)}` : `All ${list.length} prices are current`);
+}
+
 /* Offline: save the binders, their card pictures, the price lists and the news on this phone before going somewhere with
    no signal. The offline helper (sw.js) keeps what's fetched here; binders themselves are kept by the app. */
 const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes'];
@@ -5457,6 +5636,7 @@ function renderShelf() {
 }
 function showLanding() {
   closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage();
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage(); closeGiftPicker(); closeGiftList(); closeSlabPage(); closeSlabSheet();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray(); if (selMode) toggleSelectMode(false);
   closePeerViewer(true);
@@ -5675,7 +5855,7 @@ function peerViewerHTML(u, data) {
 function openPeerViewer(u, fromEdit) {
   closePeerViewer(true);
   pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit;
-  $('pv-back').textContent = pvFromEdit ? '‹ Back to editing' : '‹ Shelf';
+  $('pv-back').textContent = pvFromEdit ? '‹ Back' : '‹ Shelf';
   $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
   if (pvFromEdit) document.body.style.overflow = 'hidden';
   $('pv-name').textContent = titleOf(u);
