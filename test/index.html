@@ -1057,19 +1057,6 @@
   <div id="gl-list" class="np-grid"></div>
 </div>
 
-<!-- Graded slabs you own: card + company + grade + cert + your value; one-tap price research -->
-<div id="slab-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="sl-title">
-  <div class="np-head">
-    <button type="button" class="np-x" onclick="closeSlabPage()" aria-label="Close">✕</button>
-    <div class="np-titles"><h2 id="sl-title">Slabs</h2><p id="sl-sub"></p></div>
-    <div class="np-acts"><span class="sp-hint">PSA · BGS · CGC · SGC · TAG</span><button type="button" class="np-lock on" onclick="openSlabSearch()">＋ Add slab</button></div>
-  </div>
-  <div id="sl-grid" class="np-grid sp-grid sl-grid"></div>
-</div>
-<div id="slab-sheet" class="sl-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="ss-title">
-  <div class="sl-card" id="ss-body"></div>
-</div>
-
 <!-- Trade analyzer: what you give vs what you get, with a multiplier on each side -->
 <div id="trade-page" class="np tp" hidden role="dialog" aria-modal="true" aria-labelledby="tp-title">
   <div class="np-head">
@@ -5636,7 +5623,7 @@ function renderShelf() {
 }
 function showLanding() {
   closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage();
-  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage(); closeGiftPicker(); closeGiftList(); closeSlabPage(); closeSlabSheet();
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage(); closeGiftPicker(); closeGiftList();
   const L = $('landing'); if (!L) return;
   closeSheet(); closeTray(); if (selMode) toggleSelectMode(false);
   closePeerViewer(true);
