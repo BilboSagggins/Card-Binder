@@ -2,16 +2,19 @@ name: news probe
 on:
   push:
     branches: [news-probe]
-    paths: [backtest.py, .github/workflows/probe.yml]
+    paths: [scripts/build-art-tags.py, .github/workflows/probe.yml]
 permissions:
   contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - run: python3 backtest.py || true
+      - run: pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu && pip install --quiet transformers pillow
+      - run: (time python3 scripts/build-art-tags.py --trial 300 --sheets --out art-tags-trial.json) > probe-report.txt 2>&1 || true
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add probe-report.txt && git commit -m "probe report" && git push
+          git add -A probe-report.txt art-tags-trial.json sheets || true
+          git commit -m "probe report" && git push
