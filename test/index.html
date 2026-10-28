@@ -113,6 +113,8 @@
   .np-meta { display: flex; justify-content: space-between; gap: .3rem; font: 500 .6rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .np-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .np-meta b { color: #34d399; flex: none; }
+  .np-from { font: 600 .58rem/1.2 Inter, system-ui, sans-serif; color: #93c5fd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+  .np-acts { flex-wrap: wrap; }
   .np-img .jp-tag { left: auto; right: 3px; top: 3px; }
   .np-conds { display: grid; grid-template-columns: auto 1fr; gap: 1px .4rem; padding: .3rem .35rem; background: #09090b; border: 1px solid #27272a; border-radius: 6px; font: 500 .58rem/1.35 Inter, system-ui, sans-serif; }
   .np-conds span { color: #71717a; }
@@ -1177,7 +1179,7 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
-    <div class="np-acts"><span id="np-hint"></span><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
+    <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
     <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
     <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
@@ -1249,7 +1251,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-28.79';
+const APP_VERSION = '2026-10-28.81';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -5677,20 +5679,87 @@ async function refreshTradePrices() {
   }
 }
 
-/* --- Need List page: every card marked Need in this binder, live (it redraws whenever the binder changes) --- */
-// Each Need card's key in the saved priority order: its card id (a second copy of the same card gets "#2")
+/* --- Need List page: every card marked Need in this binder (or in the binders you pick), live --- */
+/* Which binders: this one (default), all of yours for this game, or the ones you tick. Kept on this phone per person + game.
+   Other binders are followed live while the page is open (this phone's saved copy when there's no signal). */
+const NP_SCOPE_KEY = 'cardBinder.needScope';
+let NP_OTHER = {}, npOtherRefs = {}, NP_ALL_ORDER = null;
+const npScopeKey = () => ownerOf(currentUser) + '|' + gameOf(currentUser);
+function needBinderIds() {
+  const all = [currentUser, ...myOtherBinders().map(b => b.id)], v = (recall(NP_SCOPE_KEY, {}) || {})[npScopeKey()];
+  if (v === 'all') return all;
+  if (Array.isArray(v)) { const f = all.filter(id => v.includes(id)); if (f.length) return f; }
+  return [currentUser];
+}
+const npMulti = () => { const ids = needBinderIds(); return ids.length > 1 || ids[0] !== currentUser; };
+function npScopeLabel() {
+  const ids = needBinderIds(), all = 1 + myOtherBinders().length;
+  return ids.length === 1 ? titleOf(ids[0]) : ids.length === all ? 'All binders' : `${ids.length} binders`;
+}
+function watchNeedBinders() {
+  const want = new Set(needBinderIds().filter(id => id !== currentUser));
+  Object.keys(npOtherRefs).forEach(id => { if (!want.has(id)) { npOtherRefs[id].off(); delete npOtherRefs[id]; delete NP_OTHER[id]; } });
+  want.forEach(id => {
+    if (npOtherRefs[id]) return;
+    const c = readBinderCache(id);
+    if (c && !NP_OTHER[id]) { const n = POCKETS[c.layout] || 12; NP_OTHER[id] = { n, pages: rawBinderPages(c.pages, n), needOrder: c.needOrder || [] }; }
+    npOtherRefs[id] = db.ref('binders/' + id);
+    npOtherRefs[id].on('value', v => {
+      const d = v.val(); if (!d) return;
+      const n = POCKETS[d.layout] || 12, order = Array.isArray(d.needOrder) ? d.needOrder : Object.values(d.needOrder || {});
+      NP_OTHER[id] = { n, pages: rawBinderPages(d.pages, n), needOrder: order };
+      renderNeedPage();
+    }, () => {});
+  });
+  // the shared priority order for a view of several binders
+  const k = 'cardBinder.needAll.' + npScopeKey();
+  if (NP_ALL_ORDER == null) NP_ALL_ORDER = recall(k, null);
+  db.ref(`collections/${ownerOf(currentUser)}/needAll/${gameOf(currentUser)}`).once('value').then(v => {
+    const o = v.val(); if (o) { NP_ALL_ORDER = Array.isArray(o) ? o : Object.values(o); remember(k, NP_ALL_ORDER); renderNeedPage(); }
+  }).catch(() => {});
+}
+function unwatchNeedBinders() { Object.values(npOtherRefs).forEach(r => r.off()); npOtherRefs = {}; NP_OTHER = {}; NP_ALL_ORDER = null; }
+function openNeedScope() {
+  const all = [{ id: currentUser, title: titleOf(currentUser) }, ...myOtherBinders()], on = new Set(needBinderIds());
+  sheet(`<h2 id="lb-sheet-title">📚 Need List binders</h2>
+    <p class="sub">Show the Need cards from the binders you tick. ${all.length > 1 ? '' : 'You only have this binder for this game right now.'}</p>
+    <div class="mv-list" style="margin-top:.6rem">${all.map(b => `<label class="pp-row"><input type="checkbox" data-id="${esc(b.id)}"${on.has(b.id) ? ' checked' : ''}>
+      <span><b>${esc(b.title)}</b><small>${b.id === currentUser ? 'The binder you have open' : 'Another of your binders'}</small></span></label>`).join('')}</div>
+    <div class="lb-row" style="margin-top:.7rem"><button type="button" class="lb-btn quiet" id="ns-all">All binders</button><button type="button" class="lb-btn" id="ns-ok">Show</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  const boxes = [...document.querySelectorAll('#lb-sheet input[data-id]')];
+  const save = v => { const m = recall(NP_SCOPE_KEY, {}) || {}; m[npScopeKey()] = v; remember(NP_SCOPE_KEY, m); closeSheet(); npSel.clear(); watchNeedBinders(); renderNeedPage(); $('need-page').scrollTop = 0; };
+  $('ns-all').onclick = () => save('all');
+  $('ns-ok').onclick = () => {
+    const ids = boxes.filter(b => b.checked).map(b => b.dataset.id);
+    if (!ids.length) return toast('Tick at least one binder', 'error');
+    save(ids.length === boxes.length && boxes.length > 1 ? 'all' : ids);
+  };
+}
+// Each Need card's key in the saved priority order: its card id (a second copy of the same card gets "#2");
+// cards from another binder carry that binder's id in front
 function needCards() {
-  const out = [], seen = {};
-  getPagesArray().forEach((pg, p) => pg.cards.slice(0, cap()).forEach((c, s) => {
-    if (!c || !(c.status === 'needed' || c.acquired)) return;   // acquired cards stay, stamped, until you clear them
-    const base = String(c.id || norm(c.name) + '|' + (c.number || '')), n = seen[base] = (seen[base] || 0) + 1;
-    out.push({ c, p, s, key: n > 1 ? base + '#' + n : base, i: out.length });
-  }));
-  // your priority order first; cards not ranked yet follow in binder order
-  const rank = new Map((S.needOrder || []).map((k, i) => [k, i]));
-  return out.sort((a, b) => (rank.has(a.key) ? rank.get(a.key) : 1e9 + a.i) - (rank.has(b.key) ? rank.get(b.key) : 1e9 + b.i));
+  const out = [], seen = {}, multi = npMulti(), ids = needBinderIds(), own = {};
+  ids.forEach((id, bi) => {
+    const src = id === currentUser ? { pages: getPagesArray(), n: cap(), needOrder: S.needOrder || [] } : NP_OTHER[id];
+    if (!src) return;
+    const rank = new Map((src.needOrder || []).map((k, i) => [k, i]));
+    src.pages.forEach((pg, p) => pg && (pg.cards || []).slice(0, src.n).forEach((c, s) => {
+      if (!c || !(c.status === 'needed' || c.acquired)) return;   // acquired cards stay, stamped, until you clear them
+      const b0 = String(c.id || norm(c.name) + '|' + (c.number || '')), sk = id + '|' + b0, n = seen[sk] = (seen[sk] || 0) + 1;
+      const k0 = n > 1 ? b0 + '#' + n : b0;
+      out.push({ c, p, s, b: id, key: id === currentUser ? k0 : id + ':' + k0, i: out.length, own: bi * 1e6 + (rank.has(k0) ? rank.get(k0) : 5e5 + out.length) });
+    }));
+  });
+  // your priority order first; cards not ranked yet follow (each binder in its own order, then binder order)
+  const order = multi ? (NP_ALL_ORDER || []) : (S.needOrder || []), rank = new Map(order.map((k, i) => [k, i]));
+  const at = x => rank.has(x.key) ? rank.get(x.key) : (multi ? 1e9 + x.own : 1e9 + x.i);
+  return out.sort((a, b) => at(a) - at(b));
 }
 function saveNeedOrder(keys) {
+  if (npMulti()) {
+    NP_ALL_ORDER = keys; remember('cardBinder.needAll.' + npScopeKey(), keys);
+    return cloudUpdate(`collections/${ownerOf(currentUser)}`, { [`needAll/${gameOf(currentUser)}`]: keys }).catch(() => toast('Couldn\'t save the order. Check your connection.', 'error'));
+  }
   S.needOrder = keys;
   cloudUpdate('binders/' + currentUser, { needOrder: keys }).catch(() => toast('Couldn\'t save the order. Check your connection.', 'error'));
   writeBinderCache(currentUser, { layout: S.layout, pages: getPagesArray(), needOrder: keys });
@@ -5702,10 +5771,11 @@ function condRows(price) {
   return `<div class="np-conds">${CONDITIONS.map(([k, f], i) => `<span>${k}</span><b${i ? '' : ' class="nm"'}>${v == null ? '—' : '$' + (v * f).toFixed(2)}</b>`).join('')}</div>`;
 }
 function needCardHTML(x, i, opts) {
-  return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-key="${esc(x.key)}">
+  return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-b="${esc(x.b || '')}" data-key="${esc(x.key)}">
       <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
+      ${x.b && npMulti() ? `<div class="np-from">📒 ${esc(titleOf(x.b))} · p${x.p + 1}</div>` : ''}
       ${condRows(x.c.price)}
       <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
       ${opts && opts.gotBtn ? `<button type="button" class="np-got">${x.c.status === 'needed' ? '✓ Mark acquired' : '↩ Not acquired'}</button>` : ''}
@@ -5714,7 +5784,7 @@ function needCardHTML(x, i, opts) {
 function openNeedPage() {
   if (peerUser) return toast('The Need List is for your own binders.', 'error');
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
-  renderNeedPage();
+  watchNeedBinders(); renderNeedPage();
 }
 /* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
 let npDrag = null;
@@ -5792,6 +5862,16 @@ const NP_LOCK_KEY = 'cardBinder.needLocked';
 let npLocked = (() => { try { return localStorage.getItem(NP_LOCK_KEY) !== '0'; } catch (e) { return true; } })();
 function toggleNeedLock() { npLocked = !npLocked; npSel.clear(); try { localStorage.setItem(NP_LOCK_KEY, npLocked ? '1' : '0'); } catch (e) {} renderNeedPage(); }
 function npToggleAcquired(el) {
+  const b = el.dataset.b;
+  if (b && b !== currentUser) {       // a card in another binder: change it there
+    const src = NP_OTHER[b], p = +el.dataset.p, s = +el.dataset.s, c = src && src.pages[p] && src.pages[p].cards[s]; if (!c) return;
+    let next;
+    if (c.status === 'needed') { next = { ...c, status: 'owned', acquired: Date.now() }; if (navigator.vibrate) navigator.vibrate(15); toast(`${c.name} acquired · marked Owned in ${titleOf(b)}`); }
+    else { const { acquired, ...back } = c; next = { ...back, status: 'needed' }; toast(`${c.name} is back on your Need list`); }
+    src.pages[p].cards[s] = next; renderNeedPage();
+    cloudUpdate('binders/' + b, { [`pages/${p}/cards/${s}`]: next }).catch(() => {});
+    return;
+  }
   const pages = getPagesArray(), p = +el.dataset.p, s = +el.dataset.s, c = pages[p] && pages[p].cards[s]; if (!c) return;
   if (c.status === 'needed') {
     pages[p].cards[s] = { ...c, status: 'owned', acquired: Date.now() };
@@ -5857,10 +5937,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Take acquired cards off the list (they stay Owned in the binder)
 function clearAcquired() {
-  const pages = getPagesArray(); let n = 0;
-  pages.forEach(pg => pg.cards.forEach((c, i) => { if (c && c.acquired && c.status !== 'needed') { const { acquired, ...rest } = c; pg.cards[i] = rest; n++; } }));
+  const ids = needBinderIds(); let n = 0;
+  ids.filter(id => id !== currentUser).forEach(id => {
+    const src = NP_OTHER[id]; if (!src) return; const up = {};
+    src.pages.forEach((pg, p) => pg && pg.cards.forEach((c, i) => { if (c && c.acquired && c.status !== 'needed') { const { acquired, ...rest } = c; pg.cards[i] = rest; up[`pages/${p}/cards/${i}`] = rest; n++; } }));
+    if (Object.keys(up).length) cloudUpdate('binders/' + id, up).catch(() => {});
+  });
+  const pages = getPagesArray(); let here = 0;
+  if (ids.includes(currentUser)) pages.forEach(pg => pg.cards.forEach((c, i) => { if (c && c.acquired && c.status !== 'needed') { const { acquired, ...rest } = c; pg.cards[i] = rest; here++; } }));
+  n += here;
   if (!n) return;
-  saveActivePages(pages); render(); toast(`Cleared ${n} acquired card${n === 1 ? '' : 's'} from the list`);
+  if (here) { saveActivePages(pages); render(); } else renderNeedPage();
+  toast(`Cleared ${n} acquired card${n === 1 ? '' : 's'} from the list`);
 }
 document.addEventListener('DOMContentLoaded', () => { const g = $('np-grid'); if (g) g.addEventListener('click', npTap); });
 // Second view: the same cards grouped by price, cheapest first (drag to reorder only works in Priority)
@@ -5894,7 +5982,7 @@ function needByPriceHTML(all) {
       + (closed ? '' : g.items.map(x => needCardHTML(x, x.rank, { gotBtn: true })).join(''));
   }).join('');
 }
-function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; }
+function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; unwatchNeedBinders(); }
 function renderNeedPage() {
   const page = $('need-page'); if (!page || page.hidden || npDrag) return;
   const all = needCards(), list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
@@ -5903,13 +5991,14 @@ function renderNeedPage() {
   lock.title = npLocked ? 'Locked: tap a card to mark it acquired. Tap here to unlock and reorder.' : 'Editing: hold and drag to reorder. Tap here to lock.';
   page.classList.toggle('locked', npLocked);
   $('np-bar').hidden = !got; $('np-bar-text').textContent = `${got} acquired`;
-  $('np-title').textContent = `Need List · ${titleOf(currentUser)}`;
+  $('np-title').textContent = `Need List · ${npScopeLabel()}`;
+  const sc = $('np-scope'); sc.textContent = `📚 ${needBinderIds().length > 1 ? npScopeLabel() : needBinderIds()[0] === currentUser ? 'This binder' : titleOf(needBinderIds()[0])}`; sc.classList.toggle('on', npMulti());
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
   $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
   $('np-find').hidden = npView !== 'price' || !all.length;
   $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
   $('np-grid').innerHTML = all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join(''))
-    : '<p class="np-empty">No cards are marked Need in this binder.<br>Mark cards as ⏳ Need and they show up here.</p>';
+    : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
 }
 
@@ -5921,7 +6010,7 @@ function exportNeededList() {
   // this page's own styles, so the export looks the same
   let css = '';
   for (const sh of document.styleSheets) { try { for (const r of sh.cssRules) { const t = r.cssText; if (/(^|[\s,])\.(np|jp-tag)|np-stamp/.test(t.split('{')[0]) || /^@keyframes np-/.test(t) || (r.media && /\.np/.test(t))) css += t + '\n'; } } catch (e) {} }
-  const name = titleOf(currentUser), day = new Date();
+  const name = npScopeLabel(), day = new Date();
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Need List · ${esc(name)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
