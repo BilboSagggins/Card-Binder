@@ -1,14 +1,12 @@
-580 pictures
 Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
-A_now: 322s
-B_hide_text: 315s
-C_siglip: 367s
-D_clip_large: 1337s
-A_now: cards with a tag strict 312/580, loose 459/580
-B_hide_text: cards with a tag strict 300/580, loose 443/580
-C_siglip: cards with a tag strict 322/580, loose 436/580
-D_clip_large: cards with a tag strict 323/580, loose 435/580
-
-real	39m7.859s
-user	101m30.408s
-sys	12m32.015s
+model changed (openai/clip-vit-base-patch16 -> openai/clip-vit-large-patch14): re-tagging everything, earlier tags kept meanwhile
+28068 cards in the list, 0 already tagged, doing 40
+looked at 40 cards in 71s
+0 cards had no picture (tried again in two weeks)
+saved 40 tagged cards (908 without a picture) to art-copy.json
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+28068 cards in the list, 40 already tagged, doing 40
+looked at 40 cards in 71s
+0 cards had no picture (tried again in two weeks)
+saved 80 tagged cards (908 without a picture) to art-copy.json
+RESULT openai/clip-vit-large-patch14 988 80 28068 27160 27080 908 80
