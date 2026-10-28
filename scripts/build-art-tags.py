@@ -88,7 +88,11 @@ def main():
     if prev.get("vocab") and prev["vocab"] != VOCAB:
         print("vocabulary changed: re-tagging everything"); prev = {}
     done = prev.get("t", {})
-    todo = [pid for pid in lst if pid not in done]
+    # cards with no picture on TCGplayer yet: skipped, and tried again after two weeks
+    miss = {p: d for p, d in prev.get("miss", {}).items() if p in lst and p not in done}
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    retry_before = time.strftime("%Y-%m-%d", time.gmtime(time.time() - 14 * 86400))
+    todo = [pid for pid in lst if pid not in done and not (pid in miss and miss[pid] > retry_before)]
     if a.trial:
         random.seed(7); todo = random.sample(list(lst), min(a.trial, len(lst)))
     else:
@@ -125,7 +129,22 @@ def main():
             if len(embs) and len(embs) % 512 == 0: print(f"  {len(embs)} cards, {time.time() - t0:.0f}s", flush=True)
         if batch: run(batch)
     print(f"looked at {len(embs)} cards in {time.time() - t0:.0f}s")
+    for pid in todo:
+        if pid not in embs: miss[pid] = today
+    print(f"{sum(1 for p in todo if p not in embs)} cards had no picture (tried again in two weeks)")
 
+    def save(mean, std):
+        out = {"model": MODEL, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "vocab": VOCAB,
+               "done": len(done) + len(miss), "tagged": len(done), "total": len(lst),
+               "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "miss": miss, "t": done}
+        os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
+        with open(a.out, "w", encoding="utf-8") as f:
+            json.dump(out, f, separators=(",", ":"))
+        print(f"saved {len(done)} tagged cards ({len(miss)} without a picture) to {a.out}")
+
+    if not embs:                      # nothing new could be looked at: just remember the cards without pictures
+        if prev.get("stats"): save(prev["stats"]["mean"], prev["stats"]["std"])
+        return
     pids = list(embs)
     S = torch.stack([embs[p] for p in pids]) @ T.T          # card x concept similarity
     # each concept's typical similarity (kept from the first big run so later cards are scored the same way)
@@ -142,12 +161,8 @@ def main():
         keep.sort(key=lambda x: -x[1])
         tags[pid] = [[j, round(v, 1)] for j, v in keep[:8]]
     done.update(tags)
-    out = {"model": MODEL, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "vocab": VOCAB, "done": len(done),
-           "total": len(lst), "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "t": done}
-    os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
-    with open(a.out, "w", encoding="utf-8") as f:
-        json.dump(out, f, separators=(",", ":"))
-    print(f"saved {len(done)} tagged cards to {a.out}")
+    for pid in tags: miss.pop(pid, None)
+    save(mean, std)
 
     if a.sheets:          # picture grids of the best matches for some tags, for checking by eye
         from PIL import Image, ImageDraw

@@ -2,22 +2,22 @@ name: news probe
 on:
   push:
     branches: [news-probe]
-    paths: [scripts/build-art-tags.py, .github/workflows/probe.yml]
+    paths: [scripts/art-compare.py, .github/workflows/probe.yml]
 permissions:
   contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - run: pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu && pip install --quiet "transformers>=4.40,<5" pillow
-      - run: (time python3 scripts/build-art-tags.py --trial 600 --sheets --out art-tags-trial.json) > probe-report.txt 2>&1 || true
+      - run: pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu && pip install --quiet "transformers>=4.40,<5" pillow sentencepiece protobuf
+      - run: (time python3 scripts/art-compare.py) > probe-report.txt 2>&1 || true
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add probe-report.txt
           if [ -f art-tags-trial.json ]; then git add art-tags-trial.json; fi
-          if [ -d sheets ]; then git add sheets; fi
+          if [ -d cmp ]; then git add cmp; fi; if [ -f art-compare.json ]; then git add art-compare.json; fi
           git commit -m "probe report"
           git pull --rebase origin news-probe && git push
