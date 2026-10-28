@@ -602,7 +602,26 @@
   .sel-bar button { appearance: none; border: 0; border-radius: 10px; padding: .65rem .7rem; font: 800 .75rem/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
   .sel-bar .sb-all, .sel-bar .sb-cancel { background: #27272a; color: #d4d4d8; }
   .sel-bar .sb-del { background: #e11d48; color: #fff; }
-  .sel-bar .sb-del:disabled { opacity: .4; }
+  .sel-bar .sb-del:disabled, .sel-bar .sb-move:disabled { opacity: .4; }
+  .sel-bar { flex-wrap: wrap; }
+  .sel-bar span { flex: 1 1 100%; padding: 2px 4px 2px; }
+  .sel-bar button { flex: 1 1 auto; }
+  .sel-bar .sb-move { background: #0369a1; color: #fff; }
+  /* Move to another binder / Duplicates sheets */
+  .mv-list { display: flex; flex-direction: column; gap: .4rem; margin-top: .25rem; }
+  .mv-b { appearance: none; display: flex; align-items: center; justify-content: space-between; gap: .6rem; width: 100%; text-align: left; border: 1px solid #3f3f46; background: #27272a; color: #f4f4f5; border-radius: 12px; padding: .7rem .85rem; font: 700 .85rem/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
+  .mv-b small { color: #a1a1aa; font-weight: 600; font-size: .7rem; }
+  .mv-b:disabled { opacity: .5; }
+  .dup-h { margin: .6rem 0 .1rem; font: 800 .72rem/1.2 Inter, system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #fbbf24; }
+  .dup-h.need { color: #fb7185; }
+  .dup-row { display: flex; gap: .6rem; align-items: flex-start; padding: .5rem; border-radius: 12px; background: #1f1f23; border: 1px solid #27272a; }
+  .dup-row img { width: 46px; height: 64px; object-fit: cover; border-radius: 4px; flex: none; background: #27272a; }
+  .dup-row b { display: block; font: 700 .82rem/1.25 Inter, system-ui, sans-serif; color: #f4f4f5; }
+  .dup-row .meta { display: block; font-size: .68rem; color: #a1a1aa; margin-top: 1px; }
+  .dup-where { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .35rem; }
+  .dup-where button, .dup-where em { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 999px; padding: .25rem .55rem; font: 600 .68rem/1.2 Inter, system-ui, sans-serif; font-style: normal; }
+  .dup-where button { cursor: pointer; border-color: #4f46e5; color: #c7d2fe; }
+  .dup-where .nd { border-color: #9f1239; color: #fecdd3; }
   body.sel-mode main { padding-bottom: 90px; }
   .ctray-item.picked img, .ctray-item.picked .ph { outline: 3px solid #10b981; outline-offset: -3px; }
   .ctray-item.picked.need img, .ctray-item.picked.need .ph { outline-color: #e11d48; }
@@ -746,6 +765,7 @@
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
+        <button type="button" onclick="openDuplicates()" title="Cards you have more than once across your binders" class="tt" style="--tt:#a16207"><span>🔁</span>Duplicates</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
 
@@ -815,6 +835,7 @@
   <span id="sel-count">Tap cards to select</span>
   <button type="button" class="sb-all" onclick="selectAllOnPage()">All on page</button>
   <button type="button" class="sb-cancel" onclick="toggleSelectMode(false)">Done</button>
+  <button type="button" id="sel-move" class="sb-move" onclick="openMoveSheet()" disabled>📦 Move</button>
   <button type="button" id="sel-del" class="sb-del" onclick="deleteSelected()" disabled>🗑 Remove</button>
 </div>
 
@@ -946,7 +967,7 @@
     <div id="pick-bar" class="pick-bar" hidden><button type="button" class="pb-clear" onclick="clearPicks()">Clear</button><button type="button" id="pick-add" class="pb-add" onclick="addPicks()"></button></div>
     <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex justify-between text-xs text-zinc-400">
       <span>Target pocket: <b id="tgt" class="text-indigo-400"></b></span>
-      <span>Data: TCGdex · Prices: TCGplayer</span>
+      <span>Cards &amp; prices: TCGplayer</span>
     </div>
   </div>
 </div>
@@ -1163,7 +1184,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-28.74';
+const APP_VERSION = '2026-10-28.76';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1387,7 +1408,7 @@ const lookupPrice = async card => {
 
 async function fillMissing(cards) {
   if (peerUser) return;
-  await pool(cards.filter(c => c.price == null && c.source !== 'ptcg' && c.game !== 'onepiece'), 4, async c => {
+  await pool(cards.filter(c => c.price == null && c.source !== 'ptcg' && c.source !== 'tcgplayer' && c.source !== 'cardtrader' && c.game !== 'onepiece'), 4, async c => {   // list cards: no price means TCGplayer has none
     const r = (await tcgByNameNumber(c)) || (await ptcgLookup(c)); if (!r) return;
     c.price = r.price; if (r.url && !c.url) c.url = r.url;
     const el = priceEls.get(c); if (el) el.textContent = fmt(c.price);
@@ -1809,14 +1830,15 @@ async function listSearch(L, gid, lang, text, rar, make) {
   const box = $('results'), rars = Array.isArray(rar) ? rar : rar ? [rar] : [];
   if (!L) { box.innerHTML = '<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t load the card list. Try again in a moment.</div>'; return; }
   const parsed = mode === 'num' ? parseQ(text) : { name: mode === 'set' ? '' : text, number: '' };
-  const q = lc(parsed.name || (mode === 'set' ? text : '')), num = parsed.number, order = gid ? String(gid).split(',') : null;
+  const fold = v => lc(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const q = fold(parsed.name || (mode === 'set' ? text : '')), num = parsed.number, order = gid ? String(gid).split(',') : null;
   const art = lang === 'en' ? ART_ON : null;
   const items = Object.entries(L.p).filter(([pid, e]) => {
     if (art && !art.has(pid)) return false;
     if (order && !order.includes(String(e[3]))) return false;
     if (rars.length && !rars.some(v => sameRarity(String(e[4] || '').trim(), v))) return false;
     if (!priceOk(e[0])) return false;
-    if (q && !lc(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
+    if (q && !fold(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
   }).sort((a, b) => (art ? art.get(b[0]) - art.get(a[0]) : 0) || (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : b[1][3] - a[1][3])
@@ -1911,10 +1933,6 @@ function watchCollection(owner, game) {
   const k = owner + '|' + game; if (collRefs[k]) return;
   collRefs[k] = db.ref('collections/' + owner + '/' + game);
   collRefs[k].on('value', v => { COLLECTIONS[k] = v.val() || null; if (collKey() === k) { if (mode === 'coll') renderCollection(); renderTray(); } }, () => {});
-}
-function collectionItem(card) {
-  const owner = ownerOf(currentUser), data = COLLECTIONS[owner + '|' + (card.game || S.game)];
-  return data && data.items && card.collId ? data.items[card.collId] : null;
 }
 function openCollection() {
   watchCollection(ownerOf(currentUser), S.game);
@@ -2194,12 +2212,6 @@ function addTrayPicks() {
   if (!trayPicks.size || peerUser) return;
   const list = [...trayPicks.values()]; trayPicks.clear(); paintTrayBar();
   fillBinder(list.map(x => collCard(x.it, x.status)), { p: S.cur, s: 0 });   // the first empty slots from this page onward
-}
-function placeInNextEmpty(it) {
-  const pages = getPagesArray(), page = pages[S.cur];
-  const i = page.cards.slice(0, cap()).findIndex(c => !c);
-  if (i < 0) return toast('This page is full. Drag the card onto a slot on another page, or add a page.', 'error');
-  placeCollectionItem(it, { p: S.cur, s: i });
 }
 // Pull a card up out of the tray (or press and hold) to drag it; slide sideways to scroll the tray
 let trayDrag = null;
@@ -2723,6 +2735,14 @@ const PK_RARITIES = ['Common', 'Uncommon', 'Rare', 'Rare Holo', 'Double rare', '
 const pkRarityCards = {};   // "lang|rarity" -> Set of card ids
 async function pkFillRarities() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'pokemon') return;
+  const L = await loadTcgList('pokemon');
+  if (L && L.p) {      // the rarities TCGplayer uses, most common first
+    if (S.game !== 'pokemon' || pkLang !== 'en' || mode === 'sealed') return;
+    const n = {}; Object.values(L.p).forEach(e => { const r = String(e[4] || '').trim(); if (r && r !== 'Unconfirmed') n[r] = (n[r] || 0) + 1; });
+    const keep = dd.value;
+    dd.innerHTML = '<option value="">Any rarity</option>' + Object.keys(n).sort((a, b) => n[b] - n[a]).map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    dd.value = keep; dd.dataset.ready = 'pokemon'; paintRarBtn(); return;
+  }
   let list = PK_RARITIES;
   try { const l = await fetchJSON(`${API}en/rarities`, 8000); if (Array.isArray(l) && l.length) list = l.filter(r => r && typeof r === 'string' && r !== 'None'); } catch (e) {}
   if (S.game !== 'pokemon' || pkLang !== 'en') return;
@@ -2760,10 +2780,15 @@ async function search() {
     const sv = $('set').value;
     return listSearch(await loadTcgList('pokemon'), sv.startsWith('tcg:') ? sv.slice(4) : '', 'en', $('q').value.trim(), rarPick());
   }
-  if ($('set').value.startsWith('tcg:')) {   // a TCGplayer set: its exact cards and prices
-    const text = $('q').value.trim(), rar = rarPick();
-    $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
-    return listSearch(await loadTcgList('pokemon'), $('set').value.slice(4), 'en', text, rar);
+  // English cards come from TCGplayer's daily list (prices/pokemon.json): every card's name, number, set, rarity, price and
+  // picture in one file, so results are instant, work offline, and pictures always match prices. TCGdex below is only a backup.
+  {
+    const text = $('q').value.trim(), rars = rarPick(), sv = $('set').value, gid = sv.startsWith('tcg:') ? sv.slice(4) : '';
+    if (mode === 'set' && !gid && !rars.length) return toast('Choose a set or a rarity', 'error');
+    if (!gid && !text && !rars.length) return toast('Type a card name, or choose a set or rarity', 'error');
+    if (!TCG_LISTS.pokemon) $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
+    const L = await loadTcgList('pokemon');
+    if (L) return listSearch(L, gid, 'en', text, rars);
   }
   const lang = $('lang').value, setVal =$('set').value, box = $('results'), text =$('q').value.trim();
   const parsed = mode === 'name' ? { name: text, number: '' } : parseQ(text);
@@ -3910,6 +3935,7 @@ function paintSelBar() {
   const n = selSlots.size, pages = new Set([...selSlots].map(k => k.split('|')[0])).size;
   $('sel-count').textContent = n ? `${n} selected${pages > 1 ? ` on ${pages} pages` : ''}` : 'Tap cards to select';
   $('sel-del').disabled = !n; $('sel-del').textContent = n ? `🗑 Remove ${n}` : '🗑 Remove';
+  $('sel-move').disabled = !n; $('sel-move').textContent = n ? `📦 Move ${n}` : '📦 Move';
   const cards = selMode ? getPagesArray()[S.cur].cards : [];
   const keys = cards.map((c, i) => c ? S.cur + '|' + i : null).filter(Boolean);
   bar.querySelector('.sb-all').textContent = keys.length && keys.every(k => selSlots.has(k)) ? 'None on page' : 'All on page';
@@ -3928,6 +3954,162 @@ function deleteSelected() {
     saveActivePages(pg); render();
     toast(`Put back ${back} card${back === 1 ? '' : 's'}${skipped ? ` · ${skipped} slot${skipped === 1 ? ' was' : 's were'} filled since` : ''}`);
   });
+}
+
+/* Your other binders (same owner and game as the open one), and their pages: from the cloud, or this phone's copy offline */
+function myOtherBinders() {
+  const owner = ownerOf(currentUser), game = gameOf(currentUser);
+  return binders().filter(b => b.owner === owner && b.id !== currentUser && (b.game || 'pokemon') === game);
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+// A binder's pages exactly as stored, laid out for that binder's own pocket count (not the open binder's)
+function rawBinderPages(raw, n) {
+  const list = (Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? Object.keys(raw).sort((a, b) => a - b).map(k => raw[k]) : []);
+  return list.map((pg, i) => {
+    if (pg == null) return null;
+    const rc = Array.isArray(pg) ? pg : pg.cards, cards = Array(n).fill(null);
+    if (Array.isArray(rc)) rc.forEach((c, j) => { cards[j] = c || null; });
+    else if (rc && typeof rc === 'object') Object.keys(rc).forEach(j => { cards[+j] = rc[j] || null; });
+    return { title: (!Array.isArray(pg) && pg.title) || `Page ${i + 1}`, locked: !Array.isArray(pg) && !!pg.locked, cards };
+  });
+}
+const POCKETS = { '2x2': 4, '3x3': 9, '4x3': 12 };
+async function loadBinderRaw(id) {
+  try { return await withTimeout(db.ref('binders/' + id).once('value').then(v => v.val() || {}), 8000); }
+  catch (e) { const c = readBinderCache(id); return c ? { layout: c.layout, pages: c.pages, cached: true } : null; }
+}
+
+/* --- Move the selected cards to another of your binders: they fill its empty pockets in order (skipping locked pages),
+   with new pages added at the end when it runs out of room. Undo puts them back. */
+function openMoveSheet() {
+  if (peerUser || !selSlots.size) return;
+  const list = myOtherBinders(), n = selSlots.size;
+  sheet(`<h2 id="lb-sheet-title">📦 Move ${n} card${n === 1 ? '' : 's'}</h2>
+    <p class="sub">They go into the first empty pockets of the binder you pick (locked pages are skipped; new pages are added if it's full).</p>
+    <div class="mv-list">${list.length ? list.map(b => `<button type="button" class="mv-b" data-id="${esc(b.id)}">${esc(b.title)}<small>›</small></button>`).join('')
+      : '<p class="sub" style="margin:0">You don\'t have another binder for this game yet. Make one from the shelf (＋ New binder), then come back.</p>'}</div>
+    <div class="lb-row" style="margin-top:.5rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('.mv-b[data-id]').forEach(b => b.onclick = () => moveSelectedTo(b.dataset.id, b));
+}
+async function moveSelectedTo(id, btn) {
+  if (peerUser || !selSlots.size) return;
+  if (navigator.onLine === false || S.connected === false) return toast('Moving cards to another binder needs signal. Try again when you have service.', 'error');
+  document.querySelectorAll('.mv-b').forEach(b => b.disabled = true); if (btn) btn.querySelector('small').textContent = '⏳';
+  const from = currentUser, pages = getPagesArray();
+  const picked = [...selSlots].map(k => k.split('|').map(Number)).sort((a, b) => a[0] - b[0] || a[1] - b[1])
+    .map(([p, s]) => ({ p, s, c: pages[p] && pages[p].cards[s] })).filter(x => x.c && !(pages[x.p] && pages[x.p].locked));
+  if (!picked.length) { closeSheet(); return; }
+  const raw = await loadBinderRaw(id);
+  if (!raw || raw.cached) { closeSheet(); return toast('Couldn\'t reach that binder. Check your signal and try again.', 'error'); }
+  const n = POCKETS[raw.layout] || 12, tp = rawBinderPages(raw.pages, n);
+  const up = {}, placed = [], fresh = new Set();
+  let pi = 0, si = 0;
+  for (const x of picked) {
+    while (true) {
+      if (pi >= tp.length) { tp.push({ title: `Page ${tp.length + 1}`, cards: Array(n).fill(null) }); fresh.add(tp.length - 1); }
+      const pg = tp[pi];
+      if (!pg || pg.locked || si >= n) { pi++; si = 0; continue; }
+      if (pg.cards[si]) { si++; continue; }
+      break;
+    }
+    tp[pi].cards[si] = x.c; placed.push({ p: pi, s: si, c: x.c }); si++;
+  }
+  placed.forEach(({ p, s, c }) => { if (!fresh.has(p)) up[`pages/${p}/cards/${s}`] = c; });
+  fresh.forEach(p => { up[`pages/${p}`] = { title: tp[p].title, cards: tp[p].cards }; });
+  try { await withTimeout(cloudUpdate('binders/' + id, up), 15000); }
+  catch (e) { closeSheet(); return toast('Couldn\'t move them (no connection?). Nothing was changed.', 'error'); }
+  picked.forEach(({ p, s }) => { pages[p].cards[s] = null; });
+  saveActivePages(pages); closeSheet(); toggleSelectMode(false); render();
+  const name = titleOf(id), pagesUsed = [...new Set(placed.map(x => x.p + 1))];
+  toastUndo(`Moved ${picked.length} card${picked.length === 1 ? '' : 's'} to ${name} (page${pagesUsed.length === 1 ? '' : 's'} ${pagesUsed.length > 3 ? pagesUsed[0] + '–' + pagesUsed[pagesUsed.length - 1] : pagesUsed.join(', ')})`, async () => {
+    if (currentUser !== from) return;
+    const now = await loadBinderRaw(id); if (!now || now.cached) return toast('Couldn\'t reach that binder to undo. Check your signal.', 'error');
+    const np = rawBinderPages(now.pages, POCKETS[now.layout] || 12), back = {};
+    let took = 0;
+    placed.forEach(({ p, s, c }) => { if (np[p] && canon(np[p].cards[s]) === canon(JSON.parse(JSON.stringify(c)))) { back[`pages/${p}/cards/${s}`] = null; took++; } });
+    fresh.forEach(p => { if (np[p] && np[p].cards.every((c, s) => !c || back[`pages/${p}/cards/${s}`] === null)) { Object.keys(back).filter(k => k.startsWith(`pages/${p}/`)).forEach(k => delete back[k]); back[`pages/${p}`] = null; } });
+    try { if (Object.keys(back).length) await cloudUpdate('binders/' + id, back); } catch (e) { return toast('Couldn\'t undo. Check your signal.', 'error'); }
+    const pg = getPagesArray(); let put = 0;
+    picked.forEach(({ p, s, c }) => { if (pg[p] && !pg[p].cards[s]) { pg[p].cards[s] = c; put++; } });
+    saveActivePages(pg); render();
+    toast(`Put back ${put} card${put === 1 ? '' : 's'}`);
+  });
+}
+
+/* --- Duplicates: the same card in more than one pocket across your binders for this game.
+   Same card = same TCGplayer product when both are known, otherwise same name and number. */
+const dupNum = v => String(v || '').toLowerCase().replace(/\s+/g, '').split('/').map(x => x.replace(/^0+(?=\w)/, '')).join('/');
+const dupKey = c => (c.lang || 'en') + '|' + norm(String(c.name || '').replace(/\s+-\s+.*$/, '').replace(/\s*\((?:jp|japanese)\)\s*/i, '')) + '|' + dupNum(c.number);
+const pidOfCard = c => String(c.tcgPid || (String(c.url || '').match(/tcgplayer\.com\/product\/(\d+)/) || [])[1] || '');
+let DUP = null;
+async function findDuplicates() {
+  const all = [{ id: currentUser, title: titleOf(currentUser) }, ...myOtherBinders()];
+  const pagesOf = await Promise.all(all.map(async b => {
+    if (b.id === currentUser) return getPagesArray().map(pg => ({ title: pg.title, cards: pg.cards }));
+    const raw = await loadBinderRaw(b.id); return raw ? rawBinderPages(raw.pages, POCKETS[raw.layout] || 12) : [];
+  }));
+  const groups = new Map();
+  all.forEach((b, bi) => (pagesOf[bi] || []).forEach((pg, p) => pg && (pg.cards || []).forEach((c, s) => {
+    if (!c || !c.name) return;
+    const k = dupKey(c); if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push({ b, p, s, c, pid: pidOfCard(c) });
+  })));
+  const out = { owned: [], need: [], binders: all.length, missing: all.filter((b, i) => !pagesOf[i] || !pagesOf[i].length).map(b => b.title) };
+  for (const list of groups.values()) {
+    const pids = [...new Set(list.map(x => x.pid).filter(Boolean))];
+    const sets = pids.length > 1 ? pids.map(pid => list.filter(x => x.pid === pid)) : [list];   // different printings with the same name and number
+    for (const g of sets) {
+      if (g.length < 2) continue;
+      const own = g.filter(x => x.c.status !== 'needed'), need = g.filter(x => x.c.status === 'needed');
+      if (own.length > 1) out.owned.push({ card: own[0].c, at: g });
+      else if (need.length && own.length) out.need.push({ card: own[0].c, at: g });
+    }
+  }
+  const val = x => +x.card.price || 0;
+  out.owned.sort((a, b) => val(b) - val(a)); out.need.sort((a, b) => val(b) - val(a));
+  return out;
+}
+async function openDuplicates() {
+  if (peerUser) return toast('Open one of your own binders to check for duplicates', 'error');
+  sheet(`<h2 id="lb-sheet-title">🔁 Duplicates</h2><p class="sub">Checking your binders…</p>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  DUP = await findDuplicates();
+  paintDuplicates();
+}
+function paintDuplicates() {
+  const d = DUP; if (!d) return;
+  const where = x => {
+    const here = x.b.id === currentUser, need = x.c.status === 'needed';
+    const label = `${esc(x.b.title)} · p${x.p + 1} #${x.s + 1}${need ? ' · need' : ''}`;
+    return here ? `<button type="button" class="${need ? 'nd' : ''}" data-go="${x.p}">${label}</button>` : `<em class="${need ? 'nd' : ''}">${label}</em>`;
+  };
+  const row = g => `<div class="dup-row"><img src="${esc(g.card.thumb || g.card.image || '')}" alt="" loading="lazy" referrerpolicy="no-referrer">
+    <div><b>${esc(g.card.name)}${g.at.filter(x => x.c.status !== 'needed').length > 1 ? ` <span style="color:#fbbf24">×${g.at.filter(x => x.c.status !== 'needed').length}</span>` : ''}</b>
+    <span class="meta">${esc(g.card.set || '')}${g.card.number ? ' · ' + esc(g.card.number) : ''}${g.card.price != null ? ' · ' + fmt(g.card.price) : ''}</span>
+    <div class="dup-where">${g.at.map(where).join('')}</div></div></div>`;
+  const extras = extraCopiesHere().length;
+  $('lb-sheet').querySelector('.lb-card').innerHTML = `<h2 id="lb-sheet-title">🔁 Duplicates</h2>
+    <p class="sub">${d.owned.length || d.need.length ? `Across your ${d.binders} binder${d.binders === 1 ? '' : 's'} for this game. Tap a page in this binder to go to it.` : `No duplicates across your ${d.binders} binder${d.binders === 1 ? '' : 's'} for this game. 👍`}${d.missing.length ? `<br><span style="color:#fbbf24">Couldn't check ${esc(d.missing.join(', '))} (no signal, and not saved on this phone).</span>` : ''}</p>
+    ${extras ? `<div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn" id="dup-sel">☑ Select the ${extras} extra cop${extras === 1 ? 'y' : 'ies'} in this binder</button></div>
+      <p class="sub" style="margin-top:.35rem;font-size:.7rem">Keeps one of each, then you can Move or Remove the rest.</p>` : ''}
+    ${d.owned.length ? `<div class="dup-h">Owned more than once (${d.owned.length})</div><div class="mv-list">${d.owned.map(row).join('')}</div>` : ''}
+    ${d.need.length ? `<div class="dup-h need">On your Need list, but you already own it (${d.need.length})</div><div class="mv-list">${d.need.map(row).join('')}</div>` : ''}
+    <div class="lb-row" style="margin-top:.75rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`;
+  $('lb-sheet').querySelectorAll('[data-go]').forEach(b => b.onclick = () => { closeSheet(); S.cur = +b.dataset.go; render(); });
+  const sel = $('dup-sel'); if (sel) sel.onclick = selectExtraCopies;
+}
+// For each card owned more than once: every copy in this binder except one kept (the first one, wherever it is)
+function extraCopiesHere() {
+  if (!DUP) return [];
+  const out = [];
+  DUP.owned.forEach(g => g.at.filter(x => x.c.status !== 'needed').slice(1).forEach(x => { if (x.b.id === currentUser && !pageLocked(x.p)) out.push(x.p + '|' + x.s); }));
+  return out;
+}
+function selectExtraCopies() {
+  const keys = extraCopiesHere(); closeSheet();
+  if (!keys.length) return;
+  toggleSelectMode(true); keys.forEach(k => selSlots.add(k));
+  S.cur = +keys[0].split('|')[0]; render(); paintSelBar();
+  toast(`Selected ${keys.length} extra cop${keys.length === 1 ? 'y' : 'ies'}. Tap 📦 Move or 🗑 Remove.`);
 }
 
 function moveCard(from, to, slide) {
@@ -4014,25 +4196,7 @@ function delInspect() {
 }
 
 /* User Profile & Peer Switching */
-function switchUser(username) {
-  currentUser = username;
-  peerUser = ''; 
-  $('peer-select').value = '';
-  setupFirebaseListener(currentUser);
-  toast(`Switched profile to: ${username}`);
-}
 
-function switchPeer(username) {
-  peerUser = username;
-  S.cur = 0; 
-  if (peerUser) {
-    setupFirebaseListener(peerUser);
-    toast(`Viewing ${peerUser}'s binder (Live Read-Only)`);
-  } else {
-    setupFirebaseListener(currentUser);
-    toast(`Returned to your binder (${currentUser})`);
-  }
-}
 
 function exportData() {
   const activeUser = peerUser || currentUser;
@@ -6324,9 +6488,10 @@ document.addEventListener('visibilitychange', () => {
   if (!NW.at || Date.now() - NW.at > 30 * 60000) loadNews(true).then(paintNewsBadge).catch(() => {});
 });
 function checkForNewVersion() {
-  return fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
-    const v = (t.match(/const APP_VERSION = '([^']+)'/) || [])[1];
-    if (!v || v === APP_VERSION) return 'current';
+  const fromFile = () => fetch('version.json?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => d && d.v ? d.v : Promise.reject());
+  const fromPage = () => fetch('index.html?check=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => (t.match(/const APP_VERSION = '([^']+)'/) || [])[1]);
+  return fromFile().catch(() => navigator.onLine === false ? '' : fromPage()).then(v => {
+    if (!v || v <= APP_VERSION) return 'current';      // versions are dates, so a newer one sorts later
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
     if (tried === v) return 'current';   // already tried once this visit; don't loop
     try { sessionStorage.setItem('cardBinder.reloadedFor', v); } catch (e) {}
