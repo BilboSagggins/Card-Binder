@@ -1,6 +1,6 @@
 """Tag what's in each card's artwork (moon, beach, snow, night sky, food...) so the app can search by art.
 
-Uses CLIP, a free open-source model that matches pictures with words (openai/clip-vit-base-patch16), on the GitHub
+Uses CLIP, a free open-source model that matches pictures with words (openai/clip-vit-large-patch14), on the GitHub
 runner's CPU. No paid AI service and no key. Each card picture is looked at once; results are kept in
 prices/art-tags.json, so every run only does cards it hasn't seen (new sets, or the rest of a long first scan).
 
@@ -17,7 +17,10 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 OUT = os.path.join(ROOT, "prices", "art-tags.json")
 LIST_URL = "https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/pokemon.json"
 IMG = "https://tcgplayer-cdn.tcgplayer.com/product/{pid}_in_1000x1000.jpg"
-MODEL = "openai/clip-vit-base-patch16"
+MODEL = "openai/clip-vit-large-patch14"
+# Oct 2026 comparison on 580 cards (base CLIP, base CLIP with text hidden, SigLIP, large CLIP with text hidden): the large
+# model with the card's words blurred was clearly best. Without blurring, CLIP reads the card: "Food Prep" -> food,
+# the Cosmic Eclipse stamp -> eclipse.
 UA = "card-binder-art-tags (github.com/BilboSagggins/Card-Binder)"
 
 # Everyday things people remember about a card's art. One word or short phrase each; the app searches these.
@@ -59,11 +62,20 @@ def load_image(pid):
         return pid, None
 
 
+def hide_text(im):
+    """The card with its name bar and text box blurred, so the model looks at the picture instead of reading words."""
+    from PIL import ImageFilter
+    w, h = im.size; out = im.copy()
+    for box in [(0, 0, w, int(h * .11)), (0, int(h * .55), w, h)]:
+        out.paste(im.crop(box).filter(ImageFilter.GaussianBlur(10)), box[:2])
+    return out
+
+
 def views(im):
-    """Two looks at a card: the whole card (letterboxed), and the artwork window near the top."""
+    """Two looks at a card: the whole card with its words blurred (letterboxed), and the artwork window near the top."""
     from PIL import Image
     w, h = im.size
-    side = max(w, h); full = Image.new("RGB", (side, side), (0, 0, 0)); full.paste(im, ((side - w) // 2, (side - h) // 2))
+    side = max(w, h); full = Image.new("RGB", (side, side), (0, 0, 0)); full.paste(hide_text(im), ((side - w) // 2, (side - h) // 2))
     art = im.crop((int(w * .07), int(h * .10), int(w * .93), int(h * .53)))
     return full, art
 
@@ -87,7 +99,14 @@ def main():
             prev = json.load(f)
     if prev.get("vocab") and prev["vocab"] != VOCAB:
         print("vocabulary changed: re-tagging everything"); prev = {}
-    done = prev.get("t", {})
+    # a new model: start over, but keep the earlier tags for cards not redone yet, so search keeps working.
+    # "t" always holds every card's current tags; "old_ids" lists the cards still on the earlier model's tags.
+    old_ids = set(prev.get("old_ids", []))
+    old = {p: v for p, v in prev.get("t", {}).items() if p in old_ids}
+    if prev.get("model") and prev["model"] != MODEL:
+        print(f"model changed ({prev['model']} -> {MODEL}): re-tagging everything, earlier tags kept meanwhile")
+        old = {**prev.get("t", {})}; prev = {"miss": prev.get("miss", {})}
+    done = {p: v for p, v in prev.get("t", {}).items() if p not in old}
     # cards with no picture on TCGplayer yet: skipped, and tried again after two weeks
     miss = {p: d for p, d in prev.get("miss", {}).items() if p in lst and p not in done}
     today = time.strftime("%Y-%m-%d", time.gmtime())
@@ -97,6 +116,8 @@ def main():
         random.seed(7); todo = random.sample(list(lst), min(a.trial, len(lst)))
     else:
         todo.sort(key=lambda pid: -int(pid))        # newest cards first
+        if not prev.get("stats"):                   # the first run sets each word's typical score: use cards from every era
+            random.seed(11); random.shuffle(todo)
         todo = todo[:a.limit]
     print(f"{len(lst)} cards in the list, {len(done)} already tagged, doing {len(todo)}")
     if not todo:
@@ -129,14 +150,18 @@ def main():
             if len(embs) and len(embs) % 512 == 0: print(f"  {len(embs)} cards, {time.time() - t0:.0f}s", flush=True)
         if batch: run(batch)
     print(f"looked at {len(embs)} cards in {time.time() - t0:.0f}s")
-    for pid in todo:
-        if pid not in embs: miss[pid] = today
-    print(f"{sum(1 for p in todo if p not in embs)} cards had no picture (tried again in two weeks)")
+    lost = [p for p in todo if p not in embs]
+    fresh = [p for p in todo if p not in miss]; fresh_lost = [p for p in fresh if p not in embs]
+    outage = len(fresh_lost) > max(50, len(fresh) // 2)     # most new pictures failing = a network problem, not missing pictures
+    for pid in lost:
+        if pid in miss or not outage: miss[pid] = today
+    print(f"{len(lost)} cards had no picture" + (" (looks like a network problem: new ones tried again next run)" if outage else " (tried again in two weeks)"))
 
     def save(mean, std):
         out = {"model": MODEL, "updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "vocab": VOCAB,
                "done": len(done) + len(miss), "tagged": len(done), "total": len(lst),
-               "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "miss": miss, "t": done}
+               "stats": {"mean": [round(float(x), 5) for x in mean], "std": [round(float(x), 5) for x in std]}, "miss": miss,
+               "old_ids": sorted(old, key=int), "t": {**old, **done}}
         os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
         with open(a.out, "w", encoding="utf-8") as f:
             json.dump(out, f, separators=(",", ":"))
@@ -157,11 +182,11 @@ def main():
     for i, pid in enumerate(pids):
         z = Z[i]; s = S[i]
         rank = torch.argsort(s, descending=True)[:25].tolist()     # what this card is most like overall
-        keep = [(j, float(z[j])) for j in rank[:20] if z[j] > 2.3]
+        keep = [(j, float(z[j])) for j in rank[:20] if z[j] > 1.8]     # 2.3+ = clear match; 1.8-2.3 = likely (listed after)
         keep.sort(key=lambda x: -x[1])
-        tags[pid] = [[j, round(v, 1)] for j, v in keep[:8]]
+        tags[pid] = [[j, round(v, 1)] for j, v in keep[:10]]
     done.update(tags)
-    for pid in tags: miss.pop(pid, None)
+    for pid in tags: miss.pop(pid, None); old.pop(pid, None)
     save(mean, std)
 
     if a.sheets:          # picture grids of the best matches for some tags, for checking by eye
