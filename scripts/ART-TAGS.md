@@ -24,4 +24,10 @@ tags it with everyday concepts. No paid AI service or key.
       (newest first) until all ~28,000 are done, then only new cards. Progress = `done` / `total` in `prices/art-tags.json`.
 - [x] App: "🎨 In the art" filter in card search (English Pokémon), word match so "moon" includes "full moon" and
       "crescent moon"; the tag file is saved for offline.
-- [ ] Later, if wanted: Japanese / One Piece cards, more words, looser matching.
+- [x] First full scan done 2026-10-25 (27,160 cards; 908 have no TCGplayer picture, retried every two weeks).
+- [x] 2026-10-28 refinement (Kyle asked): compared 4 setups on the 580-card sample (probe branch, art-compare.py).
+      Winner: openai/clip-vit-large-patch14 with the card's name bar and text box blurred (stops "Food Prep" -> food,
+      Cosmic Eclipse stamp -> eclipse). Likely matches (z 1.8-2.3) now kept and listed after clear ones. Rescan runs
+      every 2 hours, 2,400 cards each (~1.8 s/card), about a day in total; cards keep their earlier tags until redone
+      ("old_ids" in the file). App: everyday words (water, space, dessert, spooky...) map to art words.
+- [ ] Later, if wanted: Japanese / One Piece cards, more words.

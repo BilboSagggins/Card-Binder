@@ -5,7 +5,7 @@ name: Tag card art
 # aren't tagged yet (newest first), so the first full scan is spread over a few runs and later runs just add new cards.
 on:
   schedule:
-    - cron: "23 */3 * * *"    # every 3 hours; quick once everything is tagged
+    - cron: "23 */2 * * *"    # every 2 hours; quick once everything is tagged
   workflow_dispatch:
   push:
     branches: [main]
@@ -23,20 +23,20 @@ concurrency:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 130
     steps:
       - uses: actions/checkout@v4
       - name: Keep the AI model between runs
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: clip-vit-base-patch16-v1
+          key: clip-vit-large-patch14-v1
       - name: Install the model's tools (CPU only)
         run: |
           pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
           pip install --quiet "transformers>=4.40,<5" pillow
-      - name: Tag up to 9,000 new cards
-        run: python3 scripts/build-art-tags.py --limit 9000
+      - name: Tag up to 2,400 new cards (about 2.3 seconds each)
+        run: python3 scripts/build-art-tags.py --limit 2400
       - name: Save the tags to the site
         run: |
           git config user.name "github-actions[bot]"
