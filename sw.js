@@ -95,6 +95,7 @@ self.addEventListener('fetch', e => {
   if (same && (req.mode === 'navigate' || /\/(index\.html)?$/.test(url.pathname))) {
     return e.respondWith(networkFirst(req, SHELL, pageKey(req.url), 4000));
   }
+  if (same && /\/version\.json$/.test(url.pathname)) return;          // the app's version number: always straight from the internet
   if (same && /\/(prices|news)\/[^/]+\.json$/.test(url.pathname)) return e.respondWith(networkFirst(req, DATA, url.origin + url.pathname, 8000));
   if (same) return e.respondWith(cacheFirst(req, SHELL).catch(() => fetch(req)));
   if (DATA_HOSTS.test(url.hostname)) return e.respondWith(networkFirst(req, DATA, url.origin + url.pathname, 8000));

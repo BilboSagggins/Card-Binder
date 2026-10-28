@@ -1,0 +1,41 @@
+name: Version file
+
+# Writes version.json (and test/version.json) with the app's version number whenever the app page changes, so phones
+# can check for a new version by downloading a few bytes instead of the whole app.
+on:
+  push:
+    branches: [main]
+    paths: [index.html, test/index.html, .github/workflows/version.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: version-file
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write the version files
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          for page, out in [("index.html", "version.json"), ("test/index.html", "test/version.json")]:
+              if not os.path.exists(page): continue
+              m = re.search(r"const APP_VERSION = '([^']+)'", open(page, encoding="utf-8").read())
+              if m:
+                  json.dump({"v": m.group(1)}, open(out, "w")); print(out, m.group(1))
+          PY
+      - name: Save them to the site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json test/version.json 2>/dev/null || git add version.json
+          if git diff --cached --quiet; then echo "Already up to date"; exit 0; fi
+          git commit -m "Update version file"
+          git pull --rebase origin main
+          git push
