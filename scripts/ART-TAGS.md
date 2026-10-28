@@ -7,8 +7,8 @@ tags it with everyday concepts. No paid AI service or key.
 **Where things are**
 - `scripts/build-art-tags.py`: the scanner. Resumable: results go to `prices/art-tags.json`, and each run only
   does cards not tagged yet (newest first), `--limit N` per run. `--trial N --sheets` = random sample + picture grids.
-- Trial page: `test/art-trial.html` (+ `test/art-trial.json`, 580 random cards), at
-  https://bilbosagggins.github.io/Card-Binder/test/art-trial.html
+- Trial page: `(trial page removed 2026-10-28)` (+ `test/art-trial.json`, 580 random cards), at
+  https://bilbosagggins.github.io/Card-Binder/(trial page removed 2026-10-28)
 - Library note: pin `transformers>=4.40,<5` (v5 changed `get_text_features`). Install torch from the CPU index.
 
 **Settings after the trial**
