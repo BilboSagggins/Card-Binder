@@ -1221,7 +1221,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-24.73';
+const APP_VERSION = '2026-10-28.75';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1809,15 +1809,38 @@ function loadArtTags() {
 function fillArtWords() {
   const dl = $('art-words'); if (!dl || !ART || dl.dataset.ready) return;
   const n = new Array(ART.vocab.length).fill(0);
-  Object.values(ART.t).forEach(tags => tags.forEach(([j]) => n[j]++));
+  [ART.t, ART.old || {}].forEach(src => Object.values(src).forEach(tags => tags.forEach(([j]) => n[j]++)));
   dl.innerHTML = ART.vocab.map((v, j) => [v, n[j]]).filter(x => x[1]).sort((a, b) => a[0].localeCompare(b[0])).map(([v]) => `<option value="${esc(v)}">`).join('');
   dl.dataset.ready = '1';
 }
 const artStem = w => { w = lc(w); return w.length > 3 ? w.replace(/(ies)$/, 'y').replace(/(ches|shes|xes)$/, m => m.slice(0, -2)).replace(/s$/, '') : w; };
+// everyday words that mean several art words (only the ones in the current word list are used)
+const ART_ALSO = {
+  water: ['ocean', 'sea waves', 'underwater', 'lake', 'river', 'waterfall', 'pond', 'beach', 'rain', 'bubbles'],
+  sea: ['ocean', 'sea waves', 'underwater', 'beach', 'coral reef', 'shipwreck'], ocean: ['sea waves', 'underwater', 'coral reef'],
+  space: ['outer space', 'galaxy', 'planet', 'comet', 'starry sky', 'stars'], sky: ['night sky', 'starry sky', 'clouds', 'rainbow', 'sunset', 'aurora'],
+  night: ['night', 'night sky', 'starry sky', 'moon', 'full moon', 'crescent moon'], dessert: ['cake', 'cupcake', 'candy', 'ice cream', 'donut', 'cookies'],
+  sweets: ['cake', 'cupcake', 'candy', 'ice cream', 'donut', 'cookies'], snack: ['food', 'fruit', 'candy', 'cookies', 'donut', 'bread', 'rice ball'],
+  spooky: ['spooky', 'ghost', 'haunted house', 'graveyard', 'halloween', 'cobwebs', 'skull', 'pumpkin'], scary: ['spooky', 'ghost', 'haunted house', 'graveyard', 'skull'],
+  halloween: ['halloween', 'pumpkin', 'ghost', 'spooky', 'haunted house'], christmas: ['christmas tree', 'gift box'],
+  winter: ['winter', 'snow', 'snowflakes', 'ice', 'icicles', 'blizzard'], summer: ['summer', 'beach', 'sun', 'swimming pokemon', 'ice cream'],
+  fall: ['autumn', 'autumn leaves', 'pumpkin'], autumn: ['autumn', 'autumn leaves', 'pumpkin'], spring: ['spring', 'cherry blossoms', 'flowers', 'flower field', 'tulips'],
+  plant: ['flowers', 'trees', 'grass', 'vines', 'bamboo', 'cactus', 'mushrooms', 'garden'], nature: ['forest', 'trees', 'meadow', 'flower field', 'grass', 'river', 'mountain'],
+  storm: ['storm clouds', 'lightning', 'rain', 'tornado', 'wind'], weather: ['rain', 'snow', 'storm clouds', 'lightning', 'rainbow', 'fog', 'wind', 'clouds'],
+  fire: ['fire', 'flames', 'lava', 'volcano', 'campfire'], music: ['music', 'guitar', 'piano', 'drum', 'microphone', 'concert', 'stage'],
+  town: ['city', 'buildings', 'street', 'house', 'city skyline'], building: ['buildings', 'house', 'tower', 'castle', 'skyscrapers', 'temple'],
+  japan: ['torii gate', 'shrine', 'pagoda', 'cherry blossoms', 'temple'], party: ['party', 'balloons', 'confetti', 'cake', 'gift box', 'festival'],
+  sleep: ['sleeping', 'bed', 'pillow', 'blanket'], love: ['heart', 'hearts', 'hugging', 'roses'], money: ['gold coins', 'treasure chest'], treasure: ['treasure chest', 'gold coins', 'gems'],
+};
 function artWords(q) {          // the tag words that match what was typed
-  const want = lc(q).split(/[^a-z0-9]+/).filter(Boolean).map(artStem);
-  if (!want.length || !ART) return [];
-  return ART.vocab.map((v, j) => [v, j]).filter(([v]) => { const have = lc(v).split(/[^a-z0-9]+/).map(artStem); return want.every(w => have.includes(w)); }).map(x => x[1]);
+  if (!ART) return [];
+  const words = lc(q).split(/[^a-z0-9]+/).filter(Boolean); if (!words.length) return [];
+  const match = ws => { const want = ws.map(artStem); return ART.vocab.map((v, j) => [v, j]).filter(([v]) => { const have = lc(v).split(/[^a-z0-9]+/).map(artStem); return want.every(w => have.includes(w)); }).map(x => x[1]); };
+  let hit = match(words);
+  if (!hit.length) hit = match(words.map(w => w.length > 4 ? w.replace(/y$/, '') : w));      // "snowy" → snow, "rainy" → rain
+  const also = ART_ALSO[artStem(words.join(' '))] || ART_ALSO[words.join(' ')] || [];
+  also.forEach(v => { const j = ART.vocab.indexOf(v); if (j >= 0 && !hit.includes(j)) hit.push(j); });
+  return hit;
 }
 const artQuery = () => S.game === 'pokemon' && pkLang === 'en' && mode !== 'sealed' && $('art-q') ? $('art-q').value.trim() : '';
 // Sets ART_ON for the search about to run; false when the search shouldn't go ahead
@@ -1831,9 +1854,13 @@ async function startArtSearch(q) {
     $('results').innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">No art word like “${esc(q)}”.<br>Try ${esc(tips)}, or pick one from the suggestions.</div>`; return false;
   }
   const want = new Set(words), on = new Map();
-  for (const [pid, tags] of Object.entries(d.t)) for (const [j, z] of tags) if (want.has(j) && !(on.get(pid) >= z)) on.set(pid, z);
+  // d.old: tags from the earlier scan, used for cards the improved scan hasn't reached yet
+  for (const src of [d.old || {}, d.t]) for (const [pid, tags] of Object.entries(src)) {
+    if (src !== d.t && d.t[pid]) continue;
+    for (const [j, z] of tags) if (want.has(j) && !(on.get(pid) >= z)) on.set(pid, z);
+  }
   ART_ON = on;
-  if (d.done < d.total) toast(`Card art is still being scanned: ${d.done.toLocaleString()} of ${d.total.toLocaleString()} cards so far (newest first)`);
+  if (d.done < d.total) toast(`Card art tags are being improved: ${d.done.toLocaleString()} of ${d.total.toLocaleString()} cards done so far`);
   return true;
 }
 async function listSearch(L, gid, lang, text, rar, make) {
@@ -1850,7 +1877,7 @@ async function listSearch(L, gid, lang, text, rar, make) {
     if (q && !lc(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
-  }).sort((a, b) => (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : art ? art.get(b[0]) - art.get(a[0]) : b[1][3] - a[1][3])
+  }).sort((a, b) => (art ? art.get(b[0]) - art.get(a[0]) : 0) || (order ? order.indexOf(String(a[1][3])) - order.indexOf(String(b[1][3])) : b[1][3] - a[1][3])
     || String(a[1][2]).localeCompare(String(b[1][2]), undefined, { numeric: true }));   // a set reads in card-number order, its subset after it
   if (!items.length) { box.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No matching ${lang !== 'en' ? PK_LANGS[lang] + ' ' : ''}cards found${art ? ' with that in the art' : ''}.</div>`; return; }
   pending = { items, shown: 0, make: async ([pid]) => { if (make) return make(pid); const c = cardFromTcg(pid, 'pokemon', L); c.lang = lang; return c; } };
