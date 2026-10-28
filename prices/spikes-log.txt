@@ -1,4 +1,4 @@
-history: ['2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27']
+history: ['2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28']
+archive 2026-10-21: download failed (22: curl: (22) The requested URL returned error: 403)
 archive 2026-10-20: download failed (22: curl: (22) The requested URL returned error: 403)
-archive 2026-10-19: download failed (22: curl: (22) The requested URL returned error: 403)
 no prices from a week ago yet; spikes start once a week of history is saved
