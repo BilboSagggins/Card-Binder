@@ -1,4 +1,2 @@
-history: ['2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29']
-archive 2026-10-22: download failed (22: curl: (22) The requested URL returned error: 403)
-archive 2026-10-21: download failed (22: curl: (22) The requested URL returned error: 403)
-no prices from a week ago yet; spikes start once a week of history is saved
+history: ['2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30']
+1881 products up 20%+ since 2026-10-23 (of 60910 compared, 66794 today)
