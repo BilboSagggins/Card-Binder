@@ -1193,7 +1193,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-28.80';
+const APP_VERSION = '2026-10-31.82';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1505,10 +1505,14 @@ async function opSearch() {
     const all = await opLoadAll();
     const idq = text.toUpperCase().replace(/\s+/g, '').replace(/^([A-Z]+)(\d+)(\d{3})$/, '$1$2-$3');   // "op01001" -> "OP01-001"
     const pres = setVal ? setVal.split(',').map(v => v === 'P' ? 'P-' : opPrefix(v) + '-') : [], pre = pres.length > 0;
+    // newer sets have combined ids ("OP14-EB04") while their DON!! cards say just "OP-14": match any code in the id, or the set name
+    const codes = setVal ? setVal.split(',').flatMap(v => (v.toUpperCase().match(/[A-Z]+-?\d+/g) || []).map(c => c.replace('-', ''))) : [];
+    const names = setVal ? setVal.split(',').map(v => ((opSetList || []).find(x => x.id === v) || {}).name).filter(Boolean).map(lc) : [];
+    const donInSet = r => !r.card_set_id && ((r.set_id && codes.includes(opPrefix(r.set_id))) || (r.set_name && names.includes(lc(r.set_name))));
     let items = all.filter(r => {
       const cid = String(r.card_set_id || '').toUpperCase();
       // DON!! cards have no card number; they belong to a set by its id (OP-14)
-      if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x))) return false;
+      if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x)) && !donInSet(r)) return false;
       if (rar && !rars.some(v => v === 'parallel' ? opParallel(r) : String(r.rarity || '').trim() === v)) return false;
       if (!priceOk(r.market_price)) return false;
       if (!text) return true;
