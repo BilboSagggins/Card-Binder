@@ -570,6 +570,7 @@
   .ctray-seg button[aria-pressed="true"][data-st="needed"] { background: #e11d48; color: #fff; }
   .ctray-x { appearance: none; border: 0; background: #27272a; color: #e4e4e7; width: 30px; height: 30px; border-radius: 50%; flex: none; cursor: pointer; }
   .ctray-hint { margin: 0; font-size: .68rem; color: #71717a; }
+  .ctray-byname { appearance: none; border: 1px solid #4f46e5; background: #312e81; color: #e0e7ff; border-radius: 999px; padding: .2rem .6rem; font: 700 .66rem/1.2 Inter, system-ui, sans-serif; margin-left: .25rem; cursor: pointer; }
   .ctray-list { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; padding: 2px 2px 4px; min-height: 118px; scrollbar-width: thin; }
   .ctray-none { margin: auto; font-size: .78rem; color: #a1a1aa; }
   .ctray-none label { color: #a5b4fc; text-decoration: underline; cursor: pointer; margin-left: .3rem; }
@@ -856,7 +857,7 @@
     <div class="ctray-seg" role="group" aria-label="Add as"><button type="button" data-st="owned" onclick="setStatus('owned'); paintTrayStatus()">Owned</button><button type="button" data-st="needed" onclick="setStatus('needed'); paintTrayStatus()">Need</button></div>
     <button type="button" class="ctray-x" onclick="closeTray()" aria-label="Close collection">✕</button>
   </div>
-  <p class="ctray-hint">Tap cards to pick them, then Add. Or drag one card up onto a slot.</p>
+  <p class="ctray-hint">Tap cards to pick them, then Add. Or drag one card up onto a slot. <button type="button" class="ctray-byname" onclick="addCollectionByName()">🔤 Add all, sorted by name</button></p>
   <div id="ctray-list" class="ctray-list"></div>
   <div id="ctray-bar" class="pick-bar ctray-bar" hidden><button type="button" class="pb-clear" onclick="clearTrayPicks()">Clear</button><button type="button" id="ctray-add" class="pb-add" onclick="addTrayPicks()"></button></div>
 </div>
@@ -945,7 +946,8 @@
         <label for="coll-file" class="btn-p cursor-pointer whitespace-nowrap">⬆ Import CSV</label>
         <input type="file" id="coll-file" accept=".csv,text/csv,text/plain" class="hidden" onchange="pickCollectionFile(this)">
       </div>
-      <p id="coll-info" class="text-xs text-zinc-400"></p>
+      <div class="flex items-center gap-2 flex-wrap"><p id="coll-info" class="text-xs text-zinc-400 flex-1"></p>
+        <button type="button" id="coll-byname" onclick="addCollectionByName()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white whitespace-nowrap" title="Put every collection card that isn't in this binder yet into it, sorted by name so the same characters sit together">🔤 Add all, sorted by name</button></div>
       <div id="coll-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 content-start"></div>
     </div>
 
@@ -1193,7 +1195,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-31.86';
+const APP_VERSION = '2026-10-31.88';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2051,10 +2053,10 @@ function placeCollectionItem(it, at) {
 }
 // Look up a placed collection card in the card database and swap in the priced card. Resolves to true when priced.
 // quiet: no toast per card (used when many cards are added at once)
-function priceCollCard(card, binder, owner, quiet) {
+function priceCollCard(card, binder, owner, quiet, noAsk) {
   return matchCollectionCard(card, owner).then(async r => {
     let m = r.found || null;
-    if (!m && r.choices && r.choices.length) m = await pickPrinting(card, owner, r);
+    if (!m && r.choices && r.choices.length && !noAsk) m = await pickPrinting(card, owner, r);
     if (!m) {
       if (quiet) return false;
       if (r.jp) { toast(`"${card.name}" is a Japanese printing. There's no price for it in the card database.`, 'error'); return false; }
@@ -3548,16 +3550,19 @@ function sortKey(name) {
   n = n.replace(/(\s+(ex|gx|v|vmax|vstar|v-union|break|lv\.?\s*x|prime|legend|star|δ|☆|★|delta species|tag team|sp|g|gl|fb|c|4|e4|lv\.?\s*\d+))+$/g, '');
   return n.replace(/[^a-z0-9.' é-]+/g, ' ').replace(/\s+/g, ' ').trim() || String(name || '').toLowerCase();
 }
+function nameSorted(cards) {
+  const num = c => String(c.number || '').split('/')[0];
+  return cards.map((c, i) => ({ c, i, k: sortKey(c.name) }))
+    .sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }) || String(a.c.name).localeCompare(String(b.c.name)) || String(a.c.set || '').localeCompare(String(b.c.set || '')) || num(a.c).localeCompare(num(b.c), undefined, { numeric: true }) || a.i - b.i)
+    .map(x => x.c);
+}
 function sortByName() {
   if (peerUser) return;
   const pages = getPagesArray(), n = cap(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
   if (!open.length) return toast('Every page is locked. Unlock a page to sort it.', 'error');
   const cards = open.flatMap(i => pages[i].cards.slice(0, n).filter(Boolean));
   if (cards.length < 2) return toast('Nothing to sort yet', 'error');
-  const num = c => String(c.number || '').split('/')[0];
-  const sorted = cards.map((c, i) => ({ c, i, k: sortKey(c.name) }))
-    .sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }) || String(a.c.name).localeCompare(String(b.c.name)) || String(a.c.set || '').localeCompare(String(b.c.set || '')) || num(a.c).localeCompare(num(b.c), undefined, { numeric: true }) || a.i - b.i)
-    .map(x => x.c);
+  const sorted = nameSorted(cards);
   const locked = pages.length - open.length;
   if (!confirm(`Sort ${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} by name?${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
   const before = JSON.parse(JSON.stringify(pages));
@@ -3569,6 +3574,61 @@ function sortByName() {
     if (currentUser !== binder) return;
     S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
   });
+}
+/* Add your whole collection, sorted by name: every collection card not in this binder yet (one of each), mixed in with the
+   cards on the unlocked pages and sorted together, so the same characters sit next to each other. Locked pages stay put;
+   pages are added when it runs out of room. Cards are priced from TCGplayer's list right away where possible. Undo puts it back. */
+async function addCollectionByName() {
+  if (peerUser) return;
+  if (S.loadedFor !== currentUser || !S.cloud) return toast('Still connecting to the cloud. Try again in a moment.', 'error');
+  const data = COLLECTIONS[collKey()], game = S.game;
+  const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it })).filter(it => !isTotalRow(it.name));
+  if (!items.length) return toast(`No ${GAMES[game]} collection yet. Import your CSV first.`, 'error');
+  const pages0 = getPagesArray(), n = cap(), open0 = pages0.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
+  if (!open0.length) return toast('Every page is locked. Unlock a page or add one first.', 'error');
+  // what's in this binder already: by collection entry, product number, or name + number
+  const here = pages0.flatMap(pg => pg.cards).filter(Boolean);
+  const hereColl = new Set(here.map(c => c.collId).filter(Boolean));
+  const keyOf = c => { const pid = c.tcgPid || pidInUrl(c.url) || tcgPid(c.image); return pid ? 'p' + pid : 'n' + norm(c.name) + '|' + lc(c.number); };
+  const hereKeys = new Set(here.map(keyOf)), hereNames = new Set(here.map(c => 'n' + norm(c.name) + '|' + lc(c.number)));
+  const btns = [...document.querySelectorAll('#coll-byname, .ctray-byname')]; btns.forEach(b => b.disabled = true);
+  toast(`Matching ${items.length} collection card${items.length === 1 ? '' : 's'}…`);
+  const made = await pool(items, 8, async it => {
+    if (hereColl.has(it.id)) return null;
+    const r = await resolveCollItem(it, game).catch(() => null);
+    return r ? { ...r.card, status: 'owned', collId: it.id, url: r.card.url } : collCard(it, 'owned');
+  });
+  btns.forEach(b => b.disabled = false);
+  const seen = new Set(), add = [];
+  made.filter(Boolean).forEach(c => { const k = keyOf(c); if (hereKeys.has(k) || hereNames.has('n' + norm(c.name) + '|' + lc(c.number)) || seen.has(k)) return; seen.add(k); add.push(c); });
+  if (!add.length) return toast('Everything in your collection is already in this binder 👍');
+  if (currentUser === null || peerUser) return;
+  const pages = getPagesArray(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
+  const existing = open.flatMap(i => pages[i].cards.slice(0, n).filter(Boolean));
+  const sorted = nameSorted(existing.concat(add)), need = Math.max(0, Math.ceil(sorted.length / n) - open.length), locked = pages.length - open.length;
+  if (!confirm(`Add ${add.length} card${add.length === 1 ? '' : 's'} from your collection and sort ${open.length > 1 || need ? 'the' : 'this'} page${open.length + need === 1 ? '' : 's'} by name, so the same characters sit together?`
+    + `${existing.length ? `\nYour ${existing.length} card${existing.length === 1 ? '' : 's'} already here are sorted in with them.` : ''}${need ? `\n${need} new page${need === 1 ? '' : 's'} will be added.` : ''}${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  const before = JSON.parse(JSON.stringify(pages));
+  for (let i = 0; i < need; i++) { pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) }); open.push(pages.length - 1); }
+  let k = 0;
+  open.forEach(i => { const extra = pages[i].cards.slice(n); pages[i].cards = Array.from({ length: n }, () => k < sorted.length ? sorted[k++] : null).concat(extra); });
+  S.pages = pages; saveActivePages(pages); render();
+  if (!$('ctray').hidden) renderTray();
+  if (mode === 'coll') renderCollection();
+  const binder = currentUser;
+  toastUndo(`Added ${add.length} card${add.length === 1 ? '' : 's'}, sorted by name${need ? ` · ${need} new page${need === 1 ? '' : 's'}` : ''}`, () => {
+    if (currentUser !== binder) return;
+    S.pages = before; S.cur = Math.min(S.cur, before.length - 1); saveActivePages(before); render();
+    if (!$('ctray').hidden) renderTray();
+    toast('Put the binder back the way it was');
+  });
+  // cards TCGplayer's list couldn't place: look them up one by one, without asking about printings
+  const left = add.filter(c => c.source === 'collection');
+  if (left.length) {
+    const owner = ownerOf(binder); let ok = 0;
+    for (const c of left) if (await priceCollCard(c, binder, owner, true, true)) ok++;
+    if (currentUser === binder && ok < left.length) toast(`${left.length - ok} card${left.length - ok === 1 ? ' has' : 's have'} no price yet. Refresh prices later to pick their printing.`);
+  }
 }
 /* Gifts: while viewing someone else's binder, pick cards to buy for them. Your own private list, kept at
    collections/<you>/gifts/<their binder>/<card key> = { card, addedAt, bought }. Their binder is never changed. */
