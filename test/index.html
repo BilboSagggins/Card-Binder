@@ -1251,7 +1251,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-31.83';
+const APP_VERSION = '2026-10-31.85';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1519,6 +1519,17 @@ function opLoadAll() {
   return opAllP;
 }
 const opPrefix = id => String(id || '').toUpperCase().replace('-', '');   // set OP-01 -> cards OP01-xxx
+// Is a card in this set? By card number prefix, by the set id, or for DON!! cards (no number) by any code in a combined
+// set id ("OP14-EB04" while its DON!! cards say "OP-14") or by the set's name
+function opSetMatch(v) {
+  const pre = v === 'P' ? 'P-' : opPrefix(v) + '-', codes = (String(v).toUpperCase().match(/[A-Z]+-?\d+/g) || []).map(c => c.replace('-', ''));
+  const name = lc(((opSetList || []).find(x => x.id === v) || {}).name || '');
+  return r => {
+    const cid = String(r.card_set_id || '').toUpperCase();
+    return cid.startsWith(pre) || (r.set_id && opPrefix(r.set_id) + '-' === pre)
+      || (!r.card_set_id && ((r.set_id && codes.includes(opPrefix(r.set_id))) || (name && lc(r.set_name || '') === name)));
+  };
+}
 async function opLoadSets() {
   const dd = $('set');
   if (!opSetList) {
@@ -1533,8 +1544,11 @@ async function opLoadSets() {
     } catch (e) { dd.innerHTML = '<option value="">Sets unavailable — tap to retry</option>'; return; }
   }
   const keep = dd.value;
-  dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
+  dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}" data-code="${esc(x.id === 'P' ? '' : x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
   dd.value = keep;
+  opLoadAll().then(all => {     // how many cards each set has, shown next to it in the set list
+    [...dd.options].forEach(o => { if (o.value && !o.dataset.pick) { const m = opSetMatch(o.value); o.dataset.n = all.filter(m).length; } });
+  }).catch(() => {});
 }
 const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!!' };
 // Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
@@ -1562,15 +1576,11 @@ async function opSearch() {
   try {
     const all = await opLoadAll();
     const idq = text.toUpperCase().replace(/\s+/g, '').replace(/^([A-Z]+)(\d+)(\d{3})$/, '$1$2-$3');   // "op01001" -> "OP01-001"
-    const pres = setVal ? setVal.split(',').map(v => v === 'P' ? 'P-' : opPrefix(v) + '-') : [], pre = pres.length > 0;
-    // newer sets have combined ids ("OP14-EB04") while their DON!! cards say just "OP-14": match any code in the id, or the set name
-    const codes = setVal ? setVal.split(',').flatMap(v => (v.toUpperCase().match(/[A-Z]+-?\d+/g) || []).map(c => c.replace('-', ''))) : [];
-    const names = setVal ? setVal.split(',').map(v => ((opSetList || []).find(x => x.id === v) || {}).name).filter(Boolean).map(lc) : [];
-    const donInSet = r => !r.card_set_id && ((r.set_id && codes.includes(opPrefix(r.set_id))) || (r.set_name && names.includes(lc(r.set_name))));
+    const inSet = setVal ? setVal.split(',').map(opSetMatch) : [], pre = inSet.length > 0;
     let items = all.filter(r => {
       const cid = String(r.card_set_id || '').toUpperCase();
       // DON!! cards have no card number; they belong to a set by its id (OP-14)
-      if (pre && !pres.some(x => cid.startsWith(x) || (r.set_id && opPrefix(r.set_id) + '-' === x)) && !donInSet(r)) return false;
+      if (pre && !inSet.some(m => m(r))) return false;
       if (rar && !rars.some(v => v === 'parallel' ? opParallel(r) : String(r.rarity || '').trim() === v)) return false;
       if (!priceOk(r.market_price)) return false;
       if (!text) return true;
@@ -1637,7 +1647,8 @@ function fillSetDropdown(L, prefix) {
 function setGroups() {
   const dd = $('set'), groups = [];
   const add = (head, opts) => { const items = [...opts].filter(o => o.value && !o.dataset.pick).map(o => {
-    const m = o.value.match(/^([a-z]+:)(.*)$/); return { value: o.value, prefix: m ? m[1] : '', ids: (m ? m[2] : o.value).split(','), label: o.textContent.replace(/\s*\((\d+|[A-Z0-9-]+)\)$/, ''), n: (o.textContent.match(/\((\d+)\)$/) || [])[1] || '' };
+    const m = o.value.match(/^([a-z]+:)(.*)$/); return { value: o.value, prefix: m ? m[1] : '', ids: (m ? m[2] : o.value).split(','), label: o.textContent.replace(/\s*\((\d+|[A-Z0-9-]+)\)$/, ''), n: o.dataset.n || (o.textContent.match(/\((\d+)\)$/) || [])[1] || '',
+      code: o.dataset.code || (o.textContent.match(/\(([A-Z][A-Z0-9-]*)\)$/) || [])[1] || '' };
   }); if (items.length) groups.push({ head, items }); };
   add('', [...dd.children].filter(x => x.tagName === 'OPTION'));
   [...dd.querySelectorAll('optgroup')].forEach(g => add(g.label, g.children));
@@ -1740,10 +1751,10 @@ async function openSetPicker() {
   const draw = () => {
     const q = lc($('sp-find').value.trim());
     $('sp-list').innerHTML = groups.map((g, gi) => {
-      const items = g.items.filter(it => !q || lc(it.label).includes(q) || lc(g.head).includes(q)); if (!items.length) return '';
+      const items = g.items.filter(it => !q || lc(it.label).includes(q) || lc(it.code).replace(/-/g, '').includes(q.replace(/-/g, '')) || lc(g.head).includes(q)); if (!items.length) return '';
       const k = g.items.filter(it => on.has(it.value)).length, st = k === 0 ? 'none' : k === g.items.length ? 'all' : 'some';
       return (g.head ? `<button type="button" class="sp-row era" data-g="${gi}" data-on="${multi ? st : 'none'}">${multi ? '<span class="sp-box"></span>' : ''}<span>${esc(g.head)}</span><span class="n">${g.items.length} sets</span></button>` : '')
-        + items.map(it => `<button type="button" class="sp-row" data-v="${esc(it.value)}" data-on="${on.has(it.value) ? 'all' : 'none'}"><span class="sp-box"></span><span>${esc(it.label)}</span>${it.n ? `<span class="n">${it.n}</span>` : ''}</button>`).join('');
+        + items.map(it => `<button type="button" class="sp-row" data-v="${esc(it.value)}" data-on="${on.has(it.value) ? 'all' : 'none'}"><span class="sp-box"></span><span>${esc(it.label)}</span>${it.code || it.n ? `<span class="n">${[it.code, it.n && it.n + ' card' + (it.n == 1 ? '' : 's')].filter(Boolean).map(esc).join(' · ')}</span>` : ''}</button>`).join('');
     }).join('') || '<p class="sub">No sets match.</p>';
     $('sp-done').textContent = on.size ? `Done · ${on.size} set${on.size === 1 ? '' : 's'}` : 'Done · any set';
   };
@@ -1797,9 +1808,10 @@ function fillGuideSets(L) {
     const n = L.groups[g], sec = sections.find(x => x.pat && x.pat.test(n)) || sections.find(x => x.head === 'Other');
     sec.items.unshift({ name: n, ids: [g] });
   });
-  const total = ids => ids.reduce((a, i) => a + (counts[i] || 0), 0);
+  const total = ids => ids.reduce((a, i) => a + (counts[i] || 0), 0), abbr = {};
+  (L.sets || []).forEach(([g, , , a]) => { if (a) abbr[g] = a; });
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + sections.filter(x => x.items.length).map(x => {
-    return `<optgroup label="${esc(x.head)}">${x.items.map(it => `<option value="tcg:${it.ids.join(',')}">${esc(it.name)} (${total(it.ids)})</option>`).join('')}</optgroup>`;
+    return `<optgroup label="${esc(x.head)}">${x.items.map(it => `<option value="tcg:${it.ids.join(',')}" data-code="${esc(abbr[it.ids[0]] || '')}">${esc(it.name)} (${total(it.ids)})</option>`).join('')}</optgroup>`;
   }).join('');
   dd.value = keep;
 }
