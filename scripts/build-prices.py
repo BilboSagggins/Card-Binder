@@ -9,7 +9,7 @@ needs into prices/<game>.json on the site (pokemon, pokemon-jp, onepiece):
     "sets": [[groupId, "<set name>", "<release date YYYY-MM-DD>", "<abbreviation>", <card count>], ...],
     "p": { "<productId>": [marketPrice, "name", "number", groupId, "rarity"] } }
 
-Only single cards (products with a card Number) are kept.
+Only single cards (products with a card Number) are kept, plus One Piece DON!! cards (which have no number).
 """
 import json, os, re, sys, time, urllib.request
 
@@ -108,6 +108,11 @@ def add_category(game, cat, out, sealed):
             if not number:  # sealed product, not a single card
                 name = (p.get("name") or "").strip()
                 if any((ext.get(k) or "").strip() for k in CARD_FIELDS):  # a single card without a number, not a product
+                    # One Piece DON!! cards have no card number on TCGplayer: keep them (number left blank)
+                    if "DON!!" in ((ext.get("Rarity") or "") + (ext.get("CardType") or "") + (ext.get("Card Type") or "")):
+                        out["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, "", gid, "DON!!"]
+                        CURRENT[str(p["productId"])] = out["p"][str(p["productId"])][0]
+                        kept += 1
                     continue
                 if name and not NOT_SEALED.search(name):
                     sealed["p"][str(p["productId"])] = [pick_price(prices.get(p["productId"], [])), name, gid, sealed_type(name)]
