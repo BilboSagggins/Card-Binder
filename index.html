@@ -1193,7 +1193,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-31.84';
+const APP_VERSION = '2026-10-31.86';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1442,9 +1442,45 @@ const opLink = (name, number) => `https://www.tcgplayer.com/search/one-piece-car
 function opCard(r) {
   return {
     id: r.card_image_id || r.card_set_id, name: r.card_name || 'Unknown', set: r.set_name || r.structure_deck_name || '',
-    number: r.card_set_id || r.set_id || '', rarity: r.rarity || 'Unknown', price: r.market_price ?? null, url: opLink(r.card_name, r.card_set_id),
-    thumb: r.card_image, image: r.card_image, alts: [], game: 'onepiece', source: 'optcg', lang: 'en'
+    number: r.card_set_id || r.set_id || '', rarity: r.rarity || 'Unknown', price: r.market_price ?? null,
+    url: r.tcgPid ? `https://www.tcgplayer.com/product/${r.tcgPid}` : opLink(r.card_name, r.card_set_id),
+    thumb: r.card_image, image: r.card_image, alts: r.tcgPid ? tcgAlts(r.tcgPid) : [], game: 'onepiece', source: 'optcg', lang: 'en', ...(r.tcgPid ? { tcgPid: +r.tcgPid } : {})
   };
+}
+// The set list (boosters, starter decks, promos), loaded once
+let opSetListP = null;
+function opLoadSetList() {
+  if (opSetList) return Promise.resolve(opSetList);
+  if (!opSetListP) opSetListP = Promise.all([fetchJSON(OPAPI + 'allSets/', 12000), fetchJSON(OPAPI + 'allDecks/', 12000).catch(() => [])]).then(([sets, decks]) => {
+    opSetList = [
+      ...(Array.isArray(sets) ? sets : []).map(x => ({ id: x.set_id, name: x.set_name })),
+      ...(Array.isArray(decks) ? decks : []).map(x => ({ id: x.structure_deck_id, name: x.structure_deck_name })),
+      { id: 'P', name: 'Promos' }
+    ].filter(x => x.id && x.name);
+    return opSetList;
+  }).catch(e => { opSetListP = null; throw e; });
+  return opSetListP;
+}
+/* optcgapi.com is missing the DON!! cards of some sets (Adventure on Kami's Island, The World's Strongest Warriors…).
+   TCGplayer's daily list has them all: add the ones optcgapi doesn't have, placed in the matching set. */
+async function opAddTcgDons(all) {
+  const [L, sets] = await Promise.all([loadTcgList('onepiece').catch(() => null), opLoadSetList().catch(() => [])]);
+  if (!L || !L.p) return all;
+  const nn = v => norm(v), code = v => (String(v || '').toUpperCase().match(/^([A-Z]+)-?(\d+)/) || []).slice(1).join('');
+  const byName = new Map(sets.map(x => [norm(x.name), x])), byCode = new Map(sets.filter(x => x.id !== 'P').map(x => [code(x.id), x]));
+  const have = new Set(all.filter(r => !r.card_set_id).map(r => norm(r.set_name) + '|' + nn(r.card_name)));
+  const extra = [];
+  Object.entries(L.p).forEach(([pid, e]) => {
+    if (e[4] !== 'DON!!') return;
+    const g = (L.groups && L.groups[e[3]]) || '';
+    const set = byName.get(norm(g)) || byCode.get(code(g)) || (/promotion|promo/i.test(g) ? { id: 'P', name: 'Promos' } : null);
+    const setName = set ? set.name : g;
+    if (have.has(norm(setName) + '|' + nn(e[1]))) return;
+    have.add(norm(setName) + '|' + nn(e[1]));
+    extra.push({ card_set_id: null, card_name: e[1], set_id: set ? set.id : null, set_name: setName, rarity: 'DON!!', card_type: 'DON!!',
+      card_image: tcgImg(pid), card_image_id: 'tcg-' + pid, market_price: e[0] ?? null, tcgPid: pid });
+  });
+  return all.concat(extra);
 }
 // Every One Piece card (sets, starter decks, promos), loaded once per visit and searched on the phone
 function opLoadAll() {
@@ -1456,8 +1492,8 @@ function opLoadAll() {
         const k = r.card_image_id || (r.card_set_id + '|' + r.card_name); if (seen.has(k)) return false; seen.add(k); return true;
       });
       if (!all.length) { opAllP = null; throw new Error('no cards returned'); }
-      return (opAll = all);
-    });
+      return opAddTcgDons(all).catch(() => all);
+    }).then(all => (opAll = all));
   return opAllP;
 }
 const opPrefix = id => String(id || '').toUpperCase().replace('-', '');   // set OP-01 -> cards OP01-xxx
@@ -1476,14 +1512,7 @@ async function opLoadSets() {
   const dd = $('set');
   if (!opSetList) {
     dd.innerHTML = '<option value="">Loading sets…</option>';
-    try {
-      const [sets, decks] = await Promise.all([fetchJSON(OPAPI + 'allSets/', 12000), fetchJSON(OPAPI + 'allDecks/', 12000).catch(() => [])]);
-      opSetList = [
-        ...(Array.isArray(sets) ? sets : []).map(x => ({ id: x.set_id, name: x.set_name })),
-        ...(Array.isArray(decks) ? decks : []).map(x => ({ id: x.structure_deck_id, name: x.structure_deck_name })),
-        { id: 'P', name: 'Promos' }
-      ].filter(x => x.id && x.name);
-    } catch (e) { dd.innerHTML = '<option value="">Sets unavailable — tap to retry</option>'; return; }
+    try { await opLoadSetList(); } catch (e) { dd.innerHTML = '<option value="">Sets unavailable — tap to retry</option>'; return; }
   }
   const keep = dd.value;
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + opSetList.map(x => `<option value="${esc(x.id)}" data-code="${esc(x.id === 'P' ? '' : x.id)}">${esc(x.name)} (${esc(x.id)})</option>`).join('');
