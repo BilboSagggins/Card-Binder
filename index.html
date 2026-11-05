@@ -1195,7 +1195,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-10-31.88';
+const APP_VERSION = '2026-11-05.90';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1510,7 +1510,7 @@ function opSetMatch(v) {
       || (!r.card_set_id && ((r.set_id && codes.includes(opPrefix(r.set_id))) || (name && lc(r.set_name || '') === name)));
   };
 }
-async function opLoadSets() {
+async function opLoadSetsApi() {
   const dd = $('set');
   if (!opSetList) {
     dd.innerHTML = '<option value="">Loading sets…</option>';
@@ -1523,12 +1523,12 @@ async function opLoadSets() {
     [...dd.options].forEach(o => { if (o.value && !o.dataset.pick) { const m = opSetMatch(o.value); o.dataset.n = all.filter(m).length; } });
   }).catch(() => {});
 }
-const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', 'DON!!': 'DON!!' };
+const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Super Rare', SEC: 'Secret Rare', 'SP CARD': 'Special', SP: 'Special', TR: 'Treasure Rare', P: 'Promo', PR: 'Promo', 'DON!!': 'DON!!' };
 // Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
 const opRarLabel = r => !OP_RARITY[r] ? r : r === 'DON!!' ? OP_RARITY[r] : `${OP_RARITY[r]} (${r})`;
-const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'DON!!'];
+const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'PR', 'DON!!'];
 const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
-async function opFillRarities() {
+async function opFillRaritiesApi() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
   try {
     const all = await opLoadAll();
@@ -1541,7 +1541,49 @@ async function opFillRarities() {
     dd.value = keep; dd.dataset.ready = 'onepiece'; paintRarBtn();
   } catch (e) {}
 }
+/* One Piece search from TCGplayer's daily list (prices/onepiece.json), like English Pokémon: every set TCGplayer lists
+   (new ones, pre-orders and DON!! cards included) shows up by itself, results are instant and work offline.
+   optcgapi.com is only the backup when the list can't load. */
+const opList = () => loadTcgList('onepiece');
+// alternate art and parallel printings, from TCGplayer's names ("(Alternate Art)", "(Parallel)", "(Manga)", "(SP)"…)
+const opTcgParallel = name => /\((?:alternate art|parallel|manga|sp|full art|textured foil|jolly roger foil|pirate foil|gold)\)/i.test(name || '') && !/^DON!!/i.test(name || '');
+async function opLoadSets() {
+  const dd = $('set');
+  if (!TCG_LISTS.onepiece) dd.innerHTML = '<option value="">Loading sets…</option>';
+  const L = await opList();
+  if (!L || S.game !== 'onepiece' || mode === 'sealed') { if (!L) return opLoadSetsApi(); return; }
+  fillSetDropdown(L, 'tcg:');
+}
+async function opFillRarities() {
+  const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
+  const L = await opList(); if (!L) return opFillRaritiesApi();
+  if (S.game !== 'onepiece') return;
+  const found = [...new Set(Object.values(L.p).map(e => String(e[4] || '').trim()).filter(Boolean))]
+    .sort((a, b) => ((OP_RANK.indexOf(a) + 1) || 99) - ((OP_RANK.indexOf(b) + 1) || 99) || a.localeCompare(b));
+  const keep = dd.value;
+  dd.innerHTML = '<option value="">Any rarity</option>' + found.map(r => `<option value="${esc(r)}">${esc(opRarLabel(r))}</option>`).join('')
+    + '<option value="parallel">Parallel / alt art only</option>';
+  dd.value = keep; dd.dataset.ready = 'onepiece'; paintRarBtn();
+}
 async function opSearch() {
+  const setVal = $('set').value, text = $('q').value.trim(), rars = rarPick();
+  if (setVal && !setVal.startsWith('tcg:')) return opSearchApi();      // a set picked from the backup list
+  if (!setVal && !text && !rars.length) return toast(mode === 'num' ? 'Type a card ID like OP01-001, or choose a set or rarity' : mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
+  if (!TCG_LISTS.onepiece) $('results').innerHTML = '<div class="col-span-full text-center py-12 text-zinc-400 text-sm">⏳ Fetching cards…</div>';
+  const L = await opList(); if (!L) return opSearchApi();
+  const parallel = rars.includes('parallel'), rest = rars.filter(r => r !== 'parallel');
+  let p = L.p, q = text;
+  if (mode === 'num' && text) {      // card ID: "OP01-001", "op01001", "ST10-005", "P-001"
+    const id = text.toUpperCase().replace(/\s+/g, '').replace(/^([A-Z]+)(\d+)(\d{3})$/, '$1$2-$3');
+    p = Object.fromEntries(Object.entries(p).filter(([, e]) => String(e[2] || '').toUpperCase().startsWith(id))); q = '';
+  }
+  if (parallel) p = Object.fromEntries(Object.entries(p).filter(([, e]) => opTcgParallel(e[1])));
+  ART_ON = null;                                                   // art search is for Pokémon only
+  const saveMode = mode; if (mode === 'num') mode = 'name';      // the ID was matched above; listSearch only reads the mode before its first wait
+  const run = listSearch({ ...L, p }, setVal ? setVal.slice(4) : '', 'en', q, rest, pid => cardFromTcg(pid, 'onepiece', L));
+  mode = saveMode; return run;
+}
+async function opSearchApi() {
   const setVal = $('set').value, box = $('results'), text = $('q').value.trim(), rars = rarPick(), rar = rars.length;
   // Any one of: words in the box, a set, or a rarity is enough to search
   if (!setVal && !text && !rar) return toast(mode === 'num' ? 'Type a card ID like OP01-001, or choose a set or rarity' : mode === 'set' ? 'Choose a set or a rarity' : 'Type a card name, or choose a set or rarity', 'error');
@@ -1601,7 +1643,7 @@ function paintPkLang() {
 function fillSetDropdown(L, prefix) {
   const dd = $('set'), keep = dd.value;
   const sets = Array.isArray(L.sets) && L.sets.length
-    ? L.sets.map(([gid, name, date, abbr, n]) => ({ gid, name, date: date || '', n }))
+    ? L.sets.map(([gid, name, date, abbr, n]) => ({ gid, name, date: date || '', n, abbr: abbr || '' }))
     : Object.keys(L.groups || {}).map(gid => ({ gid, name: L.groups[gid], date: '', n: 0 }));   // older lists without dates: newest ids first
   sets.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (+b.gid) - (+a.gid));
   const byYear = new Map(), decks = [];
@@ -1612,7 +1654,7 @@ function fillSetDropdown(L, prefix) {
   });
   if (decks.length) byYear.set('Decks & kits', decks);
   dd.innerHTML = `<option value="">${mode === 'set' ? 'Choose a set…' : 'Any set'}</option>` + [...byYear].map(([y, xs]) =>
-    `<optgroup label="${esc(y)}">${xs.map(x => `<option value="${prefix}${esc(x.gid)}">${esc(x.name)}${x.n ? ` (${x.n})` : ''}</option>`).join('')}</optgroup>`).join('');
+    `<optgroup label="${esc(y)}">${xs.map(x => `<option value="${prefix}${esc(x.gid)}" data-code="${esc(x.abbr || '')}">${esc(x.name)}${x.n ? ` (${x.n})` : ''}</option>`).join('')}</optgroup>`).join('');
   dd.value = keep;
 }
 /* --- Set picker: tick any number of sets; tapping an era name ticks every set in it.
