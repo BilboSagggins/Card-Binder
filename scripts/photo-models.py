@@ -26,10 +26,12 @@ crops = sorted(glob.glob("photo/p*.jpg")); pims = [Image.open(f).convert("RGB") 
 def views(im, mode):
     w, h = im.size
     if mode == "full": return [im]
+    if mode == "pad": side = max(w, h); sq = Image.new("RGB", (side, side)); sq.paste(im, ((side - w) // 2, (side - h) // 2)); return [sq]
+    if mode == "top": return [im, im.crop((0, 0, w, int(h * .6)))]
     side = max(w, h); sq = Image.new("RGB", (side, side)); sq.paste(im, ((side - w) // 2, (side - h) // 2))
     return [sq, im.crop((int(w * .06), int(h * .08), int(w * .94), int(h * .55)))]
 out = {}
-for M in ["openai/clip-vit-base-patch16", "openai/clip-vit-base-patch32", "openai/clip-vit-large-patch14"]:
+for M in ["openai/clip-vit-base-patch16"]:
     model = CLIPModel.from_pretrained(M).eval(); proc = CLIPProcessor.from_pretrained(M)
     def emb(ims, mode):
         res = []
@@ -42,12 +44,13 @@ for M in ["openai/clip-vit-base-patch16", "openai/clip-vit-base-patch32", "opena
     with torch.no_grad():
         t = model.get_text_features(**proc(text=["an empty clear plastic binder pocket", "a pokemon trading card"], return_tensors="pt", padding=True)); t = t / t.norm(dim=-1, keepdim=True)
     pids = list(imgs)
-    for mode in ["full", "two"]:
+    for mode in ["full", "pad", "top"]:
         C = emb([imgs[p] for p in pids], mode); P = emb(pims, mode); S = P @ C.T; E = P @ t.T
         ok = sum(1 for i, pid in truth.items() if pids[int(S[i].argmax())] == pid)
         emp = sum(1 for i in range(len(crops)) if (bool(E[i][0] > E[i][1])) == (i in empty))
         gaps = [round(float(torch.topk(S[i], 2).values[0] - torch.topk(S[i], 2).values[1]), 3) for i in truth]
         tops = [round(float(S[i].max()), 3) for i in range(len(crops))]
+        for i in range(len(crops)):
+            tv = torch.topk(S[i], 3); print(f"   {mode} pocket {i + 1}: " + " | ".join(f"{pids[j]} {cands[pids[j]][:28]} {float(v):.3f}" for v, j in zip(tv.values.tolist(), tv.indices.tolist())) + ("  <- want " + truth[i] if i in truth else ""))
         print(f"{M.split('/')[-1]:24s} {mode:4s}: in-collection right {ok}/{len(truth)} | empty right {emp}/12 | gap to 2nd {gaps} | best scores {tops}", flush=True)
-    if M.endswith("patch16"): out = {"model": M, "empty": t[0].tolist(), "card": t[1].tolist()}
-json.dump(out, open("photo-text-b16.json", "w"))
+    
