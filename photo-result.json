@@ -1,0 +1,494 @@
+[
+ {
+  "pocket": 0,
+  "empty": false,
+  "top": [
+   {
+    "pid": "197726",
+    "score": 0.815,
+    "name": "Moltres & Zapdos & Articuno GX (Full Art)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "189659",
+    "score": 0.814,
+    "name": "Moltres & Zapdos & Articuno GX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197728",
+    "score": 0.814,
+    "name": "Moltres & Zapdos & Articuno GX (Secret)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.797,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "659612",
+    "score": 0.792,
+    "name": "Mega Charizard X ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 1,
+  "empty": false,
+  "top": [
+   {
+    "pid": "197726",
+    "score": 0.864,
+    "name": "Moltres & Zapdos & Articuno GX (Full Art)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197728",
+    "score": 0.851,
+    "name": "Moltres & Zapdos & Articuno GX (Secret)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "189659",
+    "score": 0.845,
+    "name": "Moltres & Zapdos & Articuno GX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.843,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "517048",
+    "score": 0.825,
+    "name": "Zapdos ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 2,
+  "empty": false,
+  "top": [
+   {
+    "pid": "197728",
+    "score": 0.816,
+    "name": "Moltres & Zapdos & Articuno GX (Secret)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "189659",
+    "score": 0.795,
+    "name": "Moltres & Zapdos & Articuno GX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197726",
+    "score": 0.777,
+    "name": "Moltres & Zapdos & Articuno GX (Full Art)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.735,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "664010",
+    "score": 0.735,
+    "name": "Oricorio ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 3,
+  "empty": false,
+  "top": [
+   {
+    "pid": "189659",
+    "score": 0.829,
+    "name": "Moltres & Zapdos & Articuno GX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197728",
+    "score": 0.802,
+    "name": "Moltres & Zapdos & Articuno GX (Secret)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.8,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197726",
+    "score": 0.8,
+    "name": "Moltres & Zapdos & Articuno GX (Full Art)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "517048",
+    "score": 0.799,
+    "name": "Zapdos ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 4,
+  "empty": false,
+  "top": [
+   {
+    "pid": "197728",
+    "score": 0.809,
+    "name": "Moltres & Zapdos & Articuno GX (Secret)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "189659",
+    "score": 0.808,
+    "name": "Moltres & Zapdos & Articuno GX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.8,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197726",
+    "score": 0.797,
+    "name": "Moltres & Zapdos & Articuno GX (Full Art)",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "659612",
+    "score": 0.794,
+    "name": "Mega Charizard X ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 5,
+  "empty": true,
+  "top": [
+   {
+    "pid": "594386",
+    "score": 0.706,
+    "name": "Magneton",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "567433",
+    "score": 0.671,
+    "name": "Joltik",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "517052",
+    "score": 0.656,
+    "name": "Switch",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478021",
+    "score": 0.651,
+    "name": "Oricorio",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478090",
+    "score": 0.651,
+    "name": "Charizard V",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 6,
+  "empty": true,
+  "top": [
+   {
+    "pid": "594386",
+    "score": 0.675,
+    "name": "Magneton",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "567433",
+    "score": 0.643,
+    "name": "Joltik",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478021",
+    "score": 0.62,
+    "name": "Oricorio",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478090",
+    "score": 0.619,
+    "name": "Charizard V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "517052",
+    "score": 0.614,
+    "name": "Switch",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 7,
+  "empty": true,
+  "top": [
+   {
+    "pid": "594386",
+    "score": 0.678,
+    "name": "Magneton",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "567433",
+    "score": 0.641,
+    "name": "Joltik",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478090",
+    "score": 0.618,
+    "name": "Charizard V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "488275",
+    "score": 0.617,
+    "name": "Galarian Moltres",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "673358",
+    "score": 0.615,
+    "name": "Pikachu (Pokemon Day 2026)",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 8,
+  "empty": false,
+  "top": [
+   {
+    "pid": "623588",
+    "score": 0.85,
+    "name": "Articuno",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "450289",
+    "score": 0.807,
+    "name": "Lugia V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "488271",
+    "score": 0.803,
+    "name": "Galarian Articuno",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.78,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "517020",
+    "score": 0.773,
+    "name": "Dragonair",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 9,
+  "empty": false,
+  "top": [
+   {
+    "pid": "517048",
+    "score": 0.875,
+    "name": "Zapdos ex",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.849,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "477469",
+    "score": 0.82,
+    "name": "Zacian VSTAR",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "488274",
+    "score": 0.82,
+    "name": "Galarian Zapdos",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "659612",
+    "score": 0.814,
+    "name": "Mega Charizard X ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 10,
+  "empty": false,
+  "top": [
+   {
+    "pid": "535090",
+    "score": 0.793,
+    "name": "Charizard ex",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "285378",
+    "score": 0.791,
+    "name": "Charizard VMAX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.778,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "662184",
+    "score": 0.771,
+    "name": "Mega Charizard X ex",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "659612",
+    "score": 0.761,
+    "name": "Mega Charizard X ex",
+    "set": "",
+    "number": ""
+   }
+  ]
+ },
+ {
+  "pocket": 11,
+  "empty": false,
+  "top": [
+   {
+    "pid": "111643",
+    "score": 0.842,
+    "name": "Ho-oh EX",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "488271",
+    "score": 0.82,
+    "name": "Galarian Articuno",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "197782",
+    "score": 0.812,
+    "name": "Ho-oh",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "664010",
+    "score": 0.81,
+    "name": "Oricorio ex",
+    "set": "",
+    "number": ""
+   },
+   {
+    "pid": "478233",
+    "score": 0.802,
+    "name": "Zacian V",
+    "set": "",
+    "number": ""
+   }
+  ]
+ }
+]

@@ -1,7 +1,20 @@
-allSets 0.4 s
-[('OP-01', 'Romance Dawn'), ('OP-02', 'Paramount War'), ('OP-03', 'Pillars of Strength'), ('OP-04', 'Kingdoms of Intrigue'), ('OP-05', 'Awakening of the New Era'), ('OP-06', 'Wings of the Captain'), ('OP-07', '500 Years in the Future'), ('EB-01', 'Extra Booster: Memorial Collection'), ('OP-08', 'Two Legends'), ('OP-09', 'Emperors in the New World'), ('OP-10', 'Royal Blood'), ('OP-11', 'A Fist of Divine Speed'), ('EB-02', 'Extra Booster: Anime 25th Collection'), ('OP-12', 'Legacy of the Master'), ('PRB-01', 'Premium Booster - The Best'), ('PRB-02', 'Premium Booster - The Best - Vol. 2'), ('OP-13', 'Carrying On His Will'), ('OP14-EB04', "The Azure Sea's Seven"), ('EB-03', 'Extra Booster: One Piece Heroines Edition'), ('OP15-EB04', "Adventure on Kami's Island"), ('OP-16', 'The Time of Battle'), ('OP-17', "The World's Strongest Warriors")]
-allDecks 0.2 s [('ST-25', 'Starter Deck 25: BLUE Buggy'), ('ST-26', 'Starter Deck 26: PURPLE/BLACK Monkey.D.Luffy'), ('ST-27', 'Starter Deck 27: BLACK Marshall.D.Teach'), ('ST-28', 'Starter Deck 28: GREEN/YELLOW Yamato'), ('ST-22', 'Starter Deck 22: Ace & Newgate'), ('ST-30', 'Starter Deck EX: Luffy & Ace'), ('ST-31', 'Starter Deck 31: RED Monkey.D.Luffy'), ('ST-32', 'Starter Deck 32: GREEN Roronoa Zoro'), ('ST-33', 'Starter Deck 33: BLUE Kuzan'), ('ST-34', 'Starter Deck 34: PURPLE Charlotte Katakuri'), ('ST-35', 'Starter Deck 35: RED/BLACK Sabo'), ('ST-36', 'Starter Deck 36: YELLOW Eustass"Captain"Kid')]
-allSetCards 1.0 s
-[('EB-01', 80), ('EB-02', 105), ('EB-03', 94), ('EB-05', 89), ('OP-01', 154), ('OP-02', 154), ('OP-03', 154), ('OP-04', 155), ('OP-05', 154), ('OP-06', 151), ('OP-07', 151), ('OP-08', 151), ('OP-09', 159), ('OP-10', 151), ('OP-11', 156), ('OP-12', 155), ('OP-13', 174), ('OP-16', 155), ('OP-17', 169), ('OP14-EB04', 200), ('OP15-EB04', 201), ('PRB-01', 317), ('PRB-02', 314)]
-newest scrape: 2026-11-05
-allSTCards 0.9 s [('ST-27', 15), ('ST-28', 15), ('ST-29', 31), ('ST-30', 34), ('ST-31', 14), ('ST-32', 15), ('ST-33', 14), ('ST-34', 15), ('ST-35', 15), ('ST-36', 15)]
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+binders: [('kyle', 'Kyle', 'pokemon'), ('kyle', 'Kyle', 'pokemon'), ('kyle--2', 'KYLE - OP', 'onepiece'), ('kyle--3', 'Kyle - Need', 'pokemon')]
+   kyle layout 4x3 pages 6
+   kyle layout 4x3 pages 6
+   kyle--2 layout 4x3 pages 2
+   kyle--3 layout None pages 9
+collection: 154 entries, 154 with a picture to compare
+downloaded 147
+pocket  1 -> Moltres & Zapdos & Articuno GX (Full Art)  (0.815) | Moltres & Zapdos & Articuno GX  (0.814) | Moltres & Zapdos & Articuno GX (Secret)  (0.814)
+pocket  2 -> Moltres & Zapdos & Articuno GX (Full Art)  (0.864) | Moltres & Zapdos & Articuno GX (Secret)  (0.851) | Moltres & Zapdos & Articuno GX  (0.845)
+pocket  3 -> Moltres & Zapdos & Articuno GX (Secret)  (0.816) | Moltres & Zapdos & Articuno GX  (0.795) | Moltres & Zapdos & Articuno GX (Full Art)  (0.777)
+pocket  4 -> Moltres & Zapdos & Articuno GX  (0.829) | Moltres & Zapdos & Articuno GX (Secret)  (0.802) | Zacian V  (0.8)
+pocket  5 -> Moltres & Zapdos & Articuno GX (Secret)  (0.809) | Moltres & Zapdos & Articuno GX  (0.808) | Zacian V  (0.8)
+pocket  6 EMPTY -> Magneton  (0.706) | Joltik  (0.671) | Switch  (0.656)
+pocket  7 EMPTY -> Magneton  (0.675) | Joltik  (0.643) | Oricorio  (0.62)
+pocket  8 EMPTY -> Magneton  (0.678) | Joltik  (0.641) | Charizard V  (0.618)
+pocket  9 -> Articuno  (0.85) | Lugia V  (0.807) | Galarian Articuno  (0.803)
+pocket 10 -> Zapdos ex  (0.875) | Zacian V  (0.849) | Zacian VSTAR  (0.82)
+pocket 11 -> Charizard ex  (0.793) | Charizard VMAX  (0.791) | Zacian V  (0.778)
+pocket 12 -> Ho-oh EX  (0.842) | Galarian Articuno  (0.82) | Ho-oh  (0.812)
