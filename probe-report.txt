@@ -1,40 +1,48 @@
-Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
-   full pocket 1: 197726 Moltres & Zapdos & Articuno  0.833 | 197728 Moltres & Zapdos & Articuno  0.829 | 189659 Moltres & Zapdos & Articuno  0.815
-   full pocket 2: 197726 Moltres & Zapdos & Articuno  0.864 | 252517 Charizard (Celebrations Meta 0.839 | 183897 Latias & Latios GX 0.829  <- want 197726
-   full pocket 3: 197728 Moltres & Zapdos & Articuno  0.792 | 189659 Moltres & Zapdos & Articuno  0.775 | 197726 Moltres & Zapdos & Articuno  0.757  <- want 197728
-   full pocket 4: 252517 Charizard (Celebrations Meta 0.838 | 502558 Charizard ex 0.817 | 183897 Latias & Latios GX 0.816  <- want 189659
-   full pocket 5: 535090 Charizard ex 0.772 | 285378 Charizard VMAX 0.771 | 562018 Greninja ex 0.760
-   full pocket 6: 664010 Oricorio ex 0.651 | 117267 Charizard EX 0.626 | 594386 Magneton 0.624
-   full pocket 7: 633043 Jamming Tower 0.589 | 696684 Drifloon 0.579 | 594386 Magneton 0.577
-   full pocket 8: 664010 Oricorio ex 0.624 | 696684 Drifloon 0.605 | 517034 Poliwhirl 0.590
-   full pocket 9: 623588 Articuno 0.786 | 632993 Misty's Psyduck 0.678 | 91238 Charizard EX (100 Full Art) 0.660  <- want 623588
-   full pocket 10: 517048 Zapdos ex 0.823 | 562018 Greninja ex 0.801 | 117267 Charizard EX 0.785  <- want 517048
-   full pocket 11: 252517 Charizard (Celebrations Meta 0.859 | 117267 Charizard EX 0.813 | 285378 Charizard VMAX 0.813
-   full pocket 12: 111643 Ho-oh EX 0.855 | 488271 Galarian Articuno 0.809 | 252517 Charizard (Celebrations Meta 0.808  <- want 111643
-clip-vit-base-patch16    full: in-collection right 5/6 | empty right 12/12 | gap to 2nd [0.026, 0.017, 0.02, 0.108, 0.022, 0.047] | best scores [0.833, 0.864, 0.792, 0.838, 0.772, 0.651, 0.589, 0.624, 0.786, 0.823, 0.859, 0.855]
-   pad pocket 1: 183897 Latias & Latios GX 0.847 | 562018 Greninja ex 0.834 | 189659 Moltres & Zapdos & Articuno  0.833
-   pad pocket 2: 197726 Moltres & Zapdos & Articuno  0.840 | 189659 Moltres & Zapdos & Articuno  0.839 | 197728 Moltres & Zapdos & Articuno  0.834  <- want 197726
-   pad pocket 3: 197728 Moltres & Zapdos & Articuno  0.822 | 189659 Moltres & Zapdos & Articuno  0.807 | 197726 Moltres & Zapdos & Articuno  0.778  <- want 197728
-   pad pocket 4: 478168 Zeraora VMAX 0.877 | 189659 Moltres & Zapdos & Articuno  0.874 | 562018 Greninja ex 0.859  <- want 189659
-   pad pocket 5: 197728 Moltres & Zapdos & Articuno  0.828 | 189659 Moltres & Zapdos & Articuno  0.825 | 477057 Mewtwo VSTAR 0.809
-   pad pocket 6: 252517 Charizard (Celebrations Meta 0.605 | 478058 Pikachu 0.578 | 518872 Mewtwo 0.574
-   pad pocket 7: 252517 Charizard (Celebrations Meta 0.617 | 684463 Squirtle 0.587 | 517052 Switch 0.584
-   pad pocket 8: 252517 Charizard (Celebrations Meta 0.604 | 517035 Psyduck 0.595 | 673358 Pikachu (Pokemon Day 2026) 0.580
-   pad pocket 9: 517020 Dragonair 0.706 | 518872 Mewtwo 0.682 | 623588 Articuno 0.681  <- want 623588
-   pad pocket 10: 517048 Zapdos ex 0.854 | 478168 Zeraora VMAX 0.853 | 488271 Galarian Articuno 0.845  <- want 517048
-   pad pocket 11: 562018 Greninja ex 0.854 | 477057 Mewtwo VSTAR 0.848 | 478168 Zeraora VMAX 0.842
-   pad pocket 12: 111643 Ho-oh EX 0.849 | 263785 Mimikyu VMAX 0.830 | 488271 Galarian Articuno 0.829  <- want 111643
-clip-vit-base-patch16    pad : in-collection right 4/6 | empty right 12/12 | gap to 2nd [0.001, 0.015, 0.003, 0.024, 0.001, 0.019] | best scores [0.847, 0.84, 0.822, 0.877, 0.828, 0.605, 0.617, 0.604, 0.706, 0.854, 0.854, 0.849]
-   top pocket 1: 197726 Moltres & Zapdos & Articuno  0.827 | 478233 Zacian V 0.827 | 117267 Charizard EX 0.827
-   top pocket 2: 197726 Moltres & Zapdos & Articuno  0.877 | 478233 Zacian V 0.867 | 183897 Latias & Latios GX 0.865  <- want 197726
-   top pocket 3: 197728 Moltres & Zapdos & Articuno  0.756 | 189659 Moltres & Zapdos & Articuno  0.748 | 197726 Moltres & Zapdos & Articuno  0.737  <- want 197728
-   top pocket 4: 189659 Moltres & Zapdos & Articuno  0.843 | 478233 Zacian V 0.841 | 197726 Moltres & Zapdos & Articuno  0.839  <- want 189659
-   top pocket 5: 197728 Moltres & Zapdos & Articuno  0.806 | 478233 Zacian V 0.804 | 659612 Mega Charizard X ex 0.799
-   top pocket 6: 673358 Pikachu (Pokemon Day 2026) 0.649 | 478090 Charizard V 0.644 | 478142 Regigigas V 0.627
-   top pocket 7: 108589 Ancient Mew [2000] 0.626 | 673358 Pikachu (Pokemon Day 2026) 0.624 | 517035 Psyduck 0.605
-   top pocket 8: 108589 Ancient Mew [2000] 0.619 | 673358 Pikachu (Pokemon Day 2026) 0.619 | 517035 Psyduck 0.611
-   top pocket 9: 623588 Articuno 0.826 | 517020 Dragonair 0.736 | 450289 Lugia V 0.725  <- want 623588
-   top pocket 10: 517048 Zapdos ex 0.866 | 478233 Zacian V 0.833 | 183897 Latias & Latios GX 0.832  <- want 517048
-   top pocket 11: 252517 Charizard (Celebrations Meta 0.823 | 478233 Zacian V 0.806 | 285378 Charizard VMAX 0.805
-   top pocket 12: 111643 Ho-oh EX 0.846 | 197782 Ho-oh 0.820 | 488271 Galarian Articuno 0.805  <- want 111643
-clip-vit-base-patch16    top : in-collection right 6/6 | empty right 11/12 | gap to 2nd [0.01, 0.008, 0.002, 0.09, 0.033, 0.026] | best scores [0.827, 0.877, 0.756, 0.843, 0.806, 0.649, 0.626, 0.619, 0.826, 0.866, 0.823, 0.846]
+    5s Finding your collection's cards…
+   11s Looking at your collection: 3 of 147
+   17s Looking at your collection: 7 of 147
+   24s Looking at your collection: 11 of 147
+   32s Looking at your collection: 16 of 147
+   38s Looking at your collection: 20 of 147
+   48s Looking at your collection: 26 of 147
+   56s Looking at your collection: 31 of 147
+   62s Looking at your collection: 35 of 147
+   70s Looking at your collection: 40 of 147
+   77s Looking at your collection: 44 of 147
+   86s Looking at your collection: 50 of 147
+   94s Looking at your collection: 55 of 147
+  104s Looking at your collection: 61 of 147
+  113s Looking at your collection: 67 of 147
+  120s Looking at your collection: 71 of 147
+  130s Looking at your collection: 77 of 147
+  138s Looking at your collection: 82 of 147
+  144s Looking at your collection: 86 of 147
+  152s Looking at your collection: 91 of 147
+  162s Looking at your collection: 97 of 147
+  171s Looking at your collection: 103 of 147
+  178s Looking at your collection: 107 of 147
+  186s Looking at your collection: 112 of 147
+  192s Looking at your collection: 116 of 147
+  200s Looking at your collection: 121 of 147
+  210s Looking at your collection: 127 of 147
+  217s Looking at your collection: 131 of 147
+  225s Looking at your collection: 136 of 147
+  231s Looking at your collection: 140 of 147
+  241s Looking at your collection: 146 of 147
+done after 262 s | review shown: True
+summary: 9 cards found · 5 to check (tap them)
+1: Latias & Latios GX 113/181 [183897] CHECK 0.846
+2: Latias & Latios GX 113/181 [183897] CHECK 0.890
+3: Moltres & Zapdos & Articuno GX (Secret) 69/68 [197728] sure 0.792
+4: Moltres & Zapdos & Articuno GX SM210 [189659] CHECK 0.863
+5: Moltres & Zapdos & Articuno GX SM210 [189659] CHECK 0.826
+6: EMPTY
+7: EMPTY
+8: EMPTY
+9: Articuno 161/159 [623588] sure 0.819
+10: Zapdos ex 202/165 [517048] sure 0.877
+11: Charizard ex 234/091 [535090] CHECK 0.828
+12: Ho-Oh EX (Full Art) 121/122 [111643] sure 0.870
+search 'Team Rocket's Moltres' for pocket 11: ["Team Rocket's Moltres ex | SV10: Destined Rivals · 229/182 · $56.53 · not in your collection | 87%", "Team Rocket's Moltres ex | SV10: The Glory of Team Rocket · 124/098 · $87.97 · not in your collection | 85%", "Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) | Miscellaneous Cards & Products · 229/182 · $45.07 · not in your collection | 83%", "Team Rocket's Moltres ex - 31/182 (Destined Rivals Stamp) | Miscellaneous Cards & Products · 031/182 · $1.38 · not in your collection | 80%"]
+errors: []
+console: ['A bad HTTP response code (404) was received when fetching the script.', "Offline helper not started TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8811/') with script ('http://localhost:8811/sw.js'): A bad HTTP response code (404) was received w", 'Failed to load resource: the server responded with a status of 404 (File not found)', 'Unable to determine content-length from response headers. Will expand buffer when needed.', "Access to fetch at 'https://cardtrader.com/uploads/blueprints/image/407457/407457-team-rocket-s-moltres-ex-csv10c-special-illustration-rare-263-222-csv10c-chasing-glory.webp' from origin 'http://local", 'Failed to load resource: net::ERR_FAILED', "Access to fetch at 'https://cardtrader.com/uploads/blueprints/image/407425/407425-team-rocket-s-moltres-ex-csv10c-full-art-231-222-csv10c-chasing-glory.webp' from origin 'http://localhost:8811' has be", 'Failed to load resource: net::ERR_FAILED']
