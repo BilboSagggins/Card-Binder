@@ -138,6 +138,35 @@
   #np-hint { margin-right: auto; font: 500 .68rem/1.3 Inter, system-ui, sans-serif; color: #71717a; }
   .np-lock.on { background: #e11d48; border-color: #fb7185; color: #fff; }
   .np-head { flex-wrap: wrap; }
+  .ph-body { max-width: 40rem; margin: 0 auto; padding: .9rem .9rem 2rem; }
+  .ph-p { font: 500 .8rem/1.5 Inter, system-ui, sans-serif; color: #d4d4d8; margin: 0 0 .8rem; }
+  .ph-p b { color: #fff; }
+  .ph-stage { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .ph-stage canvas { display: block; width: 100%; height: auto; border-radius: 10px; }
+  .ph-h { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: rgba(250,204,21,.35); border: 3px solid #facc15; box-shadow: 0 0 0 2px rgba(0,0,0,.5); touch-action: none; cursor: grab; }
+  .ph-grid { display: grid; gap: .45rem; }
+  .ph-cell { appearance: none; position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: .3rem; border-radius: 10px; border: 2px solid #059669; background: #18181b; color: #f4f4f5; text-align: left; cursor: pointer; min-width: 0; }
+  .ph-cell.check { border-color: #f59e0b; background: #1f1a0e; }
+  .ph-cell.empty { border-color: #3f3f46; border-style: dashed; }
+  .ph-cell .ph-shot { position: absolute; top: .3rem; left: .3rem; width: 32%; border-radius: 4px; border: 1px solid #000; z-index: 1; opacity: .95; }
+  .ph-cell.empty .ph-shot { position: static; width: 100%; opacity: .5; }
+  .ph-cell .ph-card { width: 100%; aspect-ratio: 2.5/3.5; object-fit: cover; border-radius: 6px; background: #27272a; }
+  .ph-name { font: 700 .62rem/1.2 Inter, system-ui, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ph-meta { font: 500 .56rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ph-badge { position: absolute; top: .3rem; right: .3rem; z-index: 1; font: 800 .55rem/1 Inter, system-ui, sans-serif; padding: .25rem .35rem; border-radius: 6px; background: #059669; color: #fff; }
+  .ph-cell.check .ph-badge { background: #f59e0b; color: #111; }
+  .ph-cell.empty .ph-badge { background: #3f3f46; }
+  .ph-one { display: flex; gap: .6rem; align-items: center; margin: .4rem 0; }
+  .ph-one img { width: 34%; border-radius: 6px; }
+  .ph-alt { appearance: none; display: flex; gap: .55rem; align-items: center; width: 100%; text-align: left; padding: .4rem; border-radius: 10px; border: 1px solid #3f3f46; background: #27272a; color: #f4f4f5; cursor: pointer; }
+  .ph-alt img { width: 40px; height: 56px; object-fit: cover; border-radius: 4px; flex: none; background: #18181b; }
+  .ph-alt span { flex: 1; min-width: 0; }
+  .ph-alt b { display: block; font: 700 .78rem/1.2 Inter, system-ui, sans-serif; }
+  .ph-alt small { display: block; font-size: .66rem; color: #a1a1aa; }
+  .ph-alt i { color: #fbbf24; font-style: normal; }
+  .ph-alt em { font: 700 .68rem/1 Inter, system-ui, sans-serif; color: #93c5fd; font-style: normal; }
+  .ph-find { display: flex; gap: .4rem; margin: .3rem 0 .4rem; }
+  .ph-find .sp-find { margin: 0; flex: 1; }
   .np-titles { flex: 1; min-width: 0; }
   .np-bar { flex: 0 0 calc(100% + 2rem); box-sizing: border-box; margin: .2rem -1rem -.8rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem 1rem; background: #052e16; border-bottom: 1px solid #14532d; color: #86efac; font: 600 .72rem/1 Inter, system-ui, sans-serif; }
   .np-bar[hidden] { display: none; }
@@ -951,6 +980,7 @@
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
         <button type="button" onclick="openShareSheet()" title="A link to this binder or its Need List that anyone can open to look" class="tt" style="--tt:#2563eb"><span>🔗</span>Share</button>
+        <button type="button" onclick="openPhotoPage()" title="Photograph a page of your real binder and add it here" class="tt" style="--tt:#0891b2"><span>📷</span>Photo page</button>
         <button type="button" onclick="openDuplicates()" title="Cards you have more than once across your binders" class="tt" style="--tt:#a16207"><span>🔁</span>Duplicates</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
@@ -1328,6 +1358,34 @@
 </div>
 
 <!-- Need list: a live page of every card marked Need in this binder -->
+<div id="photo-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="ph-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closePhotoPage()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="ph-title">📷 Photo → page</h2><p id="ph-sub"></p></div>
+  </div>
+  <div class="ph-body">
+    <div id="ph-pick">
+      <p class="ph-p">Lay the binder flat, take the photo from straight above in good light (sleeve glare makes it harder), and get the whole page in.
+        The cards are matched with <b>your collection</b> right on this phone; cards you don't have in it yet can be found by name.
+        The result is added as a <b>new page at the end</b> of this binder, so nothing you already have moves.</p>
+      <div class="scan-btns">
+        <label class="scan-btn"><input type="file" accept="image/*" capture="environment" class="hidden" onchange="phPickFile(this)"><span>📷</span>Take photo</label>
+        <label class="scan-btn alt"><input type="file" accept="image/*" class="hidden" onchange="phPickFile(this)"><span>🖼️</span>Choose photo</label>
+      </div>
+      <p class="ph-p" style="font-size:.7rem;color:#71717a">The first time takes a few minutes: the picture matcher (about 90 MB) is downloaded, and every card in your collection is looked at once. Both are kept on this phone, so later photos only take seconds.</p>
+    </div>
+    <div id="ph-align" hidden>
+      <div id="ph-stage" class="ph-stage" onpointerdown="phHandleDown(event)"><canvas id="ph-canvas"></canvas><i class="ph-h" data-i="0"></i><i class="ph-h" data-i="1"></i><i class="ph-h" data-i="2"></i><i class="ph-h" data-i="3"></i></div>
+      <div class="lb-row" style="margin-top:.7rem"><button type="button" class="lb-btn quiet" onclick="phStep('pick')">Another photo</button><button type="button" class="lb-btn" id="ph-next" onclick="phMatch()">Match cards</button></div>
+    </div>
+    <div id="ph-work" hidden><p id="ph-work-t" class="ph-p" style="text-align:center"></p><div class="off-bar"><i id="ph-work-fill" style="width:2%"></i></div></div>
+    <div id="ph-review" hidden>
+      <p id="ph-review-t" class="ph-p"></p>
+      <div id="ph-grid" class="ph-grid"></div>
+      <div class="lb-row" style="margin-top:.8rem"><button type="button" class="lb-btn quiet" onclick="phStep('align')">Back</button><button type="button" class="lb-btn" id="ph-add" onclick="phAddPage()">Add as a new page</button></div>
+    </div>
+  </div>
+</div>
 <div id="need-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="np-title">
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
@@ -3014,9 +3072,13 @@ function pickCollectionFile(input) {
             ['name', 'qty', 'image', 'set', 'number', 'rarity'].forEach(k => { if ((it[k] ?? '') !== (was[k] ?? '')) { up[`items/${id}/${k}`] = it[k] ?? null; diff = true; } });
             if (diff) changed++;
           });
-          Object.keys(old).forEach(id => { if (!its[id]) { up['items/' + id] = null; removed++; } });
+          // cards added here by the app (📷 Photo page) stay, unless the file now has the same card (then the file's copy is kept)
+          const filePids = new Set(Object.values(its).map(it => String(pidOf(it.image) || '')).filter(x => x !== '0'));
+          const appPid = it => String(pidOf(it.image) || (String(it.match || '').startsWith('tcg:') ? String(it.match).slice(4) : ''));
+          Object.keys(old).forEach(id => { if (its[id]) return; if (old[id] && old[id].addedBy === 'app' && !filePids.has(appPid(old[id]))) return; up['items/' + id] = null; removed++; });
           await ref.update(up);
           const kept = {}; Object.entries(its).forEach(([id, it]) => { kept[id] = old[id] ? { ...old[id], ...it } : it; });
+          Object.entries(old).forEach(([id, it]) => { if (!kept[id] && up['items/' + id] !== null && it && it.addedBy === 'app') kept[id] = it; });
           COLLECTIONS[owner + '|' + g] = { importedAt: now, file: f.name, items: kept }; watchCollection(owner, g);
           done.push(`${GAMES[g]}: ${added} new${removed ? `, ${removed} removed` : ''}${changed ? `, ${changed} updated` : ''}`);
         }
@@ -4681,6 +4743,250 @@ async function movePagesTo(id, btn, which) {
     removed.forEach(({ i, page }) => pg.splice(Math.min(i, pg.length), 0, page));
     S.pages = pg; S.cur = removed[0].i; saveActivePages(pg); render();
     toast(`Put back ${removed.length} page${removed.length === 1 ? '' : 's'}`);
+  });
+}
+
+/* --- 📷 Photo → page: photograph a real binder page and get it as a page here.
+   The photo is cut into pockets on a grid you line up, and each pocket is compared with the pictures of the cards in your
+   collection by a free picture-matching AI (CLIP) running on this phone, through transformers.js. Nothing is uploaded.
+   You check the result (alternatives, search by name, empty), then it's added as a new page at the end of this binder.
+   Cards that aren't in your collection yet are added to it too (marked as added by the app, so a Collectr import keeps them). */
+const PH_MODEL = 'Xenova/clip-vit-base-patch16', PH_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
+const PH = { img: null, quad: null, cols: 4, rows: 3, cells: [], pick: [], cands: [], busy: false };
+let phLibP = null, phModel = null;
+// The matcher: loaded once (about 90 MB the first time, then from this phone)
+function phLoadModel(onProgress) {
+  if (window.__phEmbed) return Promise.resolve();          // tests use a stand-in
+  if (phModel) return Promise.resolve();
+  if (!phLibP) phLibP = (async () => {
+    const lib = await import(PH_LIB);
+    lib.env.allowLocalModels = false;
+    const seen = {};
+    const progress_callback = p => { if (p.status === 'progress' && p.total) { seen[p.file] = [p.loaded, p.total]; const v = Object.values(seen); onProgress && onProgress(v.reduce((a, x) => a + x[0], 0), v.reduce((a, x) => a + x[1], 0)); } };
+    const [proc, vision] = await Promise.all([lib.AutoProcessor.from_pretrained(PH_MODEL), lib.CLIPVisionModelWithProjection.from_pretrained(PH_MODEL, { dtype: 'q8', progress_callback })]);
+    phModel = { lib, proc, vision };
+  })().catch(e => { phLibP = null; throw e; });
+  return phLibP;
+}
+const phNorm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return Float32Array.from(v, x => x / s); };
+const phDot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+async function phEmbedOne(canvas) {
+  if (window.__phEmbed) return phNorm(await window.__phEmbed(canvas));
+  const { lib, proc, vision } = phModel;
+  const out = await vision(await proc(await lib.RawImage.fromCanvas(canvas)));
+  return phNorm(out.image_embeds.data);
+}
+// Two looks at a card, the mix that won the tests with this model (6 of 6 on Kyle's test photo): the whole card, and its top 60%
+function phTop(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = Math.round(src.height * .6); c.getContext('2d').drawImage(src, 0, 0); return c; }
+async function phEmbedViews(src) {
+  const full = await phEmbedOne(src), top = await phEmbedOne(phTop(src));
+  return { full, card: phNorm(full.map((x, i) => x + top[i])) };
+}
+async function phEmbedCard(src) { return (await phEmbedViews(src)).card; }
+// Remembered embeddings (IndexedDB), so each card picture is only looked at once on this phone
+let phDbP = null;
+function phDb() {
+  if (!phDbP) phDbP = new Promise(res => { try { const r = indexedDB.open('cb-photo', 1); r.onupgradeneeded = () => r.result.createObjectStore('emb'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch (e) { res(null); } });
+  return phDbP;
+}
+async function phCacheGet(k) { const db = await phDb(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('emb').objectStore('emb').get(k); q.onsuccess = () => res(q.result ? new Float32Array(q.result) : null); q.onerror = () => res(null); } catch (e) { res(null); } }); }
+async function phCachePut(k, v) { const db = await phDb(); if (!db) return; try { db.transaction('emb', 'readwrite').objectStore('emb').put(Array.from(v), k); } catch (e) {} }
+async function phLoadImage(url) {
+  const r = await fetch(url, { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' }); if (!r.ok) throw new Error('picture ' + r.status);
+  const bmp = await createImageBitmap(await r.blob());
+  const c = document.createElement('canvas'), k = Math.min(1, 448 / Math.max(bmp.width, bmp.height));
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); return c;
+}
+async function phEmbedUrl(url) {
+  const key = PH_MODEL + '|v2|' + url, hit = await phCacheGet(key); if (hit) return hit;
+  const e = await phEmbedCard(await phLoadImage(url)); phCachePut(key, e); return e;
+}
+// Text directions for "an empty clear plastic binder pocket" vs "a pokemon trading card" (made once with the same model)
+const PH_EMPTY_TXT = phNorm([0.0172,0.0515,0.0393,0.0056,0.0051,-0.0178,-0.0221,-0.0584,0.0089,-0.0104,-0.0539,-0.0347,0.0422,-0.0504,0.0389,-0.0055,0.0274,0.0339,-0.0411,-0.0056,0.0287,-0.0009,-0.0135,0.0146,0.0172,-0.0295,0.0143,-0.0017,0.0268,0.0108,0.0105,0.0115,-0.02,0.0025,-0.0123,-0.0267,-0.0019,0.0128,-0.0439,-0.001,0.0016,0.0634,-0.0161,0.0362,0.0179,-0.0676,-0.0598,-0.0049,-0.0393,0.0219,0.0426,-0.0078,0.0064,0.0045,0.0087,0.0014,-0.0323,-0.0205,0.0472,0.0153,0.0401,-0.0109,0.0112,0.0161,-0.0237,0.0025,-0.0392,-0.0117,0.0182,0.0114,-0.0118,0.017,-0.0177,0.0008,-0.0204,0.0443,-0.0465,-0.0116,-0.0022,-0.0406,-0.0519,0.0576,0.011,-0.0055,0.0357,-0.0301,0.0482,-0.0197,-0.0021,-0.0036,0.0322,-0.0581,0.0058,0.061,-0.007,0.0134,-0.1575,0.001,0.0302,-0.0054,0.0249,-0.0215,-0.0065,-0.0432,0.0156,-0.0116,0.0159,-0.0019,-0.003,0.0469,-0.03,-0.0376,-0.0038,0.0109,0.0422,0.0113,-0.0443,-0.0172,-0.0142,0.003,0.0634,0.0129,0.0249,0.0254,0.0221,0.0346,-0.0015,-0.0293,0.036,0.0369,-0.001,0.0378,0.0405,0.0193,0.0373,-0.0041,-0.071,0.0182,0.0009,0.0106,-0.0018,-0.0632,0.0221,-0.0333,0.0579,-0.0262,-0.019,0.0343,0.0337,0.051,-0.017,0.0145,0.0316,-0.0688,0.0002,0.0139,0.0536,-0.0182,-0.0137,0.0058,0.006,-0.0508,-0.0078,-0.0557,-0.0234,0.0105,-0.043,-0.0352,0.0069,-0.0285,0.0366,0.0014,-0.0517,0.0628,0,-0.0211,0.0156,0.0236,0.0338,0.0036,-0.0386,-0.04,-0.0125,0.0705,0.0188,0.0245,0.0336,0.0317,0.0137,0.0407,0.0053,0.0233,0.0041,-0.0351,0.0142,0.047,0.0055,0.0262,0.0079,0.0145,0.0554,-0.0033,0.0085,0.008,-0.0126,0.0024,0.0281,-0.0224,-0.0147,-0.0144,-0.0176,-0.0196,-0.0014,0.034,0.0343,0.0458,0.0135,-0.0368,-0.0304,-0.0478,0.0457,-0.0319,0.0247,-0.0188,0.0307,0.0307,0.0019,0.049,-0.0006,0.0659,0.0163,0.002,0.0046,0.0316,0.0004,0.0242,0.004,-0.023,0.0712,-0.0355,0.0642,-0.0475,-0.0248,-0.0219,0.0373,-0.0064,-0.0546,0.0125,-0.0471,-0.0021,0.0391,-0.0038,-0.0467,0.0484,0.0438,-0.0394,-0.0461,0.0461,0.0273,0.035,-0.0253,0.0233,-0.0041,-0.0326,0.0131,-0.0022,0.0114,0.0263,0.0163,0.0449,-0.0103,0.0157,0.0103,-0.0059,0.0153,0.0154,-0.0294,0.062,-0.0597,-0.0015,0.0022,0.0024,0.0208,0.0427,-0.0152,0.0028,-0.0056,0.0772,-0.0647,-0.0638,-0.01,-0.0125,0.0946,0.0154,0.0205,-0.0163,-0.0026,0.0174,-0.0295,-0.0212,-0.0204,-0.0176,0.0016,-0.0057,0.029,-0.0067,-0.0217,-0.009,0.0208,0.0161,-0.0282,0.024,-0.0259,-0.0465,-0.0188,0.03,0.0231,-0.0287,0.0216,-0.0032,-0.0024,0.0304,0.0582,0.0013,-0.0365,0.0111,-0.0221,0.0129,0.0551,0.0295,0.0163,0.0225,-0.0039,-0.0084,0.0016,-0.0403,-0.0346,-0.0119,-0.0011,-0.0045,0.0146,-0.0351,-0.0134,-0.0614,-0.0448,0.0286,0.0133,0.0447,0.0047,0.0027,0.0263,-0.0193,0.0322,0.0175,-0.0128,-0.0182,-0.0178,-0.0008,-0.0144,0.0219,0.0121,0.0397,0.6952,0.071,0.0101,-0.0171,-0.0374,-0.0089,-0.0434,0.0139,-0.0365,0.0179,0.0196,0.015,-0.0383,0.0016,-0.0011,-0.036,0.0139,-0.041,-0.0199,-0.0265,-0.0253,-0.0454,-0.0476,-0.0002,-0.0576,-0.0215,-0.0192,0.0425,-0.0343,0.0028,-0.0075,-0.0074,-0.0285,0.0227,0.0104,-0.0234,0.0509,0.0169,-0.0164,-0.01,0.0127,0.011,0.0038,-0.0246,-0.0333,0.0298,0.0118,0.0306,-0.0236,0.0364,0.0012,0.0274,0.0255,0.0314,0.0091,0.0166,0.0331,-0.0182,0.0013,-0.0244,0.0084,-0.0281,0.0527,0.0053,0.0026,-0.0077,0.0201,0.0509,0.0039,0.037,0.0037,-0.0155,-0.0181,0.0201,0.011,-0.0364,0.01,-0.0241,-0.017,0.0012,0.1586,-0.0329,0.0326,0.0077,0.0714,0.0162,0.0042,0.0004,0.009,0.0116,-0.0273,-0.0332,-0.018,0.0021,-0.032,-0.0035,-0.0192,0.0566,0.0348,-0.0114,-0.0488,-0.007,-0.0228,-0.0401,-0.0487,0.0365,-0.0519,0.0472,-0.0138,-0.0126,-0.0464,-0.0459,0.0199,-0.0428,0.0119,-0.0245,-0.0262,-0.0173,-0.0881,0.1056,0.0057,-0.0175,0.0104,-0.0082,-0.0282,0.0021,-0.0027,-0.0031,0.0162,-0.0585,0.0236,0.0078,0.0158,-0.0261,0.0256,0.0041,0.0008,-0.0132,-0.0379,0.0317,-0.0559,0.0402,0.0489,0.0445,-0.0249,0.0223,0.0082,-0.0414,-0.0048,-0.0074]),
+  PH_CARD_TXT = phNorm([0.0693,0.0003,0.0271,0.0042,0.0293,0.0236,0.0306,-0.0091,0.0059,-0.0094,-0.0131,-0.0065,-0.0268,-0.0351,-0.0003,0.0006,0.0035,-0.0133,-0.0093,-0.0205,0.028,-0.0103,0.0176,0.0227,0.0224,0.0059,0.013,0.0554,-0.0221,-0.0259,-0.0109,0.0187,-0.018,-0.0187,-0.0317,-0.0364,0.0044,-0.003,-0.016,0.0087,-0.037,0.0173,-0.0088,0.0211,0.0162,-0.022,-0.0804,-0.0359,-0.0184,-0.0059,0.025,0.0107,-0.0332,-0.0516,0.0125,0.0036,0.0113,-0.0042,-0.03,0.0165,0.0169,0.0137,0.017,-0.0146,-0.007,0.0223,0.0386,0.0018,0.0125,-0.0202,-0.0401,0.0404,-0.0381,0.006,0.0043,-0.0186,0.0062,0.0006,-0.0032,0.0062,-0.0548,0.0515,-0.0196,-0.0657,0.0524,0.0131,0.0285,0.0047,0.0189,-0.0121,-0.0213,-0.0455,0.0113,0.0173,0.0008,-0.0054,-0.1112,-0.0179,-0.0031,-0.0134,-0.0411,-0.0352,0.0295,-0.0111,0.0139,-0.0248,0.006,-0.0324,-0.0048,0.0042,-0.0287,-0.0157,-0.0231,-0.001,-0.0017,0.0039,0.0437,-0.0141,-0,0.0334,0.0544,0.0109,0.0244,0.0067,-0.0355,-0.0088,0.0433,-0.0068,0.0222,0.0159,-0.0159,-0.023,0.0195,0.0274,0.0225,-0.0072,-0.0379,-0.0045,-0.0025,0.0264,0.0194,-0.0607,0.0103,-0.0028,-0.0137,0.0089,0.0018,0.0149,-0.0192,0.0219,-0.0147,0.0139,-0.0276,-0.0339,-0.0233,0.0042,-0.0114,-0.0117,0.0176,-0.0254,0.0024,0.0338,0.0188,0.0301,0.0403,0.0167,-0.0526,-0.0678,-0.0098,0.0091,0.0696,0.0133,0.0103,0.0546,0.0052,0.0344,-0.0026,0.0049,0.0411,0.0294,-0.0383,-0.0104,-0.0073,0.0512,0.0413,0.011,-0.0414,0.0365,-0.0286,0.0282,-0.0108,0.0298,0.0431,0.0055,-0.0049,-0.0027,0.001,0.0114,0.0249,-0.032,0.0314,0.0147,-0.0072,0.0214,-0.0243,-0.0271,-0.0285,0.037,-0.0331,-0.006,-0.0678,0.0109,0.0408,0.0329,0.0617,-0.0367,0.0001,0.0376,-0.0295,-0.038,0.0309,0.0134,0.012,-0.0154,0.01,-0.0148,0.0115,0.0348,0.0348,0.0192,-0.0141,0.0069,0.0308,-0.0126,-0.0481,-0.0058,0.0035,-0.0418,0.0404,-0.0087,0.0222,0.0038,-0.0036,0.0151,0.0207,-0.0178,-0.0232,0.0273,-0.0513,0.001,0.0689,-0.012,0.0145,0.0057,0.0544,0.0205,-0.0621,0.0212,0.0315,0.0453,-0.0209,0.0387,-0.0066,0.0032,0.0051,-0.0172,-0.0325,-0.0269,0.0351,-0.032,0.0401,-0.0345,0.0089,-0.0166,0.0043,0.0883,-0.038,0.0164,0.0048,0.0164,-0.0105,-0.0171,-0.0109,-0.0158,0.026,-0.0086,0.0127,-0.0057,-0.0431,0.004,0.013,-0.0343,0.044,-0.024,-0.0308,0.0164,-0.0267,0.0146,0.0183,-0.0157,0.0045,-0.0091,-0.0378,-0.0322,-0.0225,-0.0039,-0.0418,-0.0062,-0.0046,0.0212,-0.0385,-0.0339,-0.03,-0.0329,0.0139,0.0214,-0.0322,-0.0137,0.005,-0.0213,0.0071,0.038,-0.0006,0.015,-0.0174,-0.0042,0.0069,-0.0309,-0.0039,-0.0194,-0.0101,-0.0286,0.0289,-0.0015,0.0133,-0.0058,-0.0184,-0.0011,-0.063,-0.0072,0.0172,-0.013,0.0394,-0.0379,0.0278,-0.0186,-0.0078,-0.0302,0.0043,-0.0727,0.0358,0.0625,0.0266,0.0637,0.0098,-0.0125,0.004,0.0204,-0.0599,-0.0197,-0.0036,0.04,0.7517,0.0227,0.0699,0.0097,-0.0621,-0.0111,-0.0532,-0.0169,-0.0501,-0.0294,-0.0555,0.0532,-0.0322,-0.0004,0.0095,0.004,0.0379,-0.0243,0.034,-0.0171,-0.0193,-0.0059,-0.0297,0.0604,0.0253,0.0049,0.0323,0.0359,-0.0225,0.0067,-0.0328,-0.0046,-0.021,-0.0156,-0.0252,-0.0102,0.0791,-0.0018,-0.0288,-0.0334,-0.0394,0.0192,-0.0327,-0.0251,-0.0163,-0.0321,-0.0318,0.0232,-0.0209,0.0398,-0.0144,0.0105,0.0099,-0.0126,-0.0038,-0.0233,0.0038,-0.0062,0.0004,-0.0509,-0.0267,0.0157,0.017,0.0073,-0.0056,0.068,0.0239,0.0341,-0.045,0.0197,-0.0081,-0.034,-0.0159,0.0142,0.0181,0.0087,-0.0261,-0.0336,0.0228,-0.0001,0.1375,-0.0085,-0.0238,-0.0203,-0.0374,0.0292,-0.0231,0.0188,-0.0327,0.0071,-0.0066,-0.0387,-0.0098,0.0347,0.017,-0.0116,0.0009,-0.0025,0.0045,0.0084,0.0152,-0.0608,0.0196,0.0203,-0.0543,0.0735,-0.0333,0.0164,0.0218,-0.0136,0.0268,-0.0386,-0.0159,0.0034,0.0486,-0.0198,-0.0425,-0.0003,-0.0022,0.0847,0.0399,-0.0612,-0.0045,-0.0031,-0.0036,-0.0262,-0.0244,-0.0221,0.0428,0.0229,0.0631,0.0095,0.0416,-0.0047,-0.0009,-0.0022,-0.0113,-0.0114,-0.0031,-0.0277,0.0149,0.0406,0.0246,-0.0298,0.0008,-0.0298,-0.0002,-0.021,0.0165,0.0061]);
+
+function openPhotoPage() {
+  if (peerUser) return toast('Open one of your own binders to add a page from a photo.', 'error');
+  const pg = $('photo-page'); pg.hidden = false; document.body.style.overflow = 'hidden';
+  const n = cap(); PH.cols = S.layout === '2x2' ? 2 : S.layout === '3x3' ? 3 : 4; PH.rows = Math.round(n / PH.cols);
+  phStep('pick');
+}
+function closePhotoPage() { $('photo-page').hidden = true; document.body.style.overflow = ''; PH.img = null; PH.cells = []; PH.pick = []; }
+function phStep(s) {
+  ['pick', 'align', 'work', 'review'].forEach(k => $('ph-' + k).hidden = k !== s);
+  $('ph-sub').textContent = { pick: `Take a straight-on photo of one binder page (${PH.cols}×${PH.rows}, like this binder).`, align: 'Drag the 4 corners onto the corners of the page.', work: 'Matching the pockets with your collection…', review: 'Check each pocket, then add the page.' }[s];
+}
+async function phPickFile(input) {
+  const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+  try {
+    const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+    const c = document.createElement('canvas'), k = Math.min(1, 2200 / Math.max(bmp.width, bmp.height));
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    PH.img = c;
+  } catch (e) { return toast('Couldn\'t open that photo.', 'error'); }
+  const w = PH.img.width, h = PH.img.height;
+  PH.quad = [[w * .06, h * .1], [w * .94, h * .1], [w * .94, h * .82], [w * .06, h * .82]];
+  phStep('align'); phDrawAlign();
+}
+// Where a point of the page grid (u, v from 0 to 1) is on the photo, from the 4 corners
+function phAt(u, v) { const [a, b, c, d] = PH.quad; return [a[0] * (1 - u) * (1 - v) + b[0] * u * (1 - v) + c[0] * u * v + d[0] * (1 - u) * v, a[1] * (1 - u) * (1 - v) + b[1] * u * (1 - v) + c[1] * u * v + d[1] * (1 - u) * v]; }
+function phDrawAlign() {
+  const cv = $('ph-canvas'), box = $('ph-stage'), img = PH.img; if (!img) return;
+  const W = Math.min(box.clientWidth || 360, 720), k = W / img.width;
+  cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.dataset.k = k;
+  const g = cv.getContext('2d'); g.drawImage(img, 0, 0, cv.width, cv.height);
+  g.lineWidth = 2; g.strokeStyle = '#facc15'; g.beginPath();
+  for (let c = 0; c <= PH.cols; c++) { const [x0, y0] = phAt(c / PH.cols, 0), [x1, y1] = phAt(c / PH.cols, 1); g.moveTo(x0 * k, y0 * k); g.lineTo(x1 * k, y1 * k); }
+  for (let r = 0; r <= PH.rows; r++) { const [x0, y0] = phAt(0, r / PH.rows), [x1, y1] = phAt(1, r / PH.rows); g.moveTo(x0 * k, y0 * k); g.lineTo(x1 * k, y1 * k); }
+  g.stroke();
+  [...box.querySelectorAll('.ph-h')].forEach((el, i) => { el.style.left = (PH.quad[i][0] * k) + 'px'; el.style.top = (PH.quad[i][1] * k) + 'px'; });
+}
+function phHandleDown(e) {
+  const el = e.target.closest('.ph-h'); if (!el) return; e.preventDefault();
+  const i = +el.dataset.i, cv = $('ph-canvas'); el.setPointerCapture && el.setPointerCapture(e.pointerId);
+  const move = ev => { const r = cv.getBoundingClientRect(), k = +cv.dataset.k;
+    PH.quad[i] = [Math.max(0, Math.min(PH.img.width, (ev.clientX - r.left) / k)), Math.max(0, Math.min(PH.img.height, (ev.clientY - r.top) / k))]; phDrawAlign(); };
+  const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); };
+  addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+}
+// One picture per pocket (a little inside the grid lines, so the neighbours stay out)
+function phCutCells() {
+  const out = [];
+  for (let r = 0; r < PH.rows; r++) for (let c = 0; c < PH.cols; c++) {
+    const pts = [[c, r], [c + 1, r], [c + 1, r + 1], [c, r + 1]].map(([u, v]) => phAt(u / PH.cols, v / PH.rows));
+    let x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0])), y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+    const ix = (x1 - x0) * .02, iy = (y1 - y0) * .02; x0 += ix; x1 -= ix; y0 += iy; y1 -= iy;
+    const cv = document.createElement('canvas'), k = Math.min(1, 448 / Math.max(x1 - x0, y1 - y0));
+    cv.width = Math.max(8, Math.round((x1 - x0) * k)); cv.height = Math.max(8, Math.round((y1 - y0) * k));
+    cv.getContext('2d').drawImage(PH.img, x0, y0, x1 - x0, y1 - y0, 0, 0, cv.width, cv.height);
+    out.push(cv);
+  }
+  return out;
+}
+// The collection's cards, each as the exact TCGplayer card (picture + price), one per printing
+async function phCollectionCards() {
+  const data = COLLECTIONS[collKey()], game = S.game;
+  const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it })).filter(it => !isTotalRow(it.name));
+  const seen = new Set(), out = [];
+  for (const r of await pool(items, 8, async it => { const m = await resolveCollItem(it, game).catch(() => null); return m ? { card: m.card, collId: it.id } : null; })) {
+    if (!r || seen.has(r.card.tcgPid)) continue; seen.add(r.card.tcgPid); out.push(r);
+  }
+  return out;
+}
+const phMsg = (t, pct) => { $('ph-work-t').textContent = t; if (pct != null) $('ph-work-fill').style.width = Math.max(2, Math.min(100, pct)) + '%'; };
+async function phMatch() {
+  if (PH.busy) return; PH.busy = true; phStep('work');
+  try {
+    watchCollection(ownerOf(currentUser), S.game);
+    if (!COLLECTIONS[collKey()]) await new Promise(r => setTimeout(r, 1200));
+    phMsg('Getting the picture matcher ready…', 2);
+    await phLoadModel((got, all) => phMsg(`Getting the picture matcher ready (first time only): ${(got / 1048576).toFixed(0)} of ${(all / 1048576).toFixed(0)} MB`, 2 + 38 * got / all));
+    phMsg('Finding your collection\'s cards…', 40);
+    PH.cands = await phCollectionCards();
+    let done = 0;
+    PH.embs = await pool(PH.cands, 3, async x => { const e = await phEmbedUrl(x.card.image).catch(() => null); done++; phMsg(`Looking at your collection: ${done} of ${PH.cands.length}`, 42 + 40 * done / Math.max(1, PH.cands.length)); return e; });
+    const cells = phCutCells(); PH.cells = cells.map(cv => ({ cv, url: cv.toDataURL('image/jpeg', .8) }));
+    phMsg('Reading the pockets…', 85);
+    const pe = [];
+    for (const [i, cv] of cells.entries()) { pe.push(await phEmbedViews(cv)); phMsg(`Reading the pockets: ${i + 1} of ${cells.length}`, 85 + 15 * (i + 1) / cells.length); }
+    PH.pick = pe.map((v, i) => {
+      const e = v.card;
+      const scored = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) : -1 })).filter(x => x.score > -1).sort((a, b) => b.score - a.score);
+      const empty = phDot(v.full, PH_EMPTY_TXT) > phDot(v.full, PH_CARD_TXT);     // judged on the whole pocket
+      PH.cells[i].emb = e; PH.cells[i].alts = scored.slice(0, 6);
+      const top = scored[0], gap = scored[1] ? top.score - scored[1].score : 1;
+      if (empty || !top) return { empty: true, sure: !!empty };
+      return { card: top.card, collId: top.collId, score: top.score, sure: gap >= PH_SURE_GAP && top.score >= PH_SURE_MIN };
+    });
+    phStep('review'); phRenderReview();
+  } catch (e) {
+    console.warn(e); phStep('align');
+    toast(navigator.onLine === false ? 'The picture matcher needs signal the first time it\'s used.' : 'Couldn\'t match the photo (' + errText(e) + '). Try again.', 'error');
+  } finally { PH.busy = false; }
+}
+// "Check" unless the best match clearly beats the next one (printings of the same card are close, so those get checked)
+const PH_SURE_GAP = 0.02, PH_SURE_MIN = 0.7;
+function phRenderReview() {
+  const g = $('ph-grid'); g.style.gridTemplateColumns = `repeat(${PH.cols}, minmax(0, 1fr))`;
+  g.innerHTML = PH.pick.map((p, i) => `<button type="button" class="ph-cell${p.empty ? ' empty' : p.sure ? '' : ' check'}" data-i="${i}">
+      <img class="ph-shot" src="${PH.cells[i].url}" alt="">
+      ${p.empty ? '<span class="ph-name">Empty</span>' : `${imgTag(p.card.thumb || p.card.image, [p.card.image, ...(p.card.alts || [])].filter(u => u && u !== (p.card.thumb || p.card.image)), p.card.name, 'ph-card')}<span class="ph-name">${esc(p.card.name)}</span><span class="ph-meta">${esc([p.card.number, p.card.price != null ? fmt(p.card.price) : ''].filter(Boolean).join(' · '))}</span>`}
+      <span class="ph-badge">${p.empty ? '—' : p.sure ? '✓' : 'Check'}${!p.empty && !p.collId ? ' · new' : ''}</span></button>`).join('');
+  g.querySelectorAll('.ph-cell').forEach(b => b.onclick = () => phOpenCell(+b.dataset.i));
+  const n = PH.pick.filter(p => !p.empty).length, check = PH.pick.filter(p => !p.empty && !p.sure).length, fresh = PH.pick.filter(p => !p.empty && !p.collId).length;
+  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}`;
+  $('ph-add').textContent = n ? `Add as a new page (${n} card${n === 1 ? '' : 's'})` : 'Nothing to add';
+  $('ph-add').disabled = !n;
+}
+// One pocket: the closest cards from your collection, search every card by name, or empty
+function phOpenCell(i) {
+  const cell = PH.cells[i], cur = PH.pick[i];
+  const row = (x, k) => `<button type="button" class="ph-alt" data-k="${k}"><img src="${esc(x.card.thumb || x.card.image)}" alt="" referrerpolicy="no-referrer"><span><b>${esc(x.card.name)}</b><small>${esc([x.card.set, x.card.number].filter(Boolean).join(' · '))}${x.card.price != null ? ' · ' + fmt(x.card.price) : ''}${x.collId ? '' : ' · <i>not in your collection</i>'}</small></span>${x.score != null ? `<em>${Math.round(x.score * 100)}%</em>` : ''}</button>`;
+  sheet(`<h2 id="lb-sheet-title">Pocket ${i + 1}</h2>
+    <div class="ph-one"><img src="${cell.url}" alt="Your photo of this pocket"><div class="sub" style="margin:0;text-align:left">${cur.empty ? 'Empty' : 'Now: <b>' + esc(cur.card.name) + '</b> ' + esc(cur.card.number || '')}</div></div>
+    <div class="dup-h">Closest in your collection</div><div class="mv-list" id="ph-alts">${(cell.alts || []).map(row).join('') || '<p class="sub">Nothing to compare yet.</p>'}</div>
+    <div class="dup-h">Not in your collection? Search every card</div>
+    <div class="ph-find"><input type="search" id="ph-q" class="sp-find" placeholder="Card name, e.g. Moltres" autocomplete="off"><button type="button" class="lb-btn" id="ph-go">Search</button></div>
+    <div class="mv-list" id="ph-found"></div>
+    <div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn quiet" id="ph-empty">Leave empty</button><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  const choose = x => { PH.pick[i] = { card: x.card, collId: x.collId || null, score: x.score, sure: true }; closeSheet(); phRenderReview(); };
+  $('ph-alts').querySelectorAll('.ph-alt').forEach(b => b.onclick = () => choose(cell.alts[+b.dataset.k]));
+  $('ph-empty').onclick = () => { PH.pick[i] = { empty: true, sure: true }; closeSheet(); phRenderReview(); };
+  const go = async () => {
+    const q = $('ph-q').value.trim(); if (!q) return;
+    const box = $('ph-found'); box.innerHTML = '<p class="sub">Searching…</p>';
+    const found = await phSearchAll(q, cell);
+    if (!$('ph-found')) return;
+    box.innerHTML = found.length ? found.map((x, k) => row(x, k)).join('') : '<p class="sub">No cards with that name.</p>';
+    box.querySelectorAll('.ph-alt').forEach(b => b.onclick = () => choose(found[+b.dataset.k]));
+  };
+  $('ph-go').onclick = go; $('ph-q').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+// Every card with that name (English, Japanese and Chinese Pokémon, or One Piece), the closest picture first
+async function phSearchAll(q, cell) {
+  const want = norm(q), game = S.game, lists = game === 'onepiece' ? [['onepiece', 'en']] : [['pokemon', 'en'], ['pokemon-jp', 'ja'], ['pokemon-zh', 'zh']];
+  const mine = new Map(PH.cands.map(x => [x.card.tcgPid, x.collId]));
+  let hits = [];
+  for (const [name, lang] of lists) {
+    const L = await loadTcgList(name).catch(() => null); if (!L || !L.p) continue;
+    Object.entries(L.p).forEach(([pid, e]) => { if (norm(e[1]).includes(want)) {
+      const c = lang === 'zh' ? cardFromCT(pid, L) : cardFromTcg(pid, game, L); if (!c) return; if (lang === 'ja') c.lang = 'ja';
+      hits.push({ card: c, collId: c.tcgPid ? mine.get(c.tcgPid) || null : null });
+    } });
+  }
+  hits = hits.slice(0, 60);
+  await pool(hits, 4, async x => { try { const e = await phEmbedUrl(x.card.image); x.score = phDot(cell.emb, e); } catch (err) { x.score = null; } });
+  return hits.sort((a, b) => (b.score ?? -1) - (a.score ?? -1)).slice(0, 25);
+}
+// Add the page; cards that aren't in the collection yet go into it too
+async function phAddPage() {
+  const n = cap(), owner = ownerOf(currentUser), game = S.game, binder = currentUser;
+  const pages = getPagesArray(), at = pages.length, newColl = {};
+  const cards = PH.pick.slice(0, n).map(p => {
+    if (p.empty || !p.card) return null;
+    const c = { ...p.card, status: 'owned' };
+    if (p.collId) c.collId = p.collId;
+    else {
+      const id = 'app-' + (c.tcgPid ? 'p' + c.tcgPid : c.ctId ? 'c' + c.ctId : norm(c.name).slice(0, 30)) + (c.lang && c.lang !== 'en' ? '-' + c.lang : '');
+      c.collId = id;
+      if (!newColl[id]) newColl[id] = { name: c.name, set: c.set || '', number: c.number || '', rarity: c.rarity || '', qty: 1, image: c.image || '', match: c.tcgPid ? 'tcg:' + c.tcgPid : '', addedBy: 'app', addedAt: Date.now() };
+    }
+    return c;
+  });
+  while (cards.length < n) cards.push(null);
+  pages.push({ title: `Page ${at + 1}`, cards });
+  S.pages = pages; S.cur = at; saveActivePages(pages); render();
+  const ids = Object.keys(newColl);
+  if (ids.length) {
+    const up = {}; ids.forEach(id => { up['items/' + id] = newColl[id]; });
+    cloudUpdate(`collections/${owner}/${game}`, up).catch(() => {});
+  }
+  closePhotoPage();
+  toastUndo(`Added page ${at + 1} from your photo${ids.length ? ` · ${ids.length} new card${ids.length === 1 ? '' : 's'} added to your collection` : ''}`, () => {
+    if (currentUser !== binder) return;
+    const pg = getPagesArray(); if (pg.length === at + 1) { pg.pop(); S.pages = pg; S.cur = Math.min(S.cur, pg.length - 1); saveActivePages(pg); render(); }
+    if (ids.length) { const back = {}; ids.forEach(id => { back['items/' + id] = null; }); cloudUpdate(`collections/${owner}/${game}`, back).catch(() => {}); }
+    toast('Took the page back off');
   });
 }
 
