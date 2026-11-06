@@ -1,20 +1,17 @@
 Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
-binders: [('kyle', 'Kyle', 'pokemon'), ('kyle', 'Kyle', 'pokemon'), ('kyle--2', 'KYLE - OP', 'onepiece'), ('kyle--3', 'Kyle - Need', 'pokemon')]
-   kyle layout 4x3 pages 6
-   kyle layout 4x3 pages 6
-   kyle--2 layout 4x3 pages 2
-   kyle--3 layout None pages 9
-collection: 154 entries, 154 with a picture to compare
-downloaded 147
-pocket  1 -> Moltres & Zapdos & Articuno GX (Full Art)  (0.815) | Moltres & Zapdos & Articuno GX  (0.814) | Moltres & Zapdos & Articuno GX (Secret)  (0.814)
-pocket  2 -> Moltres & Zapdos & Articuno GX (Full Art)  (0.864) | Moltres & Zapdos & Articuno GX (Secret)  (0.851) | Moltres & Zapdos & Articuno GX  (0.845)
-pocket  3 -> Moltres & Zapdos & Articuno GX (Secret)  (0.816) | Moltres & Zapdos & Articuno GX  (0.795) | Moltres & Zapdos & Articuno GX (Full Art)  (0.777)
-pocket  4 -> Moltres & Zapdos & Articuno GX  (0.829) | Moltres & Zapdos & Articuno GX (Secret)  (0.802) | Zacian V  (0.8)
-pocket  5 -> Moltres & Zapdos & Articuno GX (Secret)  (0.809) | Moltres & Zapdos & Articuno GX  (0.808) | Zacian V  (0.8)
-pocket  6 EMPTY -> Magneton  (0.706) | Joltik  (0.671) | Switch  (0.656)
-pocket  7 EMPTY -> Magneton  (0.675) | Joltik  (0.643) | Oricorio  (0.62)
-pocket  8 EMPTY -> Magneton  (0.678) | Joltik  (0.641) | Charizard V  (0.618)
-pocket  9 -> Articuno  (0.85) | Lugia V  (0.807) | Galarian Articuno  (0.803)
-pocket 10 -> Zapdos ex  (0.875) | Zacian V  (0.849) | Zacian VSTAR  (0.82)
-pocket 11 -> Charizard ex  (0.793) | Charizard VMAX  (0.791) | Zacian V  (0.778)
-pocket 12 -> Ho-oh EX  (0.842) | Galarian Articuno  (0.82) | Ho-oh  (0.812)
+pocket 1: by name + picture -> [('197688', 0.844), ('197726', 0.815), ('197728', 0.814), ('189659', 0.814)] => pick 197688
+pocket 5: by name + picture -> [('353449', 0.828), ('353704', 0.823), ('353706', 0.842), ('353723', 0.86)] => pick 353723
+pocket 11: by name + picture -> [('630808', 0.751), ('633008', 0.779), ('633029', 0.827), ('663425', 0.775), ('663426', 0.797), ('663427', 0.81)] => pick 633029
+slot  1: Moltres & Zapdos & Articuno GX · Hidden Fates · 44/68 · $48.21
+slot  2: Moltres & Zapdos & Articuno GX (Full Art) · Hidden Fates · 66/68 · $43.53 · in collection
+slot  3: Moltres & Zapdos & Articuno GX (Secret) · Hidden Fates · 69/68 · $46.01 · in collection
+slot  4: Moltres & Zapdos & Articuno GX · SM Promos · SM210 · $147.49 · in collection
+slot  5: Moltres & Zapdos & Articuno GX · CSM2c: Shining Synergy - Summon · 185/150 · $64.44
+slot  6: (empty)
+slot  7: (empty)
+slot  8: (empty)
+slot  9: Articuno · SV09: Journey Together · 161/159 · $13.45 · in collection
+slot 10: Zapdos ex · SV: Scarlet & Violet 151 · 202/165 · $69.74 · in collection
+slot 11: Team Rocket's Moltres ex · SV10: Destined Rivals · 229/182 · $56.75
+slot 12: Ho-Oh EX (Full Art) · XY - BREAKpoint · 121/122 · $60.74 · in collection
+wrote page 7 ('📷 Photo test'), pages before 6, after 7; cards saved: 9
