@@ -1,48 +1,54 @@
-    5s Finding your collection's cards…
-   11s Looking at your collection: 3 of 147
-   17s Looking at your collection: 7 of 147
-   24s Looking at your collection: 11 of 147
-   32s Looking at your collection: 16 of 147
-   38s Looking at your collection: 20 of 147
-   48s Looking at your collection: 26 of 147
-   56s Looking at your collection: 31 of 147
-   62s Looking at your collection: 35 of 147
-   70s Looking at your collection: 40 of 147
-   77s Looking at your collection: 44 of 147
-   86s Looking at your collection: 50 of 147
-   94s Looking at your collection: 55 of 147
-  104s Looking at your collection: 61 of 147
-  113s Looking at your collection: 67 of 147
-  120s Looking at your collection: 71 of 147
-  130s Looking at your collection: 77 of 147
-  138s Looking at your collection: 82 of 147
-  144s Looking at your collection: 86 of 147
-  152s Looking at your collection: 91 of 147
-  162s Looking at your collection: 97 of 147
-  171s Looking at your collection: 103 of 147
-  178s Looking at your collection: 107 of 147
-  186s Looking at your collection: 112 of 147
-  192s Looking at your collection: 116 of 147
-  200s Looking at your collection: 121 of 147
-  210s Looking at your collection: 127 of 147
-  217s Looking at your collection: 131 of 147
-  225s Looking at your collection: 136 of 147
-  231s Looking at your collection: 140 of 147
-  241s Looking at your collection: 146 of 147
-done after 262 s | review shown: True
-summary: 9 cards found · 5 to check (tap them)
-1: Latias & Latios GX 113/181 [183897] CHECK 0.846
-2: Latias & Latios GX 113/181 [183897] CHECK 0.890
-3: Moltres & Zapdos & Articuno GX (Secret) 69/68 [197728] sure 0.792
-4: Moltres & Zapdos & Articuno GX SM210 [189659] CHECK 0.863
-5: Moltres & Zapdos & Articuno GX SM210 [189659] CHECK 0.826
-6: EMPTY
-7: EMPTY
-8: EMPTY
-9: Articuno 161/159 [623588] sure 0.819
-10: Zapdos ex 202/165 [517048] sure 0.877
-11: Charizard ex 234/091 [535090] CHECK 0.828
-12: Ho-Oh EX (Full Art) 121/122 [111643] sure 0.870
-search 'Team Rocket's Moltres' for pocket 11: ["Team Rocket's Moltres ex | SV10: Destined Rivals · 229/182 · $56.53 · not in your collection | 87%", "Team Rocket's Moltres ex | SV10: The Glory of Team Rocket · 124/098 · $87.97 · not in your collection | 85%", "Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) | Miscellaneous Cards & Products · 229/182 · $45.07 · not in your collection | 83%", "Team Rocket's Moltres ex - 31/182 (Destined Rivals Stamp) | Miscellaneous Cards & Products · 031/182 · $1.38 · not in your collection | 80%"]
+== q8 inset 0.02: 258s | cards right 4/6 (sure 3) | empty right 12/12
+    1: Charizard EX [117267] CHECK 0.841
+    2: Latias & Latios GX [183897] CHECK 0.882  <- want 197726
+    3: Moltres & Zapdos & Articuno GX [189659] CHECK 0.801  <- want 197728
+    4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.868  <- want 189659
+    5: Charizard EX [117267] CHECK 0.851
+    6: EMPTY
+    7: EMPTY
+    8: EMPTY
+    9: Articuno [623588] sure 0.828  <- want 623588
+   10: Zapdos ex [517048] sure 0.89  <- want 517048
+   11: Charizard EX [117267] CHECK 0.843
+   12: Ho-Oh EX (Full Art) [111643] sure 0.87  <- want 111643
+== q8 inset 0.06: 19s | cards right 5/6 (sure 4) | empty right 12/12
+    1: Zacian V [478233] CHECK 0.84
+    2: Zacian V [478233] CHECK 0.839  <- want 197726
+    3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.8  <- want 197728
+    4: Moltres & Zapdos & Articuno GX [189659] sure 0.879  <- want 189659
+    5: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.819
+    6: EMPTY
+    7: EMPTY
+    8: EMPTY
+    9: Articuno [623588] sure 0.827  <- want 623588
+   10: Zapdos ex [517048] sure 0.886  <- want 517048
+   11: Charizard ex [535090] CHECK 0.85
+   12: Ho-Oh EX (Full Art) [111643] CHECK 0.859  <- want 111643
+== fp32 inset 0.02: 457s | cards right 6/6 (sure 5) | empty right 12/12
+    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.861
+    2: Moltres & Zapdos & Articuno GX (Fu [197726] sure 0.91  <- want 197726
+    3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.799  <- want 197728
+    4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.861  <- want 189659
+    5: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.837
+    6: EMPTY
+    7: EMPTY
+    8: EMPTY
+    9: Articuno [623588] sure 0.869  <- want 623588
+   10: Zapdos ex [517048] sure 0.875  <- want 517048
+   11: Charizard EX [117267] CHECK 0.84
+   12: Ho-Oh EX (Full Art) [111643] sure 0.838  <- want 111643
+== fp32 inset 0.06: 33s | cards right 6/6 (sure 4) | empty right 12/12
+    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.864
+    2: Moltres & Zapdos & Articuno GX (Fu [197726] CHECK 0.883  <- want 197726
+    3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.805  <- want 197728
+    4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.856  <- want 189659
+    5: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.829
+    6: EMPTY
+    7: EMPTY
+    8: EMPTY
+    9: Articuno [623588] sure 0.853  <- want 623588
+   10: Zapdos ex [517048] sure 0.886  <- want 517048
+   11: Charizard VMAX [285378] CHECK 0.823
+   12: Ho-Oh EX (Full Art) [111643] sure 0.867  <- want 111643
 errors: []
-console: ['A bad HTTP response code (404) was received when fetching the script.', "Offline helper not started TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8811/') with script ('http://localhost:8811/sw.js'): A bad HTTP response code (404) was received w", 'Failed to load resource: the server responded with a status of 404 (File not found)', 'Unable to determine content-length from response headers. Will expand buffer when needed.', "Access to fetch at 'https://cardtrader.com/uploads/blueprints/image/407457/407457-team-rocket-s-moltres-ex-csv10c-special-illustration-rare-263-222-csv10c-chasing-glory.webp' from origin 'http://local", 'Failed to load resource: net::ERR_FAILED', "Access to fetch at 'https://cardtrader.com/uploads/blueprints/image/407425/407425-team-rocket-s-moltres-ex-csv10c-full-art-231-222-csv10c-chasing-glory.webp' from origin 'http://localhost:8811' has be", 'Failed to load resource: net::ERR_FAILED']
+console: ['A bad HTTP response code (404) was received when fetching the script.', "Offline helper not started TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8811/') with script ('http://localhost:8811/sw.js'): A bad HTTP response code (404) was received w", 'Failed to load resource: the server responded with a status of 404 (File not found)', 'Unable to determine content-length from response headers. Will expand buffer when needed.', 'Unable to determine content-length from response headers. Will expand buffer when needed.', "Unable to add response to browser cache: UnknownError: Failed to execute 'put' on 'Cache': Unexpected internal error.."]
