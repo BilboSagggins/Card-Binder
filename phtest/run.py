@@ -24,27 +24,25 @@ async def main():
         await pg.evaluate("c => { firebase.database().ref('binders/kyle').set({ layout: '4x3', pages: [{ title: 'Mine', cards: Array(12).fill(null) }] }); firebase.database().ref('collections/kyle/pokemon').set(c); }", coll)
         await pg.evaluate("$('lb-scene').dataset.shape=''; renderShelf()"); await pg.wait_for_timeout(500)
         await pg.evaluate("document.querySelector('.lb-scene .bk[data-user=\"kyle\"]').click()"); await pg.wait_for_timeout(5000)
-        await pg.evaluate("openPhotoPage()")
-        await pg.set_input_files("#ph-pick label.alt input", "phtest/page.jpg"); await pg.wait_for_timeout(1500)
-        await pg.evaluate("() => { const w = PH.img.width, h = PH.img.height; PH.quad = [[40, 40], [w - 40, 40], [w - 40, h - 40], [40, h - 40]]; phDrawAlign(); }")
-        t0 = time.time(); await pg.click("#ph-next")
-        last = ""
-        while time.time() - t0 < 1500:
-            await pg.wait_for_timeout(5000)
-            t = await pg.evaluate("$('ph-work-t').textContent")
-            if t != last: print(f"{time.time() - t0:5.0f}s {t}", flush=True); last = t
-            if not await pg.evaluate("$('ph-review').hidden") or not await pg.evaluate("$('ph-align').hidden"): break
-        print("done after", round(time.time() - t0), "s | review shown:", not await pg.evaluate("$('ph-review').hidden"))
-        print("summary:", await pg.evaluate("$('ph-review-t') && $('ph-review-t').innerText"))
-        picks = await pg.evaluate("PH.pick.map((p,i)=>(i+1)+': '+(p.empty?'EMPTY':p.card.name+' '+p.card.number+' ['+p.card.tcgPid+'] '+(p.sure?'sure':'CHECK')+' '+(p.score||0).toFixed(3)))")
-        print("\n".join(picks))
-        await pg.screenshot(path="phtest/review.png", full_page=True)
-        # search fallback with the real model: pocket 11 (Team Rocket's Moltres ex, not in the collection)
-        await pg.evaluate("phOpenCell(10)"); await pg.fill("#ph-q", "Team Rocket's Moltres"); await pg.click("#ph-go")
-        for _ in range(60):
-            await pg.wait_for_timeout(2000)
-            if await pg.evaluate("document.querySelectorAll('#ph-found .ph-alt').length"): break
-        print("search 'Team Rocket's Moltres' for pocket 11:", await pg.evaluate("[...document.querySelectorAll('#ph-found .ph-alt')].slice(0,4).map(b=>b.innerText.replace(/\\n/g,' | '))"))
+        TRUTH = {2: "197726", 3: "197728", 4: "189659", 9: "623588", 10: "517048", 12: "111643"}; EMPTY = {6, 7, 8}
+        for dtype, inset in [("q8", .02), ("q8", .06), ("fp32", .02), ("fp32", .06)]:
+            await pg.evaluate(f"() => {{ window.__phDtype = '{dtype}'; window.__phInset = {inset}; }}")
+            if dtype == "fp32" and inset == .02: await pg.evaluate("() => { phModel = null; phLibP = null; }")
+            await pg.evaluate("openPhotoPage()")
+            await pg.set_input_files("#ph-pick label.alt input", "phtest/real-page.jpg"); await pg.wait_for_timeout(1500)
+            await pg.evaluate("() => { const k = PH.img.width / 1482; PH.quad = [[22, 28], [1460, 28], [1460, 1543], [22, 1543]].map(([x, y]) => [x * k, y * k]); phDrawAlign(); }")
+            t0 = time.time(); await pg.click("#ph-next")
+            while time.time() - t0 < 1500:
+                await pg.wait_for_timeout(4000)
+                if not await pg.evaluate("$('ph-review').hidden") or not await pg.evaluate("$('ph-align').hidden"): break
+            picks = await pg.evaluate("PH.pick.map(p => p.empty ? null : [String(p.card.tcgPid), p.card.name, p.sure, +(p.score||0).toFixed(3)])")
+            right = sum(1 for i, pid in TRUTH.items() if picks[i - 1] and picks[i - 1][0] == pid)
+            sure_right = sum(1 for i, pid in TRUTH.items() if picks[i - 1] and picks[i - 1][0] == pid and picks[i - 1][2])
+            emp = sum(1 for i in range(1, 13) if (picks[i - 1] is None) == (i in EMPTY))
+            print(f"== {dtype} inset {inset}: {round(time.time() - t0)}s | cards right {right}/6 (sure {sure_right}) | empty right {emp}/12", flush=True)
+            for i, x in enumerate(picks, 1): print(f"   {i:2d}: " + ("EMPTY" if x is None else f"{x[1][:34]} [{x[0]}] {'sure' if x[2] else 'CHECK'} {x[3]}") + ("  <- want " + TRUTH[i] if i in TRUTH else ""))
+            if inset == .02: await pg.screenshot(path=f"phtest/review-{dtype}.png", full_page=True)
+            await pg.evaluate("closePhotoPage()")
         print("errors:", errs[:5]); print("console:", [l[:200] for l in logs if 'tailwind' not in l][:8])
         await b.close()
 asyncio.run(main()); srv.terminate()

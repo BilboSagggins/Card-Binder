@@ -8,7 +8,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - run: pip install --quiet playwright && python3 -m playwright install --with-deps chromium > /dev/null
@@ -17,6 +17,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add probe-report.txt
-          [ -f phtest/review.png ] && git add phtest/review.png
+          git add phtest/review-*.png 2>/dev/null || true
           git commit -m "probe report"
           git pull --rebase origin news-probe && git push
