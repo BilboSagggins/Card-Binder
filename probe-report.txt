@@ -1,44 +1,18 @@
-== q8 inset 0.02: 258s | cards right 4/6 (sure 3) | empty right 12/12
-    1: Charizard EX [117267] CHECK 0.841
-    2: Latias & Latios GX [183897] CHECK 0.882  <- want 197726
-    3: Moltres & Zapdos & Articuno GX [189659] CHECK 0.801  <- want 197728
-    4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.868  <- want 189659
-    5: Charizard EX [117267] CHECK 0.851
-    6: EMPTY
-    7: EMPTY
-    8: EMPTY
-    9: Articuno [623588] sure 0.828  <- want 623588
-   10: Zapdos ex [517048] sure 0.89  <- want 517048
-   11: Charizard EX [117267] CHECK 0.843
-   12: Ho-Oh EX (Full Art) [111643] sure 0.87  <- want 111643
-== q8 inset 0.06: 19s | cards right 5/6 (sure 4) | empty right 12/12
-    1: Zacian V [478233] CHECK 0.84
-    2: Zacian V [478233] CHECK 0.839  <- want 197726
-    3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.8  <- want 197728
-    4: Moltres & Zapdos & Articuno GX [189659] sure 0.879  <- want 189659
-    5: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.819
-    6: EMPTY
-    7: EMPTY
-    8: EMPTY
-    9: Articuno [623588] sure 0.827  <- want 623588
-   10: Zapdos ex [517048] sure 0.886  <- want 517048
-   11: Charizard ex [535090] CHECK 0.85
-   12: Ho-Oh EX (Full Art) [111643] CHECK 0.859  <- want 111643
-== fp32 inset 0.02: 457s | cards right 6/6 (sure 5) | empty right 12/12
-    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.861
+== fp16 inset 0.02: 496s | cards right 6/6 (sure 5) | empty right 12/12
+    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.862
     2: Moltres & Zapdos & Articuno GX (Fu [197726] sure 0.91  <- want 197726
     3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.799  <- want 197728
     4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.861  <- want 189659
-    5: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.837
+    5: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.838
     6: EMPTY
     7: EMPTY
     8: EMPTY
-    9: Articuno [623588] sure 0.869  <- want 623588
+    9: Articuno [623588] sure 0.87  <- want 623588
    10: Zapdos ex [517048] sure 0.875  <- want 517048
    11: Charizard EX [117267] CHECK 0.84
    12: Ho-Oh EX (Full Art) [111643] sure 0.838  <- want 111643
-== fp32 inset 0.06: 33s | cards right 6/6 (sure 4) | empty right 12/12
-    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.864
+== fp16 inset 0.06: 39s | cards right 6/6 (sure 4) | empty right 12/12
+    1: Moltres & Zapdos & Articuno GX (Se [197728] CHECK 0.865
     2: Moltres & Zapdos & Articuno GX (Fu [197726] CHECK 0.883  <- want 197726
     3: Moltres & Zapdos & Articuno GX (Se [197728] sure 0.805  <- want 197728
     4: Moltres & Zapdos & Articuno GX [189659] CHECK 0.856  <- want 189659
@@ -51,4 +25,4 @@
    11: Charizard VMAX [285378] CHECK 0.823
    12: Ho-Oh EX (Full Art) [111643] sure 0.867  <- want 111643
 errors: []
-console: ['A bad HTTP response code (404) was received when fetching the script.', "Offline helper not started TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8811/') with script ('http://localhost:8811/sw.js'): A bad HTTP response code (404) was received w", 'Failed to load resource: the server responded with a status of 404 (File not found)', 'Unable to determine content-length from response headers. Will expand buffer when needed.', 'Unable to determine content-length from response headers. Will expand buffer when needed.', "Unable to add response to browser cache: UnknownError: Failed to execute 'put' on 'Cache': Unexpected internal error.."]
+console: ['A bad HTTP response code (404) was received when fetching the script.', "Offline helper not started TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8811/') with script ('http://localhost:8811/sw.js'): A bad HTTP response code (404) was received w", 'Failed to load resource: the server responded with a status of 404 (File not found)', 'Unable to determine content-length from response headers. Will expand buffer when needed.']
