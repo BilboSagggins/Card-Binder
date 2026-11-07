@@ -25,9 +25,9 @@ async def main():
         await pg.evaluate("$('lb-scene').dataset.shape=''; renderShelf()"); await pg.wait_for_timeout(500)
         await pg.evaluate("document.querySelector('.lb-scene .bk[data-user=\"kyle\"]').click()"); await pg.wait_for_timeout(5000)
         TRUTH = {2: "197726", 3: "197728", 4: "189659", 9: "623588", 10: "517048", 12: "111643"}; EMPTY = {6, 7, 8}
-        for dtype, inset in [("q8", .02), ("q8", .06), ("fp32", .02), ("fp32", .06)]:
+        for dtype, inset in [("fp16", .02), ("fp16", .06)]:
             await pg.evaluate(f"() => {{ window.__phDtype = '{dtype}'; window.__phInset = {inset}; }}")
-            if dtype == "fp32" and inset == .02: await pg.evaluate("() => { phModel = null; phLibP = null; }")
+            if False: await pg.evaluate("() => { phModel = null; phLibP = null; }")
             await pg.evaluate("openPhotoPage()")
             await pg.set_input_files("#ph-pick label.alt input", "phtest/real-page.jpg"); await pg.wait_for_timeout(1500)
             await pg.evaluate("() => { const k = PH.img.width / 1482; PH.quad = [[22, 28], [1460, 28], [1460, 1543], [22, 1543]].map(([x, y]) => [x * k, y * k]); phDrawAlign(); }")
