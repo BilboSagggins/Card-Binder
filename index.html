@@ -25,7 +25,7 @@
     document.head.appendChild(s);
   }
 </script>
-<link rel="stylesheet" href="tw.css?h=e001592778" onerror="twFallback()">
+<link rel="stylesheet" href="tw.css?h=0e55950f19" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
@@ -129,6 +129,8 @@
   .np-conds span { color: #71717a; }
   .np-conds b { text-align: right; color: #d4d4d8; font-weight: 600; }
   .np-conds b.nm { color: #34d399; font-weight: 800; }
+  #i-conds .np-conds { grid-template-columns: none; grid-template-rows: auto auto; grid-auto-flow: column; text-align: center; font-size: .7rem; padding: .45rem .3rem; }
+  #i-conds .np-conds b { text-align: center; font-size: .78rem; }
   .np-card { touch-action: pan-y; -webkit-touch-callout: none; }
   .np-lock { margin-left: auto; flex: none; appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; border-radius: 999px; padding: .45rem .8rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
   .np-acts { flex: 0 0 100%; display: flex; align-items: center; justify-content: flex-end; gap: .5rem; }
@@ -1062,6 +1064,16 @@
       <div class="flex justify-between border-b border-zinc-800 pb-1.5"><span class="text-zinc-400">Rarity:</span><b id="i-rar" class="text-indigo-400"></b></div>
       <div class="flex justify-between"><span id="i-price-label" class="text-zinc-400">TCGplayer Market:</span><b id="i-price" class="text-emerald-400 text-sm"></b></div>
       <a id="i-link" href="#" target="_blank" rel="noopener noreferrer" class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition mt-3">🔗 View on TCGplayer</a>
+    </div>
+    <!-- Card detail: prices by condition, where else you have it, and quick actions -->
+    <div id="i-extra" class="w-full flex flex-col gap-2.5">
+      <div class="w-full panel p-3"><div class="text-[11px] text-zinc-400 mb-1.5">Price by condition <span class="text-zinc-500">(other conditions estimated from Near Mint)</span></div><div id="i-conds"></div></div>
+      <div class="w-full panel p-3 text-xs"><div class="text-[11px] text-zinc-400 mb-1.5">Where you have it</div><div id="i-where" class="dup-where"></div></div>
+      <div id="i-acts" class="grid grid-cols-3 gap-2">
+        <button type="button" id="i-move" onclick="inspMove()" class="btn !py-2 !text-[11px]">📦 Move</button>
+        <button type="button" id="i-trade" onclick="inspTrade()" class="btn !py-2 !text-[11px]">⚖️ Add to trade</button>
+        <button type="button" id="i-alert" onclick="inspAlert()" class="btn !py-2 !text-[11px]">🔔 Price alert</button>
+      </div>
     </div>
     <button id="i-tcg-btn" type="button" onclick="linkTcgSheet()" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700">🔗 Link TCGplayer page <span class="text-zinc-500 font-normal">· wrong card or no price?</span></button>
     <button id="i-del-btn" onclick="delInspect()" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/80">🗑️ Delete Card</button>
@@ -4553,7 +4565,68 @@ function openInspect(p, s) {
   $('cb-controls').classList.toggle('hidden', !!peerUser);
   $('i-tcg-btn').classList.toggle('hidden', !!peerUser || c.source === 'custom');
   paintCardBack(c);
+  paintInspectExtra(c, p, s);
   $('flip').classList.remove('ry180');$('i-modal').classList.remove('hidden');
+}
+/* Card detail extras: condition prices, every place you have this card, and quick actions */
+function paintInspectExtra(c, p, s) {
+  const custom = c.source === 'custom';
+  $('i-conds').innerHTML = condRows(c.price);
+  $('i-conds').parentNode.classList.toggle('hidden', custom || c.price == null);
+  $('i-acts').classList.toggle('hidden', !!peerUser);
+  $('i-move').classList.toggle('hidden', !myOtherBinders().length || pageLocked(p));
+  $('i-alert').classList.toggle('hidden', c.status !== 'needed');
+  $('i-alert').textContent = c.alert ? `🔔 Alert ${fmt(c.alert)}` : '🔔 Price alert';
+  $('i-trade').textContent = c.status === 'needed' ? '⚖️ Trade: you get' : '⚖️ Trade: you give';
+  const box = $('i-where'); box.innerHTML = '<em>Looking…</em>';
+  const want = { key: dupKey(c), pid: pidOfCard(c) }, same = x => x && x.name && (want.pid && pidOfCard(x) ? pidOfCard(x) === want.pid : dupKey(x) === want.key);
+  const chip = (label, need, go) => go != null ? `<button type="button" class="${need ? 'nd' : ''}" data-go="${go}">${esc(label)}</button>` : `<em class="${need ? 'nd' : ''}">${esc(label)}</em>`;
+  const binder = peerUser || currentUser, open = { ...insp };
+  (async () => {
+    const out = [];
+    getPagesArray().forEach((pg, pi) => (pg.cards || []).forEach((x, si) => {
+      if (!same(x)) return;
+      const here = pi === p && si === s;
+      out.push(chip(`${here ? 'This pocket' : 'This binder'} · p${pi + 1} #${si + 1}${x.status === 'needed' ? ' · need' : ''}`, x.status === 'needed', here || peerUser ? null : pi));
+    }));
+    if (!peerUser) {
+      const others = await Promise.all(myOtherBinders().map(async b => { const raw = await loadBinderRaw(b.id); return { b, pages: raw ? rawBinderPages(raw.pages, POCKETS[raw.layout] || 12) : [] }; }));
+      others.forEach(({ b, pages }) => pages.forEach((pg, pi) => pg && (pg.cards || []).forEach(x => { if (same(x)) out.push(chip(`${b.title} · p${pi + 1}${x.status === 'needed' ? ' · need' : ''}`, x.status === 'needed', null)); })));
+      const data = COLLECTIONS[ownerOf(currentUser) + '|' + (c.game || S.game)];
+      let qty = 0;
+      Object.values((data && data.items) || {}).forEach(it => {
+        if (!it || isTotalRow(it.name)) return;
+        const pid = String(pidOf(it.image) || (String(it.match || '').startsWith('tcg:') ? String(it.match).slice(4) : ''));
+        if (want.pid ? pid === want.pid : dupKey({ name: it.name, number: it.number, lang: c.lang }) === want.key) qty += +it.qty || 1;
+      });
+      if (qty) out.push(chip(`Collection ×${qty}`, false, null));
+    }
+    if ((peerUser || currentUser) !== binder || insp.p !== open.p || insp.s !== open.s || $('i-modal').classList.contains('hidden')) return;
+    box.innerHTML = out.join('') || '<em>Only here</em>';
+    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { closeInspect(); S.cur = +b.dataset.go; render(); });
+  })().catch(() => { box.innerHTML = '<em>Only here</em>'; });
+}
+function inspMove() {
+  if (peerUser) return;
+  const { p, s } = insp; closeInspect();
+  toggleSelectMode(true); selSlots.add(p + '|' + s); render(); paintSelBar(); openMoveSheet();
+}
+function inspAlert() {
+  if (peerUser) return;
+  const { p, s } = insp; closeInspect();
+  openAlertSheet({ dataset: { b: currentUser, p: String(p), s: String(s) } });
+}
+// Add to the trade page: Owned cards go on "You give", Need cards on "You get" (read first, so nothing on it is lost)
+async function inspTrade() {
+  if (peerUser) return;
+  const c = getPagesArray()[insp.p].cards[insp.s]; if (!c) return;
+  const side = c.status === 'needed' ? 'get' : 'give', ref = db.ref(`trades/${ownerOf(currentUser)}/${side}`);
+  try {
+    const cur = (await withTimeout(ref.once('value'), 8000)).val(), list = Array.isArray(cur) ? cur.filter(Boolean) : Object.values(cur || {});
+    await ref.set([...list, tradeCard(c)]);
+    closeInspect();
+    toastUndo(`${c.name} added to the trade (${side === 'give' ? 'You give' : 'You get'})`, () => ref.set(list).then(() => toast('Taken off the trade')).catch(() => {}));
+  } catch (e) { toast('Couldn\'t reach your trade. Check your connection.', 'error'); }
 }
 
 const closeInspect = () => $('i-modal').classList.add('hidden');
