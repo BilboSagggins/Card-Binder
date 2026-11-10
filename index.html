@@ -167,6 +167,17 @@
   .np-bucket::after { content: '▾'; color: #71717a; font-size: .8rem; transition: transform .15s; }
   .np-bucket.shut::after { transform: rotate(-90deg); }
   .np-bucket span { flex: 1; }
+  .tt { position: relative; }
+  .np-bell { appearance: none; margin-top: .1rem; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 8px; padding: .35rem .3rem; font: 700 .6rem/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-bell.on { border-color: #b45309; background: #422006; color: #fde68a; }
+  .np-bell.hit { border-color: #059669; background: #064e3b; color: #d1fae5; }
+  .np-card.got .np-bell, .np-export .np-bell { display: none; }
+  .np-drops { grid-column: 1 / -1; border: 1px solid #059669; background: #052e23; border-radius: 12px; padding: .55rem .7rem; font: 600 .74rem/1.4 Inter, system-ui, sans-serif; color: #d1fae5; }
+  .np-drops b { color: #6ee7b7; }
+  .np-drops button { appearance: none; display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: .2rem 0; cursor: pointer; }
+  .np-export .np-drops { display: none; }
+  .na-row { display: flex; align-items: center; gap: .4rem; margin: .5rem 0; font: 700 1rem/1 Inter, system-ui, sans-serif; color: #e4e4e7; }
+  .na-row input { flex: 1; margin: 0; }
   .np-got { appearance: none; margin-top: .1rem; border: 1px solid #059669; background: #064e3b; color: #d1fae5; border-radius: 8px; padding: .45rem .3rem; font: 800 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .np-card.got .np-got { border-color: #3f3f46; background: #27272a; color: #d4d4d8; }
   .np-bucket b { font: 900 .9rem/1 Inter, system-ui, sans-serif; color: #fff; }
@@ -779,7 +790,7 @@
         <button type="button" onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="tt" style="--tt:#4338ca"><span>📖</span>Export</button>
         <button type="button" onclick="openSealedPage()" title="The sealed product you own" class="tt" style="--tt:#d97706"><span>🎁</span>Sealed</button>
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
-        <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
+        <button type="button" id="tt-need" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
@@ -3460,6 +3471,7 @@ function setupFirebaseListener(username) {
       S.cloud = { layout: null, pages: [] };
     }
     S.loadedFor = username; S.fromPhone = false;
+    if (!peerUser && username === currentUser && NA.checkedFor !== username) { NA.checkedFor = username; setTimeout(checkNeedAlerts, 3000); }   // price-drop alerts
     writeBinderCache(username, data);
     render();
     if (!peerUser && !dailyChecked[username]) { dailyChecked[username] = true; maybeDailyBackup(); }
@@ -5543,6 +5555,64 @@ async function refreshTradePrices() {
   }
 }
 
+/* --- Price-drop alerts: a Need card can carry a target price (card.alert, saved in the binder like the rest of the card).
+   When a binder is opened, and when the Need List is, every Need card with an alert in all your binders for this game is
+   compared with today's price list. Drops show as a 🔔 badge on the Need List and a list at its top, until you've seen
+   them (a drop shows again if the price falls further). */
+const NA = { hits: new Map(), checkedFor: null }, NA_SEEN_KEY = 'cardBinder.alertsSeen';
+const naKey = (b, c) => b + '|' + String(c.id || norm(c.name) + '|' + (c.number || ''));
+async function naAlertCards() {
+  const out = [], take = (b, pages) => (pages || []).forEach((pg, p) => pg && (pg.cards || []).forEach((c, s) => { if (c && c.status === 'needed' && +c.alert > 0) out.push({ b, p, s, c }); }));
+  take(currentUser, getPagesArray());
+  for (const b of myOtherBinders()) {
+    const src = NP_OTHER[b.id] || await loadBinderRaw(b.id).then(raw => raw ? { pages: rawBinderPages(raw.pages, POCKETS[raw.layout] || 12) } : null).catch(() => null);
+    if (src) take(b.id, src.pages);
+  }
+  return out;
+}
+async function checkNeedAlerts() {
+  if (!currentUser || peerUser) return;
+  const binder = currentUser, list = await naAlertCards(), hits = new Map();
+  await pool(list, 4, async x => {
+    const r = await lookupPrice(x.c).catch(() => null), price = r && r.price != null ? r.price : (x.c.price ?? null);
+    if (price != null && +price <= +x.c.alert) hits.set(naKey(x.b, x.c), { ...x, price: +price });
+  });
+  if (currentUser !== binder) return;
+  NA.hits = hits; paintNeedBadge(); renderNeedPage();
+}
+const naUnseen = () => { const seen = recall(NA_SEEN_KEY, {}) || {}; return [...NA.hits].filter(([k, h]) => !(seen[k] != null && h.price >= seen[k])); };
+function naMarkSeen() { const seen = {}; NA.hits.forEach((h, k) => { seen[k] = h.price; }); remember(NA_SEEN_KEY, seen); paintNeedBadge(); }
+function paintNeedBadge() {
+  const n = naUnseen().length;
+  ['tt-need', 'tab-need', 'tools-btn'].forEach(id => {
+    const b = $(id); if (!b) return;
+    let a = b.querySelector('.na-alert'); if (n && !a) { a = document.createElement('i'); a.className = 'nw-alert na-alert'; a.style.background = '#10b981'; b.style.position = 'relative'; b.appendChild(a); }
+    if (a) { if (n) a.textContent = `🔔 ${n}`; else a.remove(); }
+  });
+}
+function openAlertSheet(el) {
+  const b = el.dataset.b || currentUser, p = +el.dataset.p, s = +el.dataset.s, other = b !== currentUser;
+  const src = other ? NP_OTHER[b] : { pages: getPagesArray() }, c = src && src.pages[p] && src.pages[p].cards[s]; if (!c) return;
+  const price = Number.isFinite(+c.price) && c.price != null ? +c.price : null;
+  const chip = pct => price ? `<button type="button" class="lb-btn quiet" data-v="${(price * (1 - pct / 100)).toFixed(2)}">${pct}% less · ${fmt(price * (1 - pct / 100))}</button>` : '';
+  sheet(`<h2 id="lb-sheet-title">🔔 Price alert</h2>
+    <p class="sub"><b>${esc(c.name)}</b>${price != null ? ` is ${fmt(price)} now` : ' has no price yet'}. Tell me when it's at or under:</p>
+    <div class="na-row"><span>$</span><input id="na-v" type="number" inputmode="decimal" step="0.01" min="0" class="sp-find" value="${c.alert ? (+c.alert).toFixed(2) : ''}" placeholder="${price ? (price * .9).toFixed(2) : '0.00'}"></div>
+    <div class="lb-row">${[10, 20, 30].map(chip).join('')}</div>
+    <p class="sub" style="font-size:.7rem">Checked against the daily TCGplayer prices each time you open this binder. Drops show as 🔔 on the Need List.</p>
+    <div class="lb-row"><button type="button" class="lb-btn" id="na-save">Save alert</button>${c.alert ? '<button type="button" class="lb-btn quiet" id="na-clear">Remove alert</button>' : ''}<button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('#lb-sheet [data-v]').forEach(x => x.onclick = () => { $('na-v').value = x.dataset.v; });
+  const save = v => {
+    const next = { ...c }; if (v > 0) next.alert = Math.round(v * 100) / 100; else delete next.alert;
+    closeSheet();
+    if (other) { src.pages[p].cards[s] = next; cloudUpdate('binders/' + b, { [`pages/${p}/cards/${s}`]: next }).catch(() => toast('Couldn\'t save the alert. Check your connection.', 'error')); }
+    else { const pages = getPagesArray(); pages[p].cards[s] = next; saveActivePages(pages); }
+    toast(v > 0 ? `Alert set: ${c.name} at ${fmt(next.alert)} or less` : `Alert removed for ${c.name}`);
+    renderNeedPage(); checkNeedAlerts().then(() => { if (!$('need-page').hidden) naMarkSeen(); });
+  };
+  $('na-save').onclick = () => { const v = parseFloat($('na-v').value); if (!(v > 0)) return toast('Type a price above 0', 'error'); save(v); };
+  if ($('na-clear')) $('na-clear').onclick = () => save(0);
+}
 /* --- Need List page: every card marked Need in this binder (or in the binders you pick), live --- */
 /* Which binders: this one (default), all of yours for this game, or the ones you tick. Kept on this phone per person + game.
    Other binders are followed live while the page is open (this phone's saved copy when there's no signal). */
@@ -5642,6 +5712,7 @@ function needCardHTML(x, i, opts) {
       ${x.b && npMulti() ? `<div class="np-from">📒 ${esc(titleOf(x.b))} · p${x.p + 1}</div>` : ''}
       ${condRows(x.c.price)}
       <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+      ${x.c.status === 'needed' ? (h => `<button type="button" class="np-bell${h ? ' hit' : x.c.alert ? ' on' : ''}" title="Price alert">${h ? `🔔 Dropped to ${fmt(h.price)}` : x.c.alert ? `🔔 at ${fmt(x.c.alert)}` : '🔔 Price alert'}</button>`)(NA.hits.get(naKey(x.b || currentUser, x.c))) : ''}
       ${opts && opts.gotBtn ? `<button type="button" class="np-got">${x.c.status === 'needed' ? '✓ Mark acquired' : '↩ Not acquired'}</button>` : ''}
     </div>`;
 }
@@ -5649,6 +5720,7 @@ function openNeedPage() {
   if (peerUser) return toast('The Need List is for your own binders.', 'error');
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
   watchNeedBinders(); renderNeedPage();
+  checkNeedAlerts().then(naMarkSeen);
 }
 /* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
 let npDrag = null;
@@ -5748,6 +5820,10 @@ function npToggleAcquired(el) {
   saveActivePages(pages); render();
 }
 function npTap(e) {
+  const bell = e.target.closest('#np-grid .np-bell');
+  if (bell) { e.preventDefault(); e.stopPropagation(); return openAlertSheet(bell.closest('.np-card')); }
+  const drop = e.target.closest('#np-grid .np-drops button');
+  if (drop) { const el = [...document.querySelectorAll('#np-grid .np-card')].find(c => c.dataset.key === drop.dataset.key); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   const btn = e.target.closest('#np-grid .np-got');
   if (btn) { e.preventDefault(); e.stopPropagation(); return npToggleAcquired(btn.closest('.np-card')); }   // the button works locked or not
   const bucket = e.target.closest('#np-grid .np-bucket');
@@ -5861,7 +5937,11 @@ function renderNeedPage() {
   $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
   $('np-find').hidden = npView !== 'price' || !all.length;
   $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
-  $('np-grid').innerHTML = all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join(''))
+  // every drop, also in binders this list isn't showing right now (those say where they are)
+  const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
+  const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
+    return `<button type="button" data-key="${x ? esc(x.key) : ''}">${esc(h.c.name)}: now <b>${fmt(h.price)}</b> (your alert: ${fmt(h.c.alert)})${x ? '' : ` · in ${esc(titleOf(h.b))}`}</button>`; }).join('')}</div>` : '';
+  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + (all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
     : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
 }
