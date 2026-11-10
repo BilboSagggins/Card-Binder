@@ -15,8 +15,17 @@
 <meta name="apple-mobile-web-app-title" content="Card Binder">
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
-<!-- Tailwind CSS for styling -->
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Styles: Tailwind, built ahead of time into tw.css by tools/build-css.sh (the phone no longer builds them at every start).
+     If that file can't load, the in-browser Tailwind takes over, using the settings and classes below. -->
+<script>
+  function twFallback() {
+    if (window.__twFallback) return; window.__twFallback = true;
+    const s = document.createElement('script'); s.src = 'https://cdn.tailwindcss.com';
+    s.onload = () => { tailwind.config = TW_CONFIG; };
+    document.head.appendChild(s);
+  }
+</script>
+<link rel="stylesheet" href="tw.css?h=2629eee35b" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
@@ -24,7 +33,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-  tailwind.config = {
+  const TW_CONFIG = {      // keep in step with tools/build-css.sh
     darkMode: 'class',
     theme: {
       extend: {
@@ -34,7 +43,7 @@
         }
       }
     }
-  }
+  };
 </script>
 <style type="text/tailwindcss">
   .btn { @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 active:scale-95; }
@@ -187,6 +196,17 @@
   .np-bucket::after { content: '▾'; color: #71717a; font-size: .8rem; transition: transform .15s; }
   .np-bucket.shut::after { transform: rotate(-90deg); }
   .np-bucket span { flex: 1; }
+  .tt { position: relative; }
+  .np-bell { appearance: none; margin-top: .1rem; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 8px; padding: .35rem .3rem; font: 700 .6rem/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-bell.on { border-color: #b45309; background: #422006; color: #fde68a; }
+  .np-bell.hit { border-color: #059669; background: #064e3b; color: #d1fae5; }
+  .np-card.got .np-bell, .np-export .np-bell { display: none; }
+  .np-drops { grid-column: 1 / -1; border: 1px solid #059669; background: #052e23; border-radius: 12px; padding: .55rem .7rem; font: 600 .74rem/1.4 Inter, system-ui, sans-serif; color: #d1fae5; }
+  .np-drops b { color: #6ee7b7; }
+  .np-drops button { appearance: none; display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: .2rem 0; cursor: pointer; }
+  .np-export .np-drops { display: none; }
+  .na-row { display: flex; align-items: center; gap: .4rem; margin: .5rem 0; font: 700 1rem/1 Inter, system-ui, sans-serif; color: #e4e4e7; }
+  .na-row input { flex: 1; margin: 0; }
   .np-got { appearance: none; margin-top: .1rem; border: 1px solid #059669; background: #064e3b; color: #d1fae5; border-radius: 8px; padding: .45rem .3rem; font: 800 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .np-card.got .np-got { border-color: #3f3f46; background: #27272a; color: #d4d4d8; }
   .np-bucket b { font: 900 .9rem/1 Inter, system-ui, sans-serif; color: #fff; }
@@ -833,10 +853,11 @@
         <button type="button" onclick="openSealedPage()" title="The sealed product you own" class="tt" style="--tt:#d97706"><span>🎁</span>Sealed</button>
         <button type="button" onclick="openSlabPage()" title="Your graded slabs: PSA, BGS, CGC and more" class="tt" style="--tt:#be123c"><span>🏅</span>Slabs</button>
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
-        <button type="button" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
+        <button type="button" id="tt-need" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
+        <button type="button" onclick="openShareSheet()" title="A link to this binder or its Need List that anyone can open to look" class="tt" style="--tt:#2563eb"><span>🔗</span>Share</button>
         <button type="button" onclick="openPhotoPage()" title="Photograph a page of your real binder and add it here" class="tt" style="--tt:#0891b2"><span>📷</span>Photo page</button>
         <button type="button" onclick="openDuplicates()" title="Cards you have more than once across your binders" class="tt" style="--tt:#a16207"><span>🔁</span>Duplicates</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
@@ -1239,7 +1260,7 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
-    <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
+    <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="shareNeedFromPage()" title="A link to this Need List that anyone can open">🔗 Share</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
     <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
     <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
@@ -1311,7 +1332,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-06.95';
+const APP_VERSION = '2026-11-10.98';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1601,18 +1622,30 @@ async function opAddTcgDons(all) {
   return all.concat(extra);
 }
 // Every One Piece card (sets, starter decks, promos), loaded once per visit and searched on the phone
+// Every One Piece card, for matching a collection, sorting an import by game and refreshing prices: from TCGplayer's daily
+// list (prices/onepiece.json, also on the phone offline). optcgapi.com is only asked when that list can't be loaded.
 function opLoadAll() {
   if (opAll) return Promise.resolve(opAll);
-  if (!opAllP) opAllP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/', 'allDonCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
+  if (!opAllP) opAllP = (async () => {
+    const L = await loadTcgList('onepiece').catch(() => null);
+    if (!L || !L.p) return opLoadAllApi();
+    return (opAll = Object.entries(L.p).map(([pid, e]) => ({ card_set_id: e[2] || null, card_name: e[1], set_name: (L.groups && L.groups[e[3]]) || '', set_id: null, rarity: e[4] || '',
+      card_image: tcgImg(pid), card_image_id: 'tcg-' + pid, market_price: e[0] ?? null, tcgPid: pid })));
+  })().catch(e => { opAllP = null; throw e; });
+  return opAllP;
+}
+let opApiP = null;
+function opLoadAllApi() {
+  if (!opApiP) opApiP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/', 'allDonCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
     .then(lists => {
       const seen = new Set();
       const all = lists.flat().filter(r => r && r.card_name && r.card_image).filter(r => {
         const k = r.card_image_id || (r.card_set_id + '|' + r.card_name); if (seen.has(k)) return false; seen.add(k); return true;
       });
-      if (!all.length) { opAllP = null; throw new Error('no cards returned'); }
+      if (!all.length) { opApiP = null; throw new Error('no cards returned'); }
       return opAddTcgDons(all).catch(() => all);
     }).then(all => (opAll = all));
-  return opAllP;
+  return opApiP;
 }
 const opPrefix = id => String(id || '').toUpperCase().replace('-', '');   // set OP-01 -> cards OP01-xxx
 // Is a card in this set? By card number prefix, by the set id, or for DON!! cards (no number) by any code in a combined
@@ -1643,7 +1676,7 @@ const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Su
 // Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
 const opRarLabel = r => !OP_RARITY[r] ? r : r === 'DON!!' ? OP_RARITY[r] : `${OP_RARITY[r]} (${r})`;
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'PR', 'DON!!'];
-const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
+const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || r.id || '');
 async function opFillRaritiesApi() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
   try {
@@ -1726,10 +1759,23 @@ async function opSearchApi() {
     box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t reach the One Piece card database (${esc(errText(e))}).</div>`;
   }
 }
+// Today's price for a One Piece card already in a binder. Cards added before the TCGplayer list was used carry optcgapi's
+// id ("OP01-001", "OP01-001_p1"): those are found by card number and name, the parallel / regular printing kept apart.
 async function opLookup(card) {
   try {
-    const r = (await opLoadAll()).find(x => (x.card_image_id || x.card_set_id) === card.id);
-    return r && r.market_price != null ? { price: r.market_price, url: card.url || opLink(r.card_name, r.card_set_id) } : null;
+    const all = await opLoadAll();
+    let r = all.find(x => (x.card_image_id || x.card_set_id) === card.id);
+    if (!r) {
+      const num = String(card.number || '').toUpperCase(), want = opParse(card.name), par = opParallel({ card_name: card.name, id: card.id });
+      let c = /^(?:[A-Z]{1,3}\d{2}|P)-\d{3}$/.test(num) ? all.filter(x => String(x.card_set_id || '').toUpperCase() === num) : all.filter(x => !x.card_set_id && lc(x.card_name) === lc(card.name) && (!card.set || lc(x.set_name) === lc(card.set)));
+      const narrow = test => { const t = c.filter(test); if (t.length) c = t; };
+      if (c.length > 1) narrow(x => opParse(x.card_name).base === want.base);
+      if (c.length > 1) narrow(x => opParallel(x) === par);
+      if (c.length > 1 && card.set) narrow(x => norm(x.set_name) === norm(card.set));
+      if (c.length > 1) narrow(x => !/\((?:sp|manga|gold|full art|reprint|textured foil|jolly roger foil|pirate foil)\)/i.test(x.card_name));   // the plain printing
+      r = c[0];
+    }
+    return r && r.market_price != null ? { price: r.market_price, url: card.url || (r.tcgPid ? `https://www.tcgplayer.com/product/${r.tcgPid}` : opLink(r.card_name, r.card_set_id)) } : null;
   } catch (e) { return null; }
 }
 /* --- Japanese Pokémon: searched in TCGplayer's Japanese catalog (prices/pokemon-jp.json, English card names) --- */
@@ -2526,6 +2572,18 @@ function loadTcgList(game) {
   return tcgListP[game];
 }
 const tcgImg = (pid, small) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${small ? '200w' : 'in_1000x1000'}.jpg`;
+/* The binder grid shows a picture sized for the pocket: TCGplayer serves 400 / 600 / 800 / 1000 px versions (a card fills
+   about 0.72 of that width), e.g. ~38 KB instead of ~160 KB on a phone's 4×3 page. The full one opens when you tap a card. */
+function gridSlotPx(g) {
+  const cols = S.layout === '2x2' ? 2 : S.layout === '3x3' ? 3 : 4, w = (g && g.clientWidth) || Math.min(innerWidth, 1100);
+  return w / cols * (window.devicePixelRatio || 1);
+}
+function gridImg(c, px) {
+  const m = String((c && c.image) || '').match(/^(https:\/\/tcgplayer-cdn\.tcgplayer\.com\/product\/\d+)_in_1000x1000\.jpg$/);
+  const size = px <= 286 ? 400 : px <= 430 ? 600 : px <= 573 ? 800 : 1000;
+  if (!m || size === 1000) return { src: c.image, alts: c.alts };
+  return { src: `${m[1]}_in_${size}x${size}.jpg`, alts: [c.image, ...(c.alts || [])] };
+}
 const tcgAlts = pid => [`https://product-images.tcgplayer.com/fit-in/437x610/${pid}.jpg`, tcgImg(pid, true)];
 function cardFromTcg(pid, game, L) {
   const e = L && L.p && L.p[String(pid)]; if (!e) return null;
@@ -3539,6 +3597,7 @@ function setupFirebaseListener(username) {
       S.cloud = { layout: null, pages: [] };
     }
     S.loadedFor = username; S.fromPhone = false;
+    if (!peerUser && username === currentUser && NA.checkedFor !== username) { NA.checkedFor = username; setTimeout(checkNeedAlerts, 3000); }   // price-drop alerts
     writeBinderCache(username, data);
     render();
     if (!peerUser && !dailyChecked[username]) { dailyChecked[username] = true; maybeDailyBackup(); }
@@ -3599,6 +3658,7 @@ function render() {
   const sb = $('sel-btn'); if (sb) sb.hidden = !!peerUser;
   const pages = getPagesArray();
   const g = $('grid'); g.className = `w-full gap-3 sm:gap-4 grid-layout-${S.layout} animate-page-turn`;
+  const slotPx = gridSlotPx(g);
   const ln = $('load-note'); if (ln) ln.classList.toggle('hidden', !activeListener || S.loadedFor === activeListener);
   
   if (S.cur >= pages.length) S.cur = Math.max(0, pages.length - 1);
@@ -3635,7 +3695,8 @@ function render() {
     };
     if (selMode && c && selSlots.has(S.cur + '|' + i)) el.classList.add('sel');
     
-    el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(c.image, c.alts, c.name, 'w-full h-full object-cover rounded-xl')}
+    const gi = c ? gridImg(c, slotPx) : null;
+    el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(gi.src, gi.alts, c.name, 'w-full h-full object-cover rounded-xl')}
         ${langTag(c)}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
           <div class="flex justify-between"><div class="flex gap-1">
@@ -3835,7 +3896,7 @@ function renderGiftPicker() {
   const q = lc($('gp-find').value.trim());
   const list = (GP.tab === 'need' ? need : all).filter(x => !q || lc(x.c.name).includes(q) || sortKey(x.c.name).includes(q) || lc(x.c.set || '').includes(q));
   $('gp-grid').innerHTML = list.length ? list.map(x => { const k = giftKey(x.c), on = !!mine[k]; return `<div class="np-card${on ? ' sel' : ''}" data-k="${esc(k)}" data-p="${x.p}" data-s="${x.s}" onclick="toggleGift(this)">
-      <div class="np-img">${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-img">${(g => imgTag(g.src || x.c.thumb, g.alts, x.c.name, ''))(gridImg(x.c, Math.min(innerWidth, 1024) / 3 * (window.devicePixelRatio || 1)))}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span><b>${fmt(x.c.price)}</b></div>
     </div>`; }).join('')
@@ -3924,7 +3985,8 @@ async function refreshPeerPrices() {
 const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes', 'art-tags'];
 const OFFLINE_AT = 'cardBinder.offlineSavedAt';
 function offlineImageUrls() {
-  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
+  const px = gridSlotPx($('grid'));      // the binder grid's own (smaller) picture too, so pages show offline without a detour
+  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb, gridImg(c, px).src].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
   const binders = [];
   try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE)).forEach(k => { const d = JSON.parse(localStorage.getItem(k) || 'null'); if (d && d.pages) binders.push(d.pages); }); } catch (e) {}
   binders.forEach(pages => normPages(pages).forEach(pg => pg.cards.forEach(add)));
@@ -6136,6 +6198,64 @@ async function refreshTradePrices() {
   }
 }
 
+/* --- Price-drop alerts: a Need card can carry a target price (card.alert, saved in the binder like the rest of the card).
+   When a binder is opened, and when the Need List is, every Need card with an alert in all your binders for this game is
+   compared with today's price list. Drops show as a 🔔 badge on the Need List and a list at its top, until you've seen
+   them (a drop shows again if the price falls further). */
+const NA = { hits: new Map(), checkedFor: null }, NA_SEEN_KEY = 'cardBinder.alertsSeen';
+const naKey = (b, c) => b + '|' + String(c.id || norm(c.name) + '|' + (c.number || ''));
+async function naAlertCards() {
+  const out = [], take = (b, pages) => (pages || []).forEach((pg, p) => pg && (pg.cards || []).forEach((c, s) => { if (c && c.status === 'needed' && +c.alert > 0) out.push({ b, p, s, c }); }));
+  take(currentUser, getPagesArray());
+  for (const b of myOtherBinders()) {
+    const src = NP_OTHER[b.id] || await loadBinderRaw(b.id).then(raw => raw ? { pages: rawBinderPages(raw.pages, POCKETS[raw.layout] || 12) } : null).catch(() => null);
+    if (src) take(b.id, src.pages);
+  }
+  return out;
+}
+async function checkNeedAlerts() {
+  if (!currentUser || peerUser) return;
+  const binder = currentUser, list = await naAlertCards(), hits = new Map();
+  await pool(list, 4, async x => {
+    const r = await lookupPrice(x.c).catch(() => null), price = r && r.price != null ? r.price : (x.c.price ?? null);
+    if (price != null && +price <= +x.c.alert) hits.set(naKey(x.b, x.c), { ...x, price: +price });
+  });
+  if (currentUser !== binder) return;
+  NA.hits = hits; paintNeedBadge(); renderNeedPage();
+}
+const naUnseen = () => { const seen = recall(NA_SEEN_KEY, {}) || {}; return [...NA.hits].filter(([k, h]) => !(seen[k] != null && h.price >= seen[k])); };
+function naMarkSeen() { const seen = {}; NA.hits.forEach((h, k) => { seen[k] = h.price; }); remember(NA_SEEN_KEY, seen); paintNeedBadge(); }
+function paintNeedBadge() {
+  const n = naUnseen().length;
+  ['tt-need', 'tab-need', 'tools-btn'].forEach(id => {
+    const b = $(id); if (!b) return;
+    let a = b.querySelector('.na-alert'); if (n && !a) { a = document.createElement('i'); a.className = 'nw-alert na-alert'; a.style.background = '#10b981'; b.style.position = 'relative'; b.appendChild(a); }
+    if (a) { if (n) a.textContent = `🔔 ${n}`; else a.remove(); }
+  });
+}
+function openAlertSheet(el) {
+  const b = el.dataset.b || currentUser, p = +el.dataset.p, s = +el.dataset.s, other = b !== currentUser;
+  const src = other ? NP_OTHER[b] : { pages: getPagesArray() }, c = src && src.pages[p] && src.pages[p].cards[s]; if (!c) return;
+  const price = Number.isFinite(+c.price) && c.price != null ? +c.price : null;
+  const chip = pct => price ? `<button type="button" class="lb-btn quiet" data-v="${(price * (1 - pct / 100)).toFixed(2)}">${pct}% less · ${fmt(price * (1 - pct / 100))}</button>` : '';
+  sheet(`<h2 id="lb-sheet-title">🔔 Price alert</h2>
+    <p class="sub"><b>${esc(c.name)}</b>${price != null ? ` is ${fmt(price)} now` : ' has no price yet'}. Tell me when it's at or under:</p>
+    <div class="na-row"><span>$</span><input id="na-v" type="number" inputmode="decimal" step="0.01" min="0" class="sp-find" value="${c.alert ? (+c.alert).toFixed(2) : ''}" placeholder="${price ? (price * .9).toFixed(2) : '0.00'}"></div>
+    <div class="lb-row">${[10, 20, 30].map(chip).join('')}</div>
+    <p class="sub" style="font-size:.7rem">Checked against the daily TCGplayer prices each time you open this binder. Drops show as 🔔 on the Need List.</p>
+    <div class="lb-row"><button type="button" class="lb-btn" id="na-save">Save alert</button>${c.alert ? '<button type="button" class="lb-btn quiet" id="na-clear">Remove alert</button>' : ''}<button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('#lb-sheet [data-v]').forEach(x => x.onclick = () => { $('na-v').value = x.dataset.v; });
+  const save = v => {
+    const next = { ...c }; if (v > 0) next.alert = Math.round(v * 100) / 100; else delete next.alert;
+    closeSheet();
+    if (other) { src.pages[p].cards[s] = next; cloudUpdate('binders/' + b, { [`pages/${p}/cards/${s}`]: next }).catch(() => toast('Couldn\'t save the alert. Check your connection.', 'error')); }
+    else { const pages = getPagesArray(); pages[p].cards[s] = next; saveActivePages(pages); }
+    toast(v > 0 ? `Alert set: ${c.name} at ${fmt(next.alert)} or less` : `Alert removed for ${c.name}`);
+    renderNeedPage(); checkNeedAlerts().then(() => { if (!$('need-page').hidden) naMarkSeen(); });
+  };
+  $('na-save').onclick = () => { const v = parseFloat($('na-v').value); if (!(v > 0)) return toast('Type a price above 0', 'error'); save(v); };
+  if ($('na-clear')) $('na-clear').onclick = () => save(0);
+}
 /* --- Need List page: every card marked Need in this binder (or in the binders you pick), live --- */
 /* Which binders: this one (default), all of yours for this game, or the ones you tick. Kept on this phone per person + game.
    Other binders are followed live while the page is open (this phone's saved copy when there's no signal). */
@@ -6229,12 +6349,13 @@ function condRows(price) {
 }
 function needCardHTML(x, i, opts) {
   return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-b="${esc(x.b || '')}" data-key="${esc(x.key)}">
-      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${(g => imgTag(g.src || x.c.thumb, g.alts, x.c.name, ''))(gridImg(x.c, Math.min(innerWidth, 1024) / 3 * (window.devicePixelRatio || 1)))}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
       ${x.b && npMulti() ? `<div class="np-from">📒 ${esc(titleOf(x.b))} · p${x.p + 1}</div>` : ''}
       ${condRows(x.c.price)}
       <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+      ${x.c.status === 'needed' ? (h => `<button type="button" class="np-bell${h ? ' hit' : x.c.alert ? ' on' : ''}" title="Price alert">${h ? `🔔 Dropped to ${fmt(h.price)}` : x.c.alert ? `🔔 at ${fmt(x.c.alert)}` : '🔔 Price alert'}</button>`)(NA.hits.get(naKey(x.b || currentUser, x.c))) : ''}
       ${opts && opts.gotBtn ? `<button type="button" class="np-got">${x.c.status === 'needed' ? '✓ Mark acquired' : '↩ Not acquired'}</button>` : ''}
     </div>`;
 }
@@ -6242,6 +6363,7 @@ function openNeedPage() {
   if (peerUser) return toast('The Need List is for your own binders.', 'error');
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
   watchNeedBinders(); renderNeedPage();
+  checkNeedAlerts().then(naMarkSeen);
 }
 /* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
 let npDrag = null;
@@ -6341,6 +6463,10 @@ function npToggleAcquired(el) {
   saveActivePages(pages); render();
 }
 function npTap(e) {
+  const bell = e.target.closest('#np-grid .np-bell');
+  if (bell) { e.preventDefault(); e.stopPropagation(); return openAlertSheet(bell.closest('.np-card')); }
+  const drop = e.target.closest('#np-grid .np-drops button');
+  if (drop) { const el = [...document.querySelectorAll('#np-grid .np-card')].find(c => c.dataset.key === drop.dataset.key); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   const btn = e.target.closest('#np-grid .np-got');
   if (btn) { e.preventDefault(); e.stopPropagation(); return npToggleAcquired(btn.closest('.np-card')); }   // the button works locked or not
   const bucket = e.target.closest('#np-grid .np-bucket');
@@ -6454,35 +6580,56 @@ function renderNeedPage() {
   $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
   $('np-find').hidden = npView !== 'price' || !all.length;
   $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
-  $('np-grid').innerHTML = all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join(''))
+  // every drop, also in binders this list isn't showing right now (those say where they are)
+  const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
+  const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
+    return `<button type="button" data-key="${x ? esc(x.key) : ''}">${esc(h.c.name)}: now <b>${fmt(h.price)}</b> (your alert: ${fmt(h.c.alert)})${x ? '' : ` · in ${esc(titleOf(h.b))}`}</button>`; }).join('')}</div>` : '';
+  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + (all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
     : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
 }
 
 // Export the Need List as it looks now: your priority order, condition prices, and Acquired stamps
+// One binder's Need cards in its saved priority order (used for a shared Need List, where no binder is open)
+function needCardsFor(pages, n, order) {
+  const out = [], seen = {};
+  (pages || []).forEach((pg, p) => pg && (pg.cards || []).slice(0, n).forEach((c, s) => {
+    if (!c || !(c.status === 'needed' || c.acquired)) return;
+    const b0 = String(c.id || norm(c.name) + '|' + (c.number || '')), k = seen[b0] = (seen[b0] || 0) + 1;
+    out.push({ c, p, s, key: k > 1 ? b0 + '#' + k : b0, i: out.length });
+  }));
+  const rank = new Map((order || []).map((k, i) => [k, i]));
+  return out.sort((a, b) => (rank.has(a.key) ? rank.get(a.key) : 1e9 + a.i) - (rank.has(b.key) ? rank.get(b.key) : 1e9 + b.i));
+}
+// From the Need List: a link to one binder's list (the open one, or the single binder being shown)
+function shareNeedFromPage() { const ids = needBinderIds(); if (ids.length > 1) toast('The link shows one binder\'s list: sharing ' + titleOf(currentUser)); shareLink('need', ids.length === 1 ? ids[0] : currentUser); }
 function exportNeededList() {
   const all = needCards(); if (!all.length) return toast('No Need cards to export', 'error');
+  const name = npScopeLabel(), day = new Date(), html = needListDoc(name, all);
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url;
+  a.download = `Need_List_${name.replace(/[^\w-]+/g, '_')}_${day.toISOString().slice(0, 10)}.html`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast(`Exported ${all.length} card${all.length === 1 ? '' : 's'} in priority order`);
+}
+// The Need List as a page of its own (the export file, and what a shared Need List link shows)
+function needListDoc(name, all) {
+  const day = new Date();
   const list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
   const total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
   // this page's own styles, so the export looks the same
   let css = '';
   for (const sh of document.styleSheets) { try { for (const r of sh.cssRules) { const t = r.cssText; if (/(^|[\s,])\.(np|jp-tag)|np-stamp/.test(t.split('{')[0]) || /^@keyframes np-/.test(t) || (r.media && /\.np/.test(t))) css += t + '\n'; } } catch (e) {} }
-  const name = npScopeLabel(), day = new Date();
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Need List · ${esc(name)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;background:#09090b;color:#f4f4f5;font-family:Inter,system-ui,sans-serif}.np{position:static;overflow:visible}.np-head{position:static}
 ${css}</style></head><body>
 <div class="np np-export"><div class="np-head"><div class="np-titles"><h2>Need List · ${esc(name)}</h2>
 <p><b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated${got ? ` · ${got} acquired` : ''}<br>In priority order · ${day.toLocaleDateString()}</p></div></div>
-<div class="np-grid">${all.map(needCardHTML).join('')}</div></div>
+<div class="np-grid">${all.length ? all.map(needCardHTML).join('') : '<p class="np-empty">Nothing on this Need List right now.</p>'}</div></div>
 <script>function imgErr(i){var a=(i.dataset.alts||'').split('|').filter(function(u){return u&&u!==i.src});var n=a.shift();i.dataset.alts=a.join('|');if(n)i.src=n;else{i.onerror=null;i.style.visibility='hidden';}}<\/script>
 </body></html>`;
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  const a = document.createElement('a'); a.href = url;
-  a.download = `Need_List_${name.replace(/[^\w-]+/g, '_')}_${day.toISOString().slice(0, 10)}.html`;
-  a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast(`Exported ${all.length} card${all.length === 1 ? '' : 's'} in priority order`);
 }
 
 function importData(e) {
@@ -6674,6 +6821,40 @@ async function acceptInvite(raw, quiet) {
   return true;
 }
 // An invite link looks like …/Card-Binder/?invite=CODE (or #invite=CODE); accept it and tidy the address
+/* --- Share links: ?view=<binder> opens that binder in the read-only viewer, ?need=<binder> its Need List.
+   Anyone with the link can look (no PIN); nothing can be changed from it. */
+const shareUrl = (kind, id) => location.origin + location.pathname + '?' + kind + '=' + encodeURIComponent(id);
+function openShareSheet() {
+  if (!currentUser || peerUser) return;
+  const t = titleOf(currentUser), needs = getPagesArray().flatMap(p => p.cards).filter(c => c && c.status === 'needed').length;
+  sheet(`<h2 id="lb-sheet-title">🔗 Share</h2>
+    <p class="sub">Send a link to <b>${esc(t)}</b>. Anyone who opens it can look, but can't change anything and doesn't need a PIN. It always shows the binder as it is now.</p>
+    <div class="mv-list" style="margin-top:.6rem">
+      <button type="button" class="mv-b" data-kind="view">📖 Share this binder<small>Flip through every page</small></button>
+      <button type="button" class="mv-b" data-kind="need">📝 Share the Need List<small>${needs} card${needs === 1 ? '' : 's'} needed, in priority order</small></button>
+    </div>
+    <div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('#lb-sheet .mv-b[data-kind]').forEach(b => b.onclick = () => shareLink(b.dataset.kind, currentUser));
+}
+async function shareLink(kind, id) {
+  const url = shareUrl(kind, id), title = (kind === 'need' ? 'Need List · ' : '') + titleOf(id);
+  try { if (navigator.share) { await navigator.share({ title, url }); closeSheet(); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(url); closeSheet(); toast('Link copied. Paste it in a message.'); }
+  catch (e) { sheet(`<h2 id="lb-sheet-title">🔗 Share</h2><p class="sub">Copy this link:</p><input class="sp-find" readonly value="${esc(url)}" onfocus="this.select()"><div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = ev => { if (ev.target === $('lb-sheet')) closeSheet(); }; }
+}
+function shareFromAddress() {
+  const m = location.search.match(/[?&](view|need)=([^&]+)/); if (!m) return;
+  const kind = m[1], id = decodeURIComponent(m[2]);
+  let tries = 0;
+  const go = () => {
+    if (!(peopleLoaded && binfoLoaded) && tries++ < 40) return setTimeout(go, 200);
+    if (!binders().some(b => b.id === id)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} return toast('That shared binder wasn\'t found. The link may be old.', 'error'); }
+    if ($('landing').hidden || !$('peer-viewer').hidden) return;       // a binder is already open
+    openPeerViewer(id, false, kind);
+    $('landing').hidden = true;                                   // straight to the viewer; Back brings the shelf
+  };
+  go();
+}
 function inviteFromAddress() {
   const m = (location.search + location.hash).match(/invite[=-]([A-Za-z0-9]+)/);
   if (!m) return;
@@ -7036,7 +7217,13 @@ function removeCardBack(path, label) {
 }
 
 /* --- View only: flip through someone else's binder in the export's 3D view --- */
-let pvUser = null, pvRef = null, pvData = null, pvShown = null, pvFromEdit = false;
+let pvUser = null, pvRef = null, pvData = null, pvShown = null, pvFromEdit = false, pvMode = 'binder';
+// What the viewer shows: the binder itself, or (from a shared Need List link) its Need List
+function pvDoc(u, data) {
+  if (pvMode !== 'need') return peerViewerHTML(u, data);
+  const d = data || {}, n = POCKETS[d.layout] || 12, order = Array.isArray(d.needOrder) ? d.needOrder : Object.values(d.needOrder || {});
+  return needListDoc(titleOf(u), needCardsFor(rawBinderPages(d.pages, n), n, order)).replace('</head>', '<style>.np.np-export{padding-top:3.3rem}.np-titles h2{display:none}</style></head>');   // room for the viewer's bar, which already shows the title
+}
 function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
@@ -7046,13 +7233,16 @@ function peerViewerHTML(u, data) {
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
 // fromEdit: opened with "View" from inside your own binder, so "Back" returns there instead of the shelf
-function openPeerViewer(u, fromEdit) {
+function openPeerViewer(u, fromEdit, mode) {
   closePeerViewer(true);
-  pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit;
+  pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit; pvMode = mode === 'need' ? 'need' : 'binder';
+  // prices and gifts are for people who have this binder on their shelf; a link visitor only looks
+  const known = visibleBinders().some(b => b.id === u);
+  $('pv-prices').hidden = pvMode === 'need' || !known; document.querySelector('#peer-viewer .pv-gift').hidden = pvMode === 'need' || !known;
   $('pv-back').textContent = pvFromEdit ? '‹ Back' : '‹ Shelf';
   $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
   if (pvFromEdit) document.body.style.overflow = 'hidden';
-  $('pv-name').textContent = titleOf(u);
+  $('pv-name').textContent = (pvMode === 'need' ? 'Need List · ' : '') + titleOf(u);
   $('pv-refresh').hidden = true;
   $('peer-frame').srcdoc = '';
   $('peer-viewer').hidden = false;
@@ -7060,19 +7250,20 @@ function openPeerViewer(u, fromEdit) {
   pvRef.on('value', snap => {
     pvData = snap.val();
     const json = JSON.stringify(pvData || null);
-    if (pvShown === null) { pvShown = json; $('peer-frame').srcdoc = peerViewerHTML(u, pvData); }
+    if (pvShown === null) { pvShown = json; $('peer-frame').srcdoc = pvDoc(u, pvData); }
     else if (json !== pvShown) $('pv-refresh').hidden = false;   // they changed something while you're looking
   }, () => toast('Couldn\'t load that binder. Check your connection.', 'error'));
 }
 function refreshPeerViewer() {
   if (!pvUser) return;
   pvShown = JSON.stringify(pvData || null);
-  $('peer-frame').srcdoc = peerViewerHTML(pvUser, pvData);
+  $('peer-frame').srcdoc = pvDoc(pvUser, pvData);
   $('pv-refresh').hidden = true;
 }
 function closePeerViewer(silent) {
   const backToEdit = pvFromEdit; pvFromEdit = false;
   if (pvRef) pvRef.off(); pvRef = null; pvUser = null;
+  if (!silent && /[?&](view|need)=/.test(location.search)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }   // leaving a shared link
   const v = $('peer-viewer'); if (v) { v.hidden = true; $('peer-frame').srcdoc = ''; }
   if (backToEdit) document.body.style.overflow = '';
   if (!silent && !backToEdit) showLanding();
@@ -7450,7 +7641,8 @@ function checkForNewVersion() {
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
     if (tried === v) return 'current';   // already tried once this visit; don't loop
     try { sessionStorage.setItem('cardBinder.reloadedFor', v); } catch (e) {}
-    location.replace(location.pathname + '?v=' + encodeURIComponent(v));
+    const keep = (location.search.match(/[?&]((?:view|need)=[^&]+)/) || [])[1];      // stay on a shared link
+    location.replace(location.pathname + '?' + (keep ? keep + '&' : '') + 'v=' + encodeURIComponent(v));
     return 'reloading';
   }).catch(() => 'current');
 }
@@ -7488,7 +7680,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(e => console.warn('Offline helper not started', e));
   const versionCheck = checkForNewVersion();
   await quietSignIn();   // before anything is read, so locked-down rules let the app in
-  paintShelfToggle(); loadInvites(); inviteFromAddress();
+  paintShelfToggle(); loadInvites(); inviteFromAddress(); shareFromAddress();
   fillSelects();
   watchPeople();
   watchBinderInfo();
