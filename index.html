@@ -15,8 +15,17 @@
 <meta name="apple-mobile-web-app-title" content="Card Binder">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<!-- Tailwind CSS for styling -->
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- Styles: Tailwind, built ahead of time into tw.css by tools/build-css.sh (the phone no longer builds them at every start).
+     If that file can't load, the in-browser Tailwind takes over, using the settings and classes below. -->
+<script>
+  function twFallback() {
+    if (window.__twFallback) return; window.__twFallback = true;
+    const s = document.createElement('script'); s.src = 'https://cdn.tailwindcss.com';
+    s.onload = () => { tailwind.config = TW_CONFIG; };
+    document.head.appendChild(s);
+  }
+</script>
+<link rel="stylesheet" href="tw.css?h=fa29821701" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
@@ -24,7 +33,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-  tailwind.config = {
+  const TW_CONFIG = {      // keep in step with tools/build-css.sh
     darkMode: 'class',
     theme: {
       extend: {
@@ -34,7 +43,7 @@
         }
       }
     }
-  }
+  };
 </script>
 <style type="text/tailwindcss">
   .btn { @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 active:scale-95; }
@@ -1195,7 +1204,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-05.90';
+const APP_VERSION = '2026-11-10.96';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1485,18 +1494,30 @@ async function opAddTcgDons(all) {
   return all.concat(extra);
 }
 // Every One Piece card (sets, starter decks, promos), loaded once per visit and searched on the phone
+// Every One Piece card, for matching a collection, sorting an import by game and refreshing prices: from TCGplayer's daily
+// list (prices/onepiece.json, also on the phone offline). optcgapi.com is only asked when that list can't be loaded.
 function opLoadAll() {
   if (opAll) return Promise.resolve(opAll);
-  if (!opAllP) opAllP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/', 'allDonCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
+  if (!opAllP) opAllP = (async () => {
+    const L = await loadTcgList('onepiece').catch(() => null);
+    if (!L || !L.p) return opLoadAllApi();
+    return (opAll = Object.entries(L.p).map(([pid, e]) => ({ card_set_id: e[2] || null, card_name: e[1], set_name: (L.groups && L.groups[e[3]]) || '', set_id: null, rarity: e[4] || '',
+      card_image: tcgImg(pid), card_image_id: 'tcg-' + pid, market_price: e[0] ?? null, tcgPid: pid })));
+  })().catch(e => { opAllP = null; throw e; });
+  return opAllP;
+}
+let opApiP = null;
+function opLoadAllApi() {
+  if (!opApiP) opApiP = Promise.all(['allSetCards/', 'allSTCards/', 'allPromoCards/', 'allDonCards/'].map(p => fetchJSON(OPAPI + p, 30000).catch(() => [])))
     .then(lists => {
       const seen = new Set();
       const all = lists.flat().filter(r => r && r.card_name && r.card_image).filter(r => {
         const k = r.card_image_id || (r.card_set_id + '|' + r.card_name); if (seen.has(k)) return false; seen.add(k); return true;
       });
-      if (!all.length) { opAllP = null; throw new Error('no cards returned'); }
+      if (!all.length) { opApiP = null; throw new Error('no cards returned'); }
       return opAddTcgDons(all).catch(() => all);
     }).then(all => (opAll = all));
-  return opAllP;
+  return opApiP;
 }
 const opPrefix = id => String(id || '').toUpperCase().replace('-', '');   // set OP-01 -> cards OP01-xxx
 // Is a card in this set? By card number prefix, by the set id, or for DON!! cards (no number) by any code in a combined
@@ -1527,7 +1548,7 @@ const OP_RARITY = { L: 'Leader', C: 'Common', UC: 'Uncommon', R: 'Rare', SR: 'Su
 // Label shown for a rarity: "Super Rare (SR)", or just "DON!! Card" where the name already says it
 const opRarLabel = r => !OP_RARITY[r] ? r : r === 'DON!!' ? OP_RARITY[r] : `${OP_RARITY[r]} (${r})`;
 const OP_RANK = ['L', 'C', 'UC', 'R', 'SR', 'SEC', 'SP CARD', 'SP', 'TR', 'P', 'PR', 'DON!!'];
-const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || '');
+const opParallel = r => /parallel|alternate art|\(alt/i.test(r.card_name || '') || /_p\d+$/i.test(r.card_image_id || r.id || '');
 async function opFillRaritiesApi() {
   const dd = $('op-rarity'); if (!dd || dd.dataset.ready === 'onepiece') return;
   try {
@@ -1610,10 +1631,23 @@ async function opSearchApi() {
     box.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-400 text-sm">Couldn’t reach the One Piece card database (${esc(errText(e))}).</div>`;
   }
 }
+// Today's price for a One Piece card already in a binder. Cards added before the TCGplayer list was used carry optcgapi's
+// id ("OP01-001", "OP01-001_p1"): those are found by card number and name, the parallel / regular printing kept apart.
 async function opLookup(card) {
   try {
-    const r = (await opLoadAll()).find(x => (x.card_image_id || x.card_set_id) === card.id);
-    return r && r.market_price != null ? { price: r.market_price, url: card.url || opLink(r.card_name, r.card_set_id) } : null;
+    const all = await opLoadAll();
+    let r = all.find(x => (x.card_image_id || x.card_set_id) === card.id);
+    if (!r) {
+      const num = String(card.number || '').toUpperCase(), want = opParse(card.name), par = opParallel({ card_name: card.name, id: card.id });
+      let c = /^(?:[A-Z]{1,3}\d{2}|P)-\d{3}$/.test(num) ? all.filter(x => String(x.card_set_id || '').toUpperCase() === num) : all.filter(x => !x.card_set_id && lc(x.card_name) === lc(card.name) && (!card.set || lc(x.set_name) === lc(card.set)));
+      const narrow = test => { const t = c.filter(test); if (t.length) c = t; };
+      if (c.length > 1) narrow(x => opParse(x.card_name).base === want.base);
+      if (c.length > 1) narrow(x => opParallel(x) === par);
+      if (c.length > 1 && card.set) narrow(x => norm(x.set_name) === norm(card.set));
+      if (c.length > 1) narrow(x => !/\((?:sp|manga|gold|full art|reprint|textured foil|jolly roger foil|pirate foil)\)/i.test(x.card_name));   // the plain printing
+      r = c[0];
+    }
+    return r && r.market_price != null ? { price: r.market_price, url: card.url || (r.tcgPid ? `https://www.tcgplayer.com/product/${r.tcgPid}` : opLink(r.card_name, r.card_set_id)) } : null;
   } catch (e) { return null; }
 }
 /* --- Japanese Pokémon: searched in TCGplayer's Japanese catalog (prices/pokemon-jp.json, English card names) --- */
@@ -2409,6 +2443,18 @@ function loadTcgList(game) {
   return tcgListP[game];
 }
 const tcgImg = (pid, small) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${small ? '200w' : 'in_1000x1000'}.jpg`;
+/* The binder grid shows a picture sized for the pocket: TCGplayer serves 400 / 600 / 800 / 1000 px versions (a card fills
+   about 0.72 of that width), e.g. ~38 KB instead of ~160 KB on a phone's 4×3 page. The full one opens when you tap a card. */
+function gridSlotPx(g) {
+  const cols = S.layout === '2x2' ? 2 : S.layout === '3x3' ? 3 : 4, w = (g && g.clientWidth) || Math.min(innerWidth, 1100);
+  return w / cols * (window.devicePixelRatio || 1);
+}
+function gridImg(c, px) {
+  const m = String((c && c.image) || '').match(/^(https:\/\/tcgplayer-cdn\.tcgplayer\.com\/product\/\d+)_in_1000x1000\.jpg$/);
+  const size = px <= 286 ? 400 : px <= 430 ? 600 : px <= 573 ? 800 : 1000;
+  if (!m || size === 1000) return { src: c.image, alts: c.alts };
+  return { src: `${m[1]}_in_${size}x${size}.jpg`, alts: [c.image, ...(c.alts || [])] };
+}
 const tcgAlts = pid => [`https://product-images.tcgplayer.com/fit-in/437x610/${pid}.jpg`, tcgImg(pid, true)];
 function cardFromTcg(pid, game, L) {
   const e = L && L.p && L.p[String(pid)]; if (!e) return null;
@@ -3474,6 +3520,7 @@ function render() {
   const sb = $('sel-btn'); if (sb) sb.hidden = !!peerUser;
   const pages = getPagesArray();
   const g = $('grid'); g.className = `w-full gap-3 sm:gap-4 grid-layout-${S.layout} animate-page-turn`;
+  const slotPx = gridSlotPx(g);
   const ln = $('load-note'); if (ln) ln.classList.toggle('hidden', !activeListener || S.loadedFor === activeListener);
   
   if (S.cur >= pages.length) S.cur = Math.max(0, pages.length - 1);
@@ -3510,7 +3557,8 @@ function render() {
     };
     if (selMode && c && selSlots.has(S.cur + '|' + i)) el.classList.add('sel');
     
-    el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(c.image, c.alts, c.name, 'w-full h-full object-cover rounded-xl')}
+    const gi = c ? gridImg(c, slotPx) : null;
+    el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(gi.src, gi.alts, c.name, 'w-full h-full object-cover rounded-xl')}
         ${langTag(c)}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
           <div class="flex justify-between"><div class="flex gap-1">
@@ -3710,7 +3758,7 @@ function renderGiftPicker() {
   const q = lc($('gp-find').value.trim());
   const list = (GP.tab === 'need' ? need : all).filter(x => !q || lc(x.c.name).includes(q) || sortKey(x.c.name).includes(q) || lc(x.c.set || '').includes(q));
   $('gp-grid').innerHTML = list.length ? list.map(x => { const k = giftKey(x.c), on = !!mine[k]; return `<div class="np-card${on ? ' sel' : ''}" data-k="${esc(k)}" data-p="${x.p}" data-s="${x.s}" onclick="toggleGift(this)">
-      <div class="np-img">${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-img">${(g => imgTag(g.src || x.c.thumb, g.alts, x.c.name, ''))(gridImg(x.c, Math.min(innerWidth, 1024) / 3 * (window.devicePixelRatio || 1)))}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span><b>${fmt(x.c.price)}</b></div>
     </div>`; }).join('')
@@ -3799,7 +3847,8 @@ async function refreshPeerPrices() {
 const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokemon-sealed', 'pokemon-jp-sealed', 'onepiece-sealed', 'spikes', 'art-tags'];
 const OFFLINE_AT = 'cardBinder.offlineSavedAt';
 function offlineImageUrls() {
-  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
+  const px = gridSlotPx($('grid'));      // the binder grid's own (smaller) picture too, so pages show offline without a detour
+  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb, gridImg(c, px).src].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
   const binders = [];
   try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE)).forEach(k => { const d = JSON.parse(localStorage.getItem(k) || 'null'); if (d && d.pages) binders.push(d.pages); }); } catch (e) {}
   binders.forEach(pages => normPages(pages).forEach(pg => pg.cards.forEach(add)));
@@ -5587,7 +5636,7 @@ function condRows(price) {
 }
 function needCardHTML(x, i, opts) {
   return `<div class="np-card${x.c.status === 'needed' ? '' : ' got'}" data-p="${x.p}" data-s="${x.s}" data-b="${esc(x.b || '')}" data-key="${esc(x.key)}">
-      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${imgTag(x.c.image || x.c.thumb, x.c.alts, x.c.name, '')}${langTag(x.c)}</div>
+      <div class="np-img"><span class="np-rank">${i + 1}</span>${x.c.status === 'needed' ? '' : `<span class="np-stamp${Date.now() - (x.c.acquired || 0) < 1500 ? ' fresh' : ''}">Acquired</span>`}${(g => imgTag(g.src || x.c.thumb, g.alts, x.c.name, ''))(gridImg(x.c, Math.min(innerWidth, 1024) / 3 * (window.devicePixelRatio || 1)))}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span></div>
       ${x.b && npMulti() ? `<div class="np-from">📒 ${esc(titleOf(x.b))} · p${x.p + 1}</div>` : ''}
