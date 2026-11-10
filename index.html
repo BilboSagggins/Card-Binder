@@ -568,6 +568,7 @@
   .lb-btn { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 12px; padding: .6rem .9rem; font: 600 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
   .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
+  .lb-btn.danger { background: #be123c; border-color: #be123c; color: #fff; }
   .lb-btn:disabled { opacity: .5; cursor: default; }
   .cb-list { display: flex; flex-direction: column; gap: .5rem; max-height: 52vh; overflow-y: auto; }
   .cb-row { display: flex; align-items: center; gap: .7rem; padding: .5rem; border: 1px solid #27272a; border-radius: 12px; background: #09090b; }
@@ -3252,7 +3253,7 @@ function saveCover() {
   const d = coverDraft;
   writeCover({ image: d.image || '', title: d.title || '', showTitle: !!d.showTitle, color: d.color || '#1e1b4b' }, 'Cover saved');
 }
-function resetCover() { if (confirm('Go back to the default cover?')) writeCover(null, 'Cover reset to default'); }
+function resetCover() { askConfirm('Your cover photo and title go back to the plain default.', { title: 'Reset the cover?', ok: 'Reset cover', danger: true }).then(ok => ok && writeCover(null, 'Cover reset to default')); }
 
 let customImg = null;
 
@@ -3494,10 +3495,10 @@ function openBackups() {
 }
 function closeBackups() { $('bk-modal').classList.add('hidden'); }
 
-function restoreBackup(id) {
+async function restoreBackup(id) {
   if (peerUser) return;
   const u = currentUser;
-  if (!confirm('Replace your binder with this backup? Your current binder is backed up first.')) return;
+  if (!(await askConfirm('Your current binder is backed up first, so you can go back to it.', { title: 'Replace your binder with this backup?', ok: 'Restore this backup' }))) return;
   db.ref(`backups/${u}/${id}`).once('value').then(s => {
     const b = s.val(); if (!b) throw new Error('Backup not found');
     backupNow('before restore', true);
@@ -3679,13 +3680,13 @@ function toggleStatus(p, s, e) {
   render(); 
   toast(`Marked ${c.name} as ${c.status === 'needed' ? 'need' : c.status}`); 
 }
-function removeCard(p, s, e) { 
+async function removeCard(p, s, e) { 
   if (peerUser) return;
   if (pageLocked(p)) { e.stopPropagation(); return lockedToast(p); }
   e.stopPropagation(); 
   const pages = getPagesArray();
   const gone = pages[p].cards[s];
-  if (gone && !confirm(`Remove ${gone.name} from your binder?`)) return;
+  if (gone && !(await askConfirm(`${gone.name}${gone.number ? ' · ' + gone.number : ''} comes out of this pocket.`, { title: 'Remove this card?', ok: 'Remove', danger: true }))) return;
   pages[p].cards[s] = null; 
   saveActivePages(pages); 
   render(); 
@@ -3767,7 +3768,7 @@ function nameSorted(cards) {
     .sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }) || String(a.c.name).localeCompare(String(b.c.name)) || String(a.c.set || '').localeCompare(String(b.c.set || '')) || num(a.c).localeCompare(num(b.c), undefined, { numeric: true }) || a.i - b.i)
     .map(x => x.c);
 }
-function sortByName() {
+async function sortByName() {
   if (peerUser) return;
   const pages = getPagesArray(), n = cap(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
   if (!open.length) return toast('Every page is locked. Unlock a page to sort it.', 'error');
@@ -3775,7 +3776,7 @@ function sortByName() {
   if (cards.length < 2) return toast('Nothing to sort yet', 'error');
   const sorted = nameSorted(cards);
   const locked = pages.length - open.length;
-  if (!confirm(`Sort ${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} by name?${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  if (!(await askConfirm(`${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} are put in name order, so the same characters sit together. You can undo it.${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`, { title: 'Sort by name?', ok: 'Sort' }))) return;
   const before = JSON.parse(JSON.stringify(pages));
   let k = 0;
   open.forEach(i => { pages[i].cards = Array.from({ length: n }, () => k < sorted.length ? sorted[k++] : null); });
@@ -3817,8 +3818,8 @@ async function addCollectionByName() {
   const pages = getPagesArray(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
   const existing = open.flatMap(i => pages[i].cards.slice(0, n).filter(Boolean));
   const sorted = nameSorted(existing.concat(add)), need = Math.max(0, Math.ceil(sorted.length / n) - open.length), locked = pages.length - open.length;
-  if (!confirm(`Add ${add.length} card${add.length === 1 ? '' : 's'} from your collection and sort ${open.length > 1 || need ? 'the' : 'this'} page${open.length + need === 1 ? '' : 's'} by name, so the same characters sit together?`
-    + `${existing.length ? `\nYour ${existing.length} card${existing.length === 1 ? '' : 's'} already here are sorted in with them.` : ''}${need ? `\n${need} new page${need === 1 ? '' : 's'} will be added.` : ''}${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  if (!(await askConfirm(`Add ${add.length} card${add.length === 1 ? '' : 's'} from your collection and sort ${open.length > 1 || need ? 'the' : 'this'} page${open.length + need === 1 ? '' : 's'} by name, so the same characters sit together?`
+    + `${existing.length ? `\nYour ${existing.length} card${existing.length === 1 ? '' : 's'} already here are sorted in with them.` : ''}${need ? `\n${need} new page${need === 1 ? '' : 's'} will be added.` : ''}${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`, { title: 'Add your collection?', ok: 'Add and sort' }))) return;
   const before = JSON.parse(JSON.stringify(pages));
   for (let i = 0; i < need; i++) { pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) }); open.push(pages.length - 1); }
   let k = 0;
@@ -3925,7 +3926,7 @@ function renderGiftList() {
   $('gl-list').innerHTML = html || '<p class="np-empty">Your gift list is empty.<br>Open someone\'s binder in <b>View</b> and tap <b>🎁 Gifts</b> to pick cards for them.</p>';
 }
 function giftBought(u, k) { const g = (GIFTS[u] || {})[k]; if (!g) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}/bought`).set(!g.bought).then(() => toast(g.bought ? `${g.card.name} is back on the list` : `🎁 ${g.card.name} bought`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error')); }
-function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !confirm(`Take ${g.card.name} off your gift list?`)) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
+async function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !(await askConfirm(`${g.card.name} comes off your gift list for ${titleOf(u)}.`, { title: 'Remove this gift?', ok: 'Remove', danger: true }))) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
 function clearBoughtGifts() {
   const up = {}; Object.entries(GIFTS).forEach(([u, gifts]) => Object.entries(gifts || {}).forEach(([k, g]) => { if (g && g.bought) up[`${u}/${k}`] = null; }));
   const n = Object.keys(up).length; if (!n) return toast('Nothing marked bought yet');
@@ -4039,22 +4040,22 @@ function toggleLockPage() {
   S.pages = pages; saveActivePages(pages); render();
   toast(pg.locked ? `🔒 Page ${S.cur + 1} locked` : `🔓 Page ${S.cur + 1} unlocked`);
 }
-function delPage() { 
+async function delPage() { 
   if (peerUser) return;
   if (pageLocked(S.cur)) return lockedToast(S.cur);
   const pages = getPagesArray();
   if (pages.length <= 1) return toast('Cannot delete the only page', 'error'); 
   const inPage = pages[S.cur].cards.filter(Boolean).length;
-  if (inPage && !confirm(`Delete this page and the ${inPage} card${inPage > 1 ? 's' : ''} on it?`)) return;
+  if (inPage && !(await askConfirm(`The ${inPage} card${inPage > 1 ? 's' : ''} on it ${inPage > 1 ? 'are' : 'is'} removed too.`, { title: `Delete page ${S.cur + 1}?`, ok: 'Delete page', danger: true }))) return;
   pages.splice(S.cur, 1); 
   S.cur = Math.min(S.cur, pages.length - 1); 
   saveActivePages(pages); 
   render(); 
   toast('Page deleted'); 
 }
-function clearBinder() { 
+async function clearBinder() { 
   if (peerUser) return toast('Cannot clear binder in read-only peer mode', 'error');
-  if (confirm('Clear the whole binder? This will remove all cards and reset pages across all phones.')) { 
+  if (await askConfirm('Every card on every page is removed and the pages are reset, on all phones. Backups & restore can bring an earlier copy back.', { title: 'Clear the whole binder?', ok: 'Clear binder', danger: true })) { 
     const pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }];
     S.cur = 0;
     saveActivePages(pages); 
@@ -5271,7 +5272,7 @@ function addSealedOwned(card) {
 function sealedQty(id, d) {
   const x = SEALED_OWNED[id]; if (!x) return;
   const q = (x.qty || 1) + d, ref = db.ref(`sealed/${ownerOf(currentUser)}/items/${id}`);
-  if (q < 1) { if (confirm(`Remove ${x.name} from your sealed product?`)) ref.remove(); return; }
+  if (q < 1) { askConfirm(`${x.name} comes off your sealed product list.`, { title: 'Remove this product?', ok: 'Remove', danger: true }).then(ok => ok && ref.remove()); return; }
   ref.child('qty').set(Math.min(999, q));
 }
 async function refreshSealedPrices() {
@@ -5354,8 +5355,8 @@ function tradeQty(side, tid, d) {
   c.qty = Math.min(99, q); saveTrade();
 }
 function removeTradeCard(side, tid) { TRADE[side] = TRADE[side].filter(c => c.tid !== tid); saveTrade(); }
-function clearTrade() {
-  if ((TRADE.give.length || TRADE.get.length) && !confirm('Clear both sides of this trade?')) return;
+async function clearTrade() {
+  if ((TRADE.give.length || TRADE.get.length) && !(await askConfirm('Everything on "You give" and "You get" is taken off.', { title: 'Clear this trade?', ok: 'Clear trade', danger: true }))) return;
   TRADE = { give: [], get: [], giveMult: 100, getMult: 100 }; saveTrade();
 }
 function addTradeCard(side, card) {
@@ -6377,7 +6378,7 @@ function shareFromAddress() {
     if (!(peopleLoaded && binfoLoaded) && tries++ < 40) return setTimeout(go, 200);
     if (!binders().some(b => b.id === id)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} return toast('That shared binder wasn\'t found. The link may be old.', 'error'); }
     if ($('landing').hidden || !$('peer-viewer').hidden) return;       // a binder is already open
-    openPeerViewer(id, false, kind);
+    openPeerViewer(id, false, kind, true);
     $('landing').hidden = true;                                   // straight to the viewer; Back brings the shelf
   };
   go();
@@ -6766,11 +6767,11 @@ function withAppStyles(html) {
     .replace(/<script>\s*tailwind\.config = \{[\s\S]*?\}\s*<\/script>/, '');
 }
 // fromEdit: opened with "View" from inside your own binder, so "Back" returns there instead of the shelf
-function openPeerViewer(u, fromEdit, mode) {
+function openPeerViewer(u, fromEdit, mode, fromLink) {
   closePeerViewer(true);
   pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit; pvMode = mode === 'need' ? 'need' : 'binder';
-  // prices and gifts are for people who have this binder on their shelf; a link visitor only looks
-  const known = visibleBinders().some(b => b.id === u);
+  // prices and gifts are for people who know this binder (yours, or invited to it); someone who came by a share link only looks
+  const known = !fromLink || isUnlocked(ownerOf(u)) || Object.values(INVITED).includes(ownerOf(u));
   $('pv-prices').hidden = pvMode === 'need' || !known; document.querySelector('#peer-viewer .pv-gift').hidden = pvMode === 'need' || !known;
   $('pv-back').textContent = pvFromEdit ? '‹ Back' : '‹ Shelf';
   $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
@@ -6804,6 +6805,19 @@ function closePeerViewer(silent) {
 function cancelToShelf() { closeSheet(); if (staged && !$('landing').classList.contains('opening')) backToShelf(); }
 
 /* --- Sheets: PIN pad, email form, add person --- */
+/* Yes/no in the app's own sheet (instead of the phone's plain pop-up): a title, what happens, and a clear button */
+function askConfirm(msg, { title = '', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+  return new Promise(res => {
+    const lines = String(msg || '').split('\n').filter(Boolean);
+    const sh = sheet(`<h2 id="lb-sheet-title">${esc(title || lines.shift() || 'Are you sure?')}</h2>${lines.map(l => `<p class="sub" style="margin-top:.5rem">${esc(l)}</p>`).join('')}
+      <div class="lb-row" style="margin-top:1rem"><button type="button" class="lb-btn ${danger ? 'danger' : 'primary'}" id="ask-ok">${esc(ok)}</button><button type="button" class="lb-btn quiet" id="ask-no">${esc(cancel)}</button></div>`);
+    let done = false; const fin = v => { if (done) return; done = true; closeSheet(); res(v); };
+    $('ask-ok').onclick = () => fin(true); $('ask-no').onclick = () => fin(false);
+    sh.onclick = e => { if (e.target === sh) fin(false); };
+    sh.onkeydown = e => { if (e.key === 'Escape') fin(false); };
+    setTimeout(() => { const b = $('ask-ok'); if (b) b.focus(); }, 30);
+  });
+}
 function closeSheet() { const sh = $('lb-sheet'); if (sh) { sh.hidden = true; sh.innerHTML = ''; sh.onkeydown = null; } }
 function sheet(html) {
   const sh = $('lb-sheet'); sh.innerHTML = `<div class="lb-card">${html}</div>`; sh.hidden = false;
