@@ -25,7 +25,7 @@
     document.head.appendChild(s);
   }
 </script>
-<link rel="stylesheet" href="tw.css?h=2629eee35b" onerror="twFallback()">
+<link rel="stylesheet" href="tw.css?h=1006d2ddaf" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
@@ -129,6 +129,8 @@
   .np-conds span { color: #71717a; }
   .np-conds b { text-align: right; color: #d4d4d8; font-weight: 600; }
   .np-conds b.nm { color: #34d399; font-weight: 800; }
+  #i-conds .np-conds { grid-template-columns: none; grid-template-rows: auto auto; grid-auto-flow: column; text-align: center; font-size: .7rem; padding: .45rem .3rem; }
+  #i-conds .np-conds b { text-align: center; font-size: .78rem; }
   .np-card { touch-action: pan-y; -webkit-touch-callout: none; }
   .np-lock { margin-left: auto; flex: none; appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; border-radius: 999px; padding: .45rem .8rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
   .np-acts { flex: 0 0 100%; display: flex; align-items: center; justify-content: flex-end; gap: .5rem; }
@@ -216,7 +218,7 @@
   .np-card.sel { border-color: #818cf8; box-shadow: 0 0 0 2px #6366f1; background: #1e1b4b; }
   .np-card.sel .np-img::after { content: '✓'; position: absolute; top: .3rem; right: .3rem; z-index: 3; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #6366f1; color: #fff; font: 900 .85rem/1.5rem Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   .np-card.holding { transform: scale(.96); transition: transform .3s; }
-  .np-selbar { position: fixed; left: .7rem; right: .7rem; bottom: calc(.7rem + env(safe-area-inset-bottom)); z-index: 40; max-width: 36rem; margin: 0 auto; display: flex; align-items: center; gap: .45rem; padding: .6rem .6rem .6rem .9rem; border-radius: 14px; background: rgba(30,27,75,.97); border: 1px solid #6366f1; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+  .np-selbar { position: fixed; left: .7rem; right: .7rem; bottom: calc(.7rem + var(--tabh, 0px)); z-index: 40; max-width: 36rem; margin: 0 auto; display: flex; align-items: center; gap: .45rem; padding: .6rem .6rem .6rem .9rem; border-radius: 14px; background: rgba(30,27,75,.97); border: 1px solid #6366f1; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
   .np-selbar[hidden] { display: none; }
   .np-sel-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
   .np-sel-t b { font: 900 1.05rem/1 Inter, system-ui, sans-serif; color: #fff; }
@@ -413,7 +415,7 @@
   .tk-price { font: 800 .7rem/1.2 Inter, system-ui, sans-serif; color: #34d399; }
   .tk-price.none { color: #71717a; font-weight: 600; }
   .tk-tag { position: absolute; left: .3rem; bottom: .3rem; z-index: 3; background: rgba(0,0,0,.75); color: #e4e4e7; font: 700 .55rem/1 Inter, system-ui, sans-serif; padding: .2rem .3rem; border-radius: 4px; }
-  .tk-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding: .7rem 1rem max(.7rem, env(safe-area-inset-bottom)); background: rgba(9,9,11,.95); border-top: 1px solid #27272a; }
+  .tk-bar { position: fixed; left: 0; right: 0; bottom: var(--tabh, 0px); z-index: 3; padding: .7rem 1rem max(.7rem, env(safe-area-inset-bottom)); background: rgba(9,9,11,.95); border-top: 1px solid #27272a; }
   .tk-bar button { width: 100%; appearance: none; border: 0; border-radius: 12px; padding: .85rem; background: #4f46e5; color: #fff; font: 800 .85rem/1 Inter, system-ui, sans-serif; }
   .tk-bar button:disabled { background: #27272a; color: #71717a; }
   .tk-search { grid-column: 1 / -1; text-align: center; padding: 2rem 1rem; color: #a1a1aa; font: 500 .8rem/1.5 Inter, system-ui, sans-serif; }
@@ -627,6 +629,7 @@
   .lb-btn { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 12px; padding: .6rem .9rem; font: 600 .8rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .lb-btn.primary { background: #4f46e5; border-color: #4f46e5; color: #fff; }
   .lb-btn.quiet { background: none; border-color: transparent; color: #a1a1aa; }
+  .lb-btn.danger { background: #be123c; border-color: #be123c; color: #fff; }
   .lb-btn:disabled { opacity: .5; cursor: default; }
   .cb-list { display: flex; flex-direction: column; gap: .5rem; max-height: 52vh; overflow-y: auto; }
   .cb-row { display: flex; align-items: center; gap: .7rem; padding: .5rem; border: 1px solid #27272a; border-radius: 12px; background: #09090b; }
@@ -636,7 +639,7 @@
   .cb-text span { font-size: .7rem; color: #a1a1aa; }
   .cb-acts { display: flex; gap: .3rem; flex: none; }
   .cb-acts .lb-btn { padding: .5rem .65rem; font-size: .72rem; }
-  .ctray { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; flex-direction: column; gap: 6px; background: rgba(9,9,11,.96);
+  .ctray { position: fixed; left: 0; right: 0; bottom: var(--tabh, 0px); z-index: 40; display: flex; flex-direction: column; gap: 6px; background: rgba(9,9,11,.96);
     border-top: 1px solid #27272a; box-shadow: 0 -14px 32px rgba(0,0,0,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); font-family: Inter, system-ui, sans-serif; }
   .ctray[hidden] { display: none; }
@@ -680,7 +683,7 @@
   #grid [data-slot].sel { outline: 3px solid #e11d48; outline-offset: -3px; }
   #grid [data-slot].sel::after { content: '✓'; position: absolute; top: 6px; left: 6px; z-index: 20; width: 24px; height: 24px; border-radius: 50%; background: #e11d48; color: #fff; font: 800 14px/24px Inter, system-ui, sans-serif; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
   body.sel-mode #grid [data-slot]:not(.sel) img { opacity: .75; }
-  .sel-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 45; display: flex; align-items: center; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(24,24,27,.97); border: 1px solid #3f3f46; box-shadow: 0 10px 30px rgba(0,0,0,.6); max-width: 560px; margin: 0 auto; }
+  .sel-bar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + var(--tabh, 0px)); z-index: 45; display: flex; align-items: center; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(24,24,27,.97); border: 1px solid #3f3f46; box-shadow: 0 10px 30px rgba(0,0,0,.6); max-width: 560px; margin: 0 auto; }
   .sel-bar[hidden] { display: none; }
   .sel-bar span { flex: 1; min-width: 0; font: 700 .78rem/1.2 Inter, system-ui, sans-serif; color: #e4e4e7; padding-left: 4px; }
   .sel-bar button { appearance: none; border: 0; border-radius: 10px; padding: .65rem .7rem; font: 800 .75rem/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
@@ -721,6 +724,34 @@
   .ctray-bar button { padding: .6rem .8rem; }
   .ctray-ghost { position: fixed; z-index: 80; width: 84px; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 4.6% / 3.3%; pointer-events: none;
     transform: translate(-50%, -70%) rotate(-4deg); box-shadow: 0 18px 36px rgba(0,0,0,.65); background: #18181b; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  :root { --tabh: calc(3.5rem + env(safe-area-inset-bottom)); }
+  .who-chip { appearance: none; flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: .1rem .2rem; cursor: pointer; border-radius: 10px; }
+  .who-chip:active { background: #27272a; }
+  .who-chip-name { display: flex; align-items: center; gap: .35rem; font: 700 1rem/1.2 Cinzel, Georgia, serif; letter-spacing: .03em; color: #fff; }
+  .who-chip-name #who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who-chip-name i { font: 400 .7rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; font-style: normal; }
+  .who-chip-sub { display: block; font: 500 .68rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who-lay { display: flex; align-items: center; gap: .4rem; }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 44; display: flex; justify-content: center; gap: 0; height: var(--tabh); padding: 0 max(.3rem, env(safe-area-inset-left)) env(safe-area-inset-bottom); background: rgba(9,9,11,.97); border-top: 1px solid #27272a; }
+  .tabbar button { appearance: none; position: relative; flex: 1; max-width: 9rem; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem; border: 0; background: none; color: #a1a1aa; font: 600 .62rem/1.1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .tabbar button span { font-size: 1.15rem; line-height: 1.2; filter: grayscale(.6); opacity: .8; }
+  .tabbar button.on { color: #fff; }
+  .tabbar button.on span { filter: none; opacity: 1; }
+  .tabbar button.on::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: #6366f1; }
+  .tabbar .nw-alert { top: .15rem; right: calc(50% - 1.9rem); }
+  body { padding-bottom: var(--tabh); }
+  .np { bottom: var(--tabh); }
+  .np.np-export { bottom: 0; }
+  .more-body { max-width: 34rem; margin: 0 auto; padding: .9rem .9rem 1.5rem; }
+  .more-body #tools-row { display: flex; flex-direction: column; gap: .9rem; }
+  .more-list, .more-danger { display: flex; flex-direction: column; gap: .4rem; }
+  .more-danger { margin-top: .6rem; padding-top: .9rem; border-top: 1px dashed #3f3f46; }
+  .mu { appearance: none; display: grid; grid-template-columns: 2rem 1fr; column-gap: .6rem; align-items: center; width: 100%; text-align: left; border: 1px solid #27272a; background: #18181b; color: #f4f4f5; border-radius: 12px; padding: .6rem .8rem; cursor: pointer; }
+  .mu span { grid-row: 1 / 3; font-size: 1.2rem; text-align: center; }
+  .mu b { font: 700 .85rem/1.2 Inter, system-ui, sans-serif; }
+  .mu small { font: 500 .7rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .mu.danger { border-color: #7f1d1d; background: #1c0a0a; }
+  .mu.danger b { color: #fecaca; }
   .who-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .4rem .5rem; padding: .45rem .6rem; max-width: 100%; box-sizing: border-box; }
   .who-bar .btn { white-space: nowrap; padding: .35rem .6rem; }
   .who-bar #who-name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -789,72 +820,62 @@
 <div id="lb-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="lb-sheet-title"></div>
 
 <!-- Main Top Header -->
-<header class="bg-zinc-900/90 border-b border-zinc-800 sticky top-0 z-30 backdrop-blur-md px-4 py-3">
-  <div class="max-w-7xl mx-auto flex flex-col items-center gap-3">
-    
-    <!-- Top Level Info Bar -->
-    <div class="w-full flex flex-col md:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-3 w-full md:w-auto justify-between">
-        <div class="flex items-center gap-3">
-          <button type="button" onclick="showLanding()" title="Switch binder" aria-label="Switch binder" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-500 flex items-center justify-center text-xl shadow-lg active:scale-95 transition">📖</button>
-          <div>
-            <h1 class="font-display font-bold text-lg tracking-wide">TCG CARD BINDER</h1>
-            <p class="text-xs text-zinc-400">Vault &amp; Portfolio Tracker (Cloud Live-Sync)</p>
-          </div>
-        </div>
-        <!-- Mobile Value Display -->
-        <div class="md:hidden panel px-3 py-1 text-right">
-          <span class="text-[10px] text-zinc-400 uppercase block">Value</span>
-          <span id="val-m" class="font-bold text-emerald-400 text-sm">$0.00</span>
-        </div>
-      </div>
-
-      <!-- Controls Row 1: Profile, Peer View, Portfolio, Grid Layout -->
-      <div class="flex items-center gap-3 flex-wrap justify-center">
-        <!-- Who is using the binder, and whether they can edit -->
-        <div id="who-bar" class="who-bar panel">
-          <span id="who-mode" class="text-[10px] uppercase font-semibold text-emerald-400">Editing</span>
-          <span id="who-name" class="text-xs font-semibold text-zinc-100"></span>
-          <button type="button" onclick="showLanding()" class="btn !py-1">Switch</button>
-          <button type="button" id="who-view" onclick="openPeerViewer(currentUser, true)" class="btn !py-1" title="Flip through this binder in 3D">👁 View</button>
-          <button type="button" id="who-coll" onclick="toggleTray()" class="btn !py-1" aria-pressed="false" title="Show your collection to drag cards into slots">📦 Collection</button>
-          <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
-          <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
-          <button type="button" id="who-prices" onclick="openPricePage()" class="btn !py-1" title="Look up any card or sealed price">💲 Prices</button>
-          <button type="button" id="who-news" onclick="openNewsPage()" class="btn !py-1" title="Upcoming sets, store lotteries and card previews">📰 News</button>
-        </div>
-        <!-- Kept for older code paths; filled from the people list -->
-        <select id="user-select" class="hidden" aria-hidden="true" tabindex="-1"></select>
-        <select id="peer-select" class="hidden" aria-hidden="true" tabindex="-1"><option value=""></option></select>
-
-        <div class="hidden md:flex flex-col panel px-4 py-1.5">
-          <span class="text-[10px] text-zinc-400 uppercase font-semibold">Portfolio Value (Owned)</span>
-          <span id="val" class="font-bold text-emerald-400 text-lg leading-tight">$0.00</span>
-        </div>
-        <div class="panel px-3 py-1.5 text-xs flex gap-3">
-          <span><span class="text-zinc-400">Owned:</span> <b id="n-own" class="text-emerald-400">0</b></span>
-          <span><span class="text-zinc-400">Need:</span> <b id="n-need" class="text-rose-400">0</b></span>
-        </div>
-        <!-- Layout Switcher -->
-        <div class="flex panel p-1">
+<header class="bg-zinc-900/90 border-b border-zinc-800 sticky top-0 z-30 backdrop-blur-md px-3 py-2">
+  <!-- One slim row: shelf button, the binder's name (tap for Switch / View / Binders / Lock / layout), and its value.
+       Everything else lives in the tab bar at the bottom and the More page. -->
+  <div class="max-w-7xl mx-auto flex items-center gap-2.5">
+    <button type="button" onclick="showLanding()" title="Back to the shelf" aria-label="Back to the shelf" class="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-500 flex items-center justify-center text-lg shadow-lg active:scale-95 transition">📖</button>
+    <button type="button" id="who-chip" onclick="toggleWhoMenu()" aria-expanded="false" aria-controls="who-menu" class="who-chip" title="Switch binder, view, rename, lock, layout">
+      <span class="who-chip-name"><span id="who-name"></span><i id="who-caret">▾</i></span>
+      <span class="who-chip-sub"><span id="who-mode" class="text-[10px] uppercase font-semibold text-emerald-400">Editing</span> · <b id="n-own" class="text-emerald-400">0</b> owned · <b id="n-need" class="text-rose-400">0</b> need</span>
+    </button>
+    <div class="panel px-3 py-1 text-right shrink-0">
+      <span class="text-[10px] text-zinc-400 uppercase block leading-tight">Value</span>
+      <span id="val-m" class="font-bold text-emerald-400 text-sm leading-tight">$0.00</span><span id="val" class="hidden"></span>
+    </div>
+  </div>
+  <div id="who-menu" class="hidden max-w-7xl mx-auto pt-2">
+    <div id="who-bar" class="who-bar panel">
+      <button type="button" onclick="showLanding()" class="btn !py-1">🔀 Switch binder</button>
+      <button type="button" id="who-view" onclick="openPeerViewer(currentUser, true)" class="btn !py-1" title="Flip through this binder in 3D">👁 View</button>
+      <button type="button" id="who-binders" onclick="binderSheet()" class="btn !py-1" title="Rename this binder or start a new one">📚 Binders</button>
+      <button type="button" id="who-lock" onclick="lockCurrent()" class="btn !py-1">🔒 Lock</button>
+      <span class="who-lay"><span class="text-[10px] text-zinc-400 uppercase font-semibold">Pockets</span>
+        <span class="flex panel p-1">
           <button onclick="setLayout('2x2')" id="btn-2x2" class="px-2.5 py-1 text-xs font-semibold rounded-md">2x2</button>
           <button onclick="setLayout('3x3')" id="btn-3x3" class="px-2.5 py-1 text-xs font-semibold rounded-md">3x3</button>
           <button onclick="setLayout('4x3')" id="btn-4x3" class="px-2.5 py-1 text-xs font-semibold rounded-md">4x3</button>
-        </div>
-        <button type="button" id="tools-btn" onclick="toggleTools()" aria-expanded="false" aria-controls="tools-row" title="Cover, exports, backups and more" class="btn !py-1.5 !px-2.5 text-xs flex items-center gap-1">🧰<span class="hidden sm:inline"> Tools</span> <span id="tools-caret" class="text-zinc-400">▾</span></button>
-      </div>
+        </span></span>
     </div>
+    <!-- Kept for older code paths; filled from the people list -->
+    <select id="user-select" class="hidden" aria-hidden="true" tabindex="-1"></select>
+    <select id="peer-select" class="hidden" aria-hidden="true" tabindex="-1"><option value=""></option></select>
+  </div>
+</header>
 
-    <!-- Controls Row 2: cover, exports and utilities, folded behind "Tools" so the binder stays in view -->
-    <div id="tools-row" class="hidden w-full flex flex-col items-stretch sm:items-end gap-2 pt-2 border-t border-zinc-800/60">
+<!-- Tab bar: the binder screen's main destinations. Full-screen pages end just above it, so it stays reachable. -->
+<nav id="tabbar" class="tabbar" aria-label="Main">
+  <button type="button" id="tab-binder" onclick="tabGo('binder')" aria-current="page"><span>📖</span>Binder</button>
+  <button type="button" id="who-coll" onclick="tabGo('coll')" aria-pressed="false" title="Your collection: tap or drag cards into pockets"><span>📦</span>Collection</button>
+  <button type="button" id="tab-need" onclick="tabGo('need')" title="Your Need cards on one live page"><span>📝</span>Need</button>
+  <button type="button" id="tab-prices" onclick="tabGo('prices')" title="Look up any card or sealed price"><span>💲</span>Prices</button>
+  <button type="button" id="tab-more" onclick="tabGo('more')" title="Cover, share, trade, sealed, backups and more"><span>☰</span>More</button>
+</nav>
+
+<!-- More: every other tool, each with its name -->
+<div id="more-page" class="np" hidden role="dialog" aria-modal="true" aria-labelledby="more-title">
+  <div class="np-head">
+    <button type="button" class="np-x" onclick="closeMore()" aria-label="Close">✕</button>
+    <div class="np-titles"><h2 id="more-title">More</h2><p>Tools for this binder</p></div>
+  </div>
+  <div class="more-body">
+    <div id="tools-row">
       <div class="tool-tiles">
         <button type="button" onclick="openCover()" title="Design your binder cover (used in the export)" class="tt" style="--tt:#b45309"><span>🎨</span>Cover</button>
         <button type="button" onclick="exportBinderHTML()" title="Export complete binder as read-only HTML snapshot page" class="tt" style="--tt:#4338ca"><span>📖</span>Export</button>
         <button type="button" onclick="openSealedPage()" title="The sealed product you own" class="tt" style="--tt:#d97706"><span>🎁</span>Sealed</button>
         <button type="button" onclick="openSlabPage()" title="Your graded slabs: PSA, BGS, CGC and more" class="tt" style="--tt:#be123c"><span>🏅</span>Slabs</button>
         <button type="button" onclick="openTradePage()" title="Compare the two sides of a trade" class="tt" style="--tt:#0369a1"><span>⚖️</span>Trade</button>
-        <button type="button" id="tt-need" onclick="openNeedPage()" title="Your Need cards on one live page" class="tt" style="--tt:#e11d48"><span>📝</span>Need List</button>
-        <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
         <button type="button" onclick="openShareSheet()" title="A link to this binder or its Need List that anyone can open to look" class="tt" style="--tt:#2563eb"><span>🔗</span>Share</button>
@@ -862,19 +883,19 @@
         <button type="button" onclick="openDuplicates()" title="Cards you have more than once across your binders" class="tt" style="--tt:#a16207"><span>🔁</span>Duplicates</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
-
-      <!-- General Utility Buttons -->
-      <div class="flex items-center justify-center gap-2">
-        <button onclick="exportData()" title="Export JSON backup" class="btn">📥</button>
-        <label title="Import JSON backup" class="btn cursor-pointer">📤<input type="file" accept=".json" onchange="importData(event)" class="hidden"></label>
-        <button onclick="refreshPrices()" title="Refresh prices" class="btn">🔄</button>
-        <button onclick="openBackups()" title="Backups & restore" class="btn">🛟</button>
-        <button onclick="clearBinder()" title="Clear binder" class="btn text-rose-300">🗑️</button>
+      <!-- Backups and prices, each with its name -->
+      <div class="more-list">
+        <button type="button" class="mu" onclick="refreshPrices()"><span>🔄</span><b>Refresh prices</b><small>Update every card in this binder to today's price</small></button>
+        <button type="button" class="mu" onclick="openBackups()"><span>🛟</span><b>Backups &amp; restore</b><small>Go back to an earlier copy of this binder</small></button>
+        <button type="button" class="mu" onclick="exportData()"><span>⬇️</span><b>Save a backup file</b><small>Download this binder as a file</small></button>
+        <label class="mu"><span>⬆️</span><b>Load a backup file</b><small>Replace this binder with a saved file</small><input type="file" accept=".json" onchange="importData(event)" class="hidden"></label>
+      </div>
+      <div class="more-danger">
+        <button type="button" class="mu danger" onclick="clearBinder()"><span>🗑️</span><b>Clear this binder</b><small>Removes every card from every page</small></button>
       </div>
     </div>
-
   </div>
-</header>
+</div>
 
 <!-- Read-Only Banner Notice -->
 <div id="readonly-banner" class="hidden bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs text-center py-2 px-4 font-semibold tracking-wide">
@@ -965,7 +986,7 @@
     <div id="s-filters" class="p-4 border-b border-zinc-800 flex flex-col gap-3">
       <div class="flex flex-wrap gap-3 items-center justify-between panel p-2.5">
         <div class="flex flex-wrap bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-          <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">Card Name</button>
+          <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">🔍 Cards</button>
           <button onclick="setMode('num')" id="m-num" class="px-3 py-1 text-xs font-semibold rounded-md">Pokémon + Number</button>
           <button onclick="setMode('set')" id="m-set" class="px-3 py-1 text-xs font-semibold rounded-md">Browse Set</button>
           <button onclick="setMode('scan')" id="m-scan" class="px-3 py-1 text-xs font-semibold rounded-md">📸 Scan</button>
@@ -983,10 +1004,16 @@
         </select>
       </div>
       <div id="search-ui" class="flex flex-col gap-3">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="q" type="text" onkeydown="if(event.key==='Enter')search()" class="field flex-1" placeholder="Search cards...">
+      <div class="flex gap-2">
+        <input id="q" type="search" enterkeyhint="search" onkeydown="if(event.key==='Enter')search()" class="field flex-1 min-w-0" placeholder="Search cards...">
         <button onclick="search()" class="btn-p">Search</button>
       </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="filter-btn" onclick="toggleFilters()" aria-expanded="false" aria-controls="s-more" class="btn !py-1.5 flex items-center gap-1.5">⚙ Filters<b id="filter-n" class="hidden"></b><span id="filter-caret" class="text-zinc-500">▾</span></button>
+        <span id="filter-sum" class="flex-1 min-w-0 truncate text-[11px] text-zinc-400"></span>
+        <button type="button" id="st-btn" onclick="setStatus(addStatus === 'owned' ? 'needed' : 'owned')" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap" title="Add cards as Owned or Need (tap to switch)"></button>
+      </div>
+      <div id="s-more" class="hidden flex flex-col gap-3">
       <div class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">Set:</span>
         <button type="button" id="set-btn" onclick="openSetPicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="set-btn-text" class="truncate">Any set</span><span class="text-zinc-500">▾</span></button>
@@ -1010,8 +1037,9 @@
       <!-- What's in the card's picture (English Pokémon): tags made by the art scan job, prices/art-tags.json -->
       <div id="art-row" class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">🎨 In the art:</span>
-        <input id="art-q" type="text" list="art-words" autocomplete="off" onfocus="loadArtTags()" onkeydown="if(event.key==='Enter')search()" class="field !py-1.5 !text-xs w-full" placeholder="e.g. moon, beach, snow, cake">
+        <input id="art-q" type="text" list="art-words" autocomplete="off" onfocus="loadArtTags()" oninput="paintFilterBtn()" onkeydown="if(event.key==='Enter')search()" class="field !py-1.5 !text-xs w-full" placeholder="e.g. moon, beach, snow, cake">
         <datalist id="art-words"></datalist>
+      </div>
       </div>
       </div>
       <!-- Card scanner: a photo is read on the phone (Tesseract) and matched to the price lists by name and number -->
@@ -1024,13 +1052,8 @@
           <div class="scan-fix"><input id="scan-name" class="field !py-1.5 !text-xs" placeholder="Card name"><input id="scan-num" class="field !py-1.5 !text-xs" placeholder="Number"><button type="button" class="btn-p !py-1.5 !text-xs" onclick="scanLookup()">Look up</button></div></div></div>
         <p class="scan-tip">Tip: fill the photo with the card, in good light, avoiding glare. You'll pick the right match below.</p>
       </div>
-      <div class="flex items-center justify-between panel px-3 py-2">
-        <span class="text-xs text-zinc-400">Add selected card as:</span>
-        <div class="flex gap-2">
-          <button onclick="setStatus('owned')" id="a-owned" class="px-3 py-1 rounded-lg text-xs font-bold">✓ Owned</button>
-          <button onclick="setStatus('needed')" id="a-needed" class="px-3 py-1 rounded-lg text-xs font-bold">⏳ Need</button>
-        </div>
-      </div>
+      <!-- older Owned / Need buttons, kept for code that paints them -->
+      <span class="hidden"><button onclick="setStatus('owned')" id="a-owned"></button><button onclick="setStatus('needed')" id="a-needed"></button></span>
     </div>
     <!-- Search Results View -->
     <div id="results" class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[260px] content-start"></div>
@@ -1117,6 +1140,16 @@
       <div class="flex justify-between border-b border-zinc-800 pb-1.5"><span class="text-zinc-400">Rarity:</span><b id="i-rar" class="text-indigo-400"></b></div>
       <div class="flex justify-between"><span id="i-price-label" class="text-zinc-400">TCGplayer Market:</span><b id="i-price" class="text-emerald-400 text-sm"></b></div>
       <a id="i-link" href="#" target="_blank" rel="noopener noreferrer" class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition mt-3">🔗 View on TCGplayer</a>
+    </div>
+    <!-- Card detail: prices by condition, where else you have it, and quick actions -->
+    <div id="i-extra" class="w-full flex flex-col gap-2.5">
+      <div class="w-full panel p-3"><div class="text-[11px] text-zinc-400 mb-1.5">Price by condition <span class="text-zinc-500">(other conditions estimated from Near Mint)</span></div><div id="i-conds"></div></div>
+      <div class="w-full panel p-3 text-xs"><div class="text-[11px] text-zinc-400 mb-1.5">Where you have it</div><div id="i-where" class="dup-where"></div></div>
+      <div id="i-acts" class="grid grid-cols-3 gap-2">
+        <button type="button" id="i-move" onclick="inspMove()" class="btn !py-2 !text-[11px]">📦 Move</button>
+        <button type="button" id="i-trade" onclick="inspTrade()" class="btn !py-2 !text-[11px]">⚖️ Add to trade</button>
+        <button type="button" id="i-alert" onclick="inspAlert()" class="btn !py-2 !text-[11px]">🔔 Price alert</button>
+      </div>
     </div>
     <button id="i-tcg-btn" type="button" onclick="linkTcgSheet()" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700">🔗 Link TCGplayer page <span class="text-zinc-500 font-normal">· wrong card or no price?</span></button>
     <button id="i-del-btn" onclick="delInspect()" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/80">🗑️ Delete Card</button>
@@ -1273,7 +1306,7 @@
   </div>
 </div>
 <div id="drag-trash" aria-hidden="true"><span style="font-size:1.1rem">🗑️</span><span>Drop here to remove</span></div>
-<div id="toasts" class="fixed bottom-4 right-4 flex flex-col gap-2 pointer-events-none" style="z-index:95"></div>
+<div id="toasts" class="fixed right-4 flex flex-col gap-2 pointer-events-none" style="z-index:95;bottom:calc(1rem + var(--tabh, 0px))"></div>
 
 <div id="db-banner" onclick="this.classList.add('hidden')" class="hidden fixed top-0 inset-x-0 z-[60] bg-rose-700 text-white text-xs font-semibold text-center py-2 px-3"></div>
 
@@ -1332,7 +1365,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-10.98';
+const APP_VERSION = '2026-11-10.101';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1791,7 +1824,7 @@ function setPkLang(l) {
   const rd = $('op-rarity'); rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; rd.value = ''; setRar([]);
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
-  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
+  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Type a name or a name + number, or pick a set under Filters.</div>`;
   if (mode !== 'custom' && mode !== 'coll') loadSets();
 }
 function paintArtRow() { const r = $('art-row'); if (r) r.classList.toggle('hidden', !(S.game === 'pokemon' && pkLang === 'en' && mode !== 'sealed')); }
@@ -1833,6 +1866,7 @@ function setGroups() {
 }
 const multiSets = groups => S.game === 'onepiece' || groups.some(g => g.items.some(it => it.prefix));
 function paintSetBtn() {
+  queueMicrotask(() => typeof paintFilterBtn === 'function' && paintFilterBtn());
   const dd = $('set'), t = $('set-btn-text'); if (!t || !dd) return;
   const o = dd.options[dd.selectedIndex];
   t.textContent = o && o.value ? o.textContent.replace(/\s*\((\d+)\)$/, '') : (dd.options[0] ? dd.options[0].textContent : 'Any set');
@@ -1848,6 +1882,7 @@ function rarLabel() {
   return !names.length ? any : names.length <= 2 ? names.join(' + ') : `${names[0]} + ${names.length - 1} more`;
 }
 function paintRarBtn() {
+  queueMicrotask(() => typeof paintFilterBtn === 'function' && paintFilterBtn());
   const opts = rarOptions();
   if (opts.length) RAR = RAR.filter(v => opts.some(o => o.value === v));      // choices from another game / list drop off
   const t = $('rar-btn-text'); if (!t) return;
@@ -1886,7 +1921,7 @@ function priceLabel() {
   const runs = []; r.forEach(i => { const last = runs[runs.length - 1]; if (last && last[1] === i - 1) last[1] = i; else runs.push([i, i]); });   // neighbours join up: $5 – $25
   return runs.map(([a, b]) => b === PRICE_RANGES.length - 1 ? `$${PRICE_RANGES[a][0]}+` : `$${PRICE_RANGES[a][0]} – $${PRICE_RANGES[b][1]}`).join(', ');
 }
-function paintPriceBtn() { const t = $('price-btn-text'); if (!t) return; t.textContent = priceLabel(); t.classList.toggle('text-zinc-400', !PRICE_SEL.length); }
+function paintPriceBtn() { queueMicrotask(() => paintFilterBtn()); const t = $('price-btn-text'); if (!t) return; t.textContent = priceLabel(); t.classList.toggle('text-zinc-400', !PRICE_SEL.length); }
 function openPriceRangePicker() {
   const on = new Set(PRICE_SEL);
   sheet(`<h2 id="lb-sheet-title">Choose price ranges</h2>
@@ -2968,14 +3003,16 @@ function setMode(m) {
   $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
   ['name', 'num', 'set', 'scan', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
   $('rar-label').textContent = m === 'sealed' ? 'Type:' : 'Rarity:';
+  // one "Cards" button: name, name + number and set browsing are told apart from what's typed (cardMode)
+  ['num', 'set'].forEach(k => { const b = $('m-' + k); if (b) b.classList.add('hidden'); });
+  if (m === 'num' || m === 'set') $('m-name').className = `px-3 py-1 text-xs font-semibold rounded-md ${ON}`;
+  paintFilterBtn();
   paintArtRow();
   if (isColl) return openCollection();
   if (isCustom) return;
   if (isScan) { if (!$('scan-view').classList.contains('hidden')) return; $('results').innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-sm">📸 Take a photo of a ${S.game === 'onepiece' ? 'One Piece' : 'Pokémon'} card, or choose one you already took.</div>`; return; }
   if (m === 'sealed') { $('q').placeholder = 'Product name (e.g. Elite Trainer Box, 151)'; return loadSets(); }
-  $('q').placeholder = S.game === 'onepiece'
-    ? (m === 'name' ? 'Card name (e.g. Roronoa Zoro)' : m === 'num' ? 'Card ID (e.g. OP01-001)' : 'Optional: filter the set by name or ID')
-    : (m === 'name' ? 'Card name (e.g. Charizard)' : m === 'num' ? 'Pokémon + number (e.g. Pikachu 25)' : 'Optional: filter the set by name, number, or prefix (e.g. GG)');
+  $('q').placeholder = S.game === 'onepiece' ? 'Zoro, or OP01-001' : 'Charizard, or Pikachu 25';
   loadSets();
 }
 
@@ -3048,6 +3085,8 @@ async function pkCardsOfRarities(lang, rars) {
   return out.sort((a, b) => (firstIdx.get(setOrder(a)) - firstIdx.get(setOrder(b))) || String(a.localId).localeCompare(String(b.localId), undefined, { numeric: true }));
 }
 async function search() {
+  if (mode === 'name' || mode === 'num' || mode === 'set') mode = cardMode($('q').value, $('set').value);
+  paintFilterBtn();
   if (mode === 'sealed') return sealedSearch();
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
@@ -3245,6 +3284,38 @@ function setStatus(st) {
   const cs = $('c-status'); if (cs) cs.textContent = (st === 'needed' ? 'need' : st).toUpperCase();
   $('a-owned').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'owned' ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
   $('a-needed').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
+  const sb2 = $('st-btn'); if (sb2) { sb2.textContent = st === 'needed' ? 'Add as ⏳ Need' : 'Add as ✓ Owned'; sb2.className = `px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`; }
+}
+/* Filters (set, rarity, price, in the art) fold behind one button; the button says how many are on */
+let filtersOpen = false;
+function toggleFilters(open) {
+  filtersOpen = open === undefined ? !filtersOpen : !!open;
+  $('s-more').classList.toggle('hidden', !filtersOpen);
+  $('filter-btn').setAttribute('aria-expanded', filtersOpen); $('filter-caret').textContent = filtersOpen ? '▴' : '▾';
+}
+function activeFilters() {
+  const out = [], pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\((\d+|[A-Z0-9-]+)\)$/, '') : ''; };
+  const set = pick('set'); if (set) out.push(set);
+  if (rarPick().length) out.push(rarLabel());
+  if (PRICE_SEL.length) out.push(priceLabel());
+  if (typeof artQuery === 'function' && artQuery()) out.push('🎨 ' + artQuery());
+  return out;
+}
+function paintFilterBtn() {
+  const n = $('filter-n'), sum = $('filter-sum'); if (!n) return;
+  const f = activeFilters();
+  n.textContent = f.length; n.classList.toggle('hidden', !f.length);
+  n.className = f.length ? 'bg-indigo-600 text-white rounded-full px-1.5 text-[10px] leading-4' : 'hidden';
+  sum.textContent = f.join(' · ');
+}
+// Name, name + number, or browsing a set: worked out from what's typed
+function cardMode(text, setVal) {
+  const t = String(text || '').trim();
+  const isNum = S.game === 'onepiece'
+    ? /^[a-z]{1,4}\d{0,2}-?\d{3}$/i.test(t.replace(/\s+/g, ''))            // OP01-001, op01001, ST10-005, P-001
+    : /(^|\s)#?(?:[a-z]{1,5})?\d{1,4}[a-z]?(\/\w+)?$/i.test(t);      // "Pikachu 25", "mew 151/165", "Mewtwo GG44", "pikachu SWSH020", "25"
+  if (isNum) return 'num';
+  return setVal ? 'set' : 'name';
 }
 
 /* Custom cards (photo of a card that is not in the database) */
@@ -3306,7 +3377,7 @@ function saveCover() {
   const d = coverDraft;
   writeCover({ image: d.image || '', title: d.title || '', showTitle: !!d.showTitle, color: d.color || '#1e1b4b' }, 'Cover saved');
 }
-function resetCover() { if (confirm('Go back to the default cover?')) writeCover(null, 'Cover reset to default'); }
+function resetCover() { askConfirm('Your cover photo and title go back to the plain default.', { title: 'Reset the cover?', ok: 'Reset cover', danger: true }).then(ok => ok && writeCover(null, 'Cover reset to default')); }
 
 let customImg = null;
 
@@ -3549,10 +3620,10 @@ function openBackups() {
 }
 function closeBackups() { $('bk-modal').classList.add('hidden'); }
 
-function restoreBackup(id) {
+async function restoreBackup(id) {
   if (peerUser) return;
   const u = currentUser;
-  if (!confirm('Replace your binder with this backup? Your current binder is backed up first.')) return;
+  if (!(await askConfirm('Your current binder is backed up first, so you can go back to it.', { title: 'Replace your binder with this backup?', ok: 'Restore this backup' }))) return;
   db.ref(`backups/${u}/${id}`).once('value').then(s => {
     const b = s.val(); if (!b) throw new Error('Backup not found');
     backupNow('before restore', true);
@@ -3734,13 +3805,13 @@ function toggleStatus(p, s, e) {
   render(); 
   toast(`Marked ${c.name} as ${c.status === 'needed' ? 'need' : c.status}`); 
 }
-function removeCard(p, s, e) { 
+async function removeCard(p, s, e) { 
   if (peerUser) return;
   if (pageLocked(p)) { e.stopPropagation(); return lockedToast(p); }
   e.stopPropagation(); 
   const pages = getPagesArray();
   const gone = pages[p].cards[s];
-  if (gone && !confirm(`Remove ${gone.name} from your binder?`)) return;
+  if (gone && !(await askConfirm(`${gone.name}${gone.number ? ' · ' + gone.number : ''} comes out of this pocket.`, { title: 'Remove this card?', ok: 'Remove', danger: true }))) return;
   pages[p].cards[s] = null; 
   saveActivePages(pages); 
   render(); 
@@ -3748,13 +3819,51 @@ function removeCard(p, s, e) {
 }
 function go(d) { const pages = getPagesArray(); const n = S.cur + d; if (n >= 0 && n < pages.length) { S.cur = n; render(); } }
 // The Tools row (cover, exports, backups, clear) folds away; the phone remembers if you left it open
-const TOOLS_KEY = 'cardBinder.toolsOpen';
-function paintTools(open) {
-  $('tools-row').classList.toggle('hidden', !open);
-  $('tools-btn').setAttribute('aria-expanded', open); $('tools-caret').textContent = open ? '▴' : '▾';
+/* --- Tab bar and More page --- */
+function closeAllPages() {
+  closeNeedPage(); closeTradePicker(); closeTradePage(); closeSealedPage(); closePricePage(); closeNewsPage(); closeGiftPicker(); closeGiftList(); closeMore();
+  if (typeof closePhotoPage === 'function' && $('photo-page') && !$('photo-page').hidden) closePhotoPage();
+  if (typeof closeSlabPage === 'function' && $('slab-page') && !$('slab-page').hidden) closeSlabPage();
 }
-function toggleTools() { const open = $('tools-row').classList.contains('hidden'); paintTools(open); try { localStorage.setItem(TOOLS_KEY, open ? '1' : ''); } catch (e) {} }
-try { if (localStorage.getItem(TOOLS_KEY) === '1') queueMicrotask(() => paintTools(true)); } catch (e) {}
+const pageOpen = id => { const el = $(id); return !!el && !el.hidden; };
+function activeTab() {
+  if (pageOpen('need-page')) return 'need';
+  if (pageOpen('price-page')) return 'prices';
+  if (pageOpen('more-page') || [...document.querySelectorAll('.np:not([hidden])')].some(el => el.id !== 'need-page' && el.id !== 'price-page')) return 'more';
+  if (pageOpen('ctray')) return 'coll';
+  return 'binder';
+}
+function paintTabs() {
+  const t = activeTab(), map = { binder: 'tab-binder', coll: 'who-coll', need: 'tab-need', prices: 'tab-prices', more: 'tab-more' };
+  Object.entries(map).forEach(([k, id]) => { const b = $(id); if (!b) return; b.classList.toggle('on', k === t); if (k === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+}
+// Tapping the tab you're on goes back to the binder
+function tabGo(t) {
+  const was = activeTab();
+  if ($('who-menu') && !$('who-menu').classList.contains('hidden')) toggleWhoMenu(false);
+  closeAllPages(); if (t !== 'coll' || was !== 'binder' && was !== 'coll') closeTray();
+  if (t === 'coll') { if (was !== 'coll') toggleTray(); else closeTray(); }
+  else if (t === 'need' && was !== 'need') openNeedPage();
+  else if (t === 'prices' && was !== 'prices') openPricePage();
+  else if (t === 'more' && was !== 'more') openMore();
+  paintTabs();
+}
+function openMore() { $('more-page').hidden = false; $('more-page').scrollTop = 0; paintTabs(); }
+function closeMore() { const m = $('more-page'); if (m) m.hidden = true; }
+function toggleWhoMenu(open) {
+  const m = $('who-menu'); if (!m) return;
+  const show = open === undefined ? m.classList.contains('hidden') : !!open;
+  m.classList.toggle('hidden', !show); $('who-chip').setAttribute('aria-expanded', show); $('who-caret').textContent = show ? '▴' : '▾';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // a tool closes More first, so pop-ups and the binder aren't hidden behind it
+  $('more-page').addEventListener('click', e => { if (e.target.closest('.tt, .mu')) closeMore(); }, true);
+  $('who-menu').addEventListener('click', e => { if (e.target.closest('.btn')) toggleWhoMenu(false); });
+  const mo = new MutationObserver(paintTabs);
+  document.querySelectorAll('.np, #ctray').forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
+  paintTabs();
+});
+function toggleTools() { tabGo('more'); }      // older name, still used by a few buttons
 function addPage() { 
   if (peerUser) return;
   const pages = getPagesArray(); 
@@ -3784,7 +3893,7 @@ function nameSorted(cards) {
     .sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }) || String(a.c.name).localeCompare(String(b.c.name)) || String(a.c.set || '').localeCompare(String(b.c.set || '')) || num(a.c).localeCompare(num(b.c), undefined, { numeric: true }) || a.i - b.i)
     .map(x => x.c);
 }
-function sortByName() {
+async function sortByName() {
   if (peerUser) return;
   const pages = getPagesArray(), n = cap(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
   if (!open.length) return toast('Every page is locked. Unlock a page to sort it.', 'error');
@@ -3792,7 +3901,7 @@ function sortByName() {
   if (cards.length < 2) return toast('Nothing to sort yet', 'error');
   const sorted = nameSorted(cards);
   const locked = pages.length - open.length;
-  if (!confirm(`Sort ${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} by name?${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  if (!(await askConfirm(`${cards.length} cards on ${open.length} page${open.length === 1 ? '' : 's'} are put in name order, so the same characters sit together. You can undo it.${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`, { title: 'Sort by name?', ok: 'Sort' }))) return;
   const before = JSON.parse(JSON.stringify(pages));
   let k = 0;
   open.forEach(i => { pages[i].cards = Array.from({ length: n }, () => k < sorted.length ? sorted[k++] : null); });
@@ -3834,8 +3943,8 @@ async function addCollectionByName() {
   const pages = getPagesArray(), open = pages.map((pg, i) => pg.locked ? -1 : i).filter(i => i >= 0);
   const existing = open.flatMap(i => pages[i].cards.slice(0, n).filter(Boolean));
   const sorted = nameSorted(existing.concat(add)), need = Math.max(0, Math.ceil(sorted.length / n) - open.length), locked = pages.length - open.length;
-  if (!confirm(`Add ${add.length} card${add.length === 1 ? '' : 's'} from your collection and sort ${open.length > 1 || need ? 'the' : 'this'} page${open.length + need === 1 ? '' : 's'} by name, so the same characters sit together?`
-    + `${existing.length ? `\nYour ${existing.length} card${existing.length === 1 ? '' : 's'} already here are sorted in with them.` : ''}${need ? `\n${need} new page${need === 1 ? '' : 's'} will be added.` : ''}${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`)) return;
+  if (!(await askConfirm(`Add ${add.length} card${add.length === 1 ? '' : 's'} from your collection and sort ${open.length > 1 || need ? 'the' : 'this'} page${open.length + need === 1 ? '' : 's'} by name, so the same characters sit together?`
+    + `${existing.length ? `\nYour ${existing.length} card${existing.length === 1 ? '' : 's'} already here are sorted in with them.` : ''}${need ? `\n${need} new page${need === 1 ? '' : 's'} will be added.` : ''}${locked ? `\n${locked} locked page${locked === 1 ? '' : 's'} won't change.` : ''}`, { title: 'Add your collection?', ok: 'Add and sort' }))) return;
   const before = JSON.parse(JSON.stringify(pages));
   for (let i = 0; i < need; i++) { pages.push({ title: `Page ${pages.length + 1}`, cards: Array(n).fill(null) }); open.push(pages.length - 1); }
   let k = 0;
@@ -3942,7 +4051,7 @@ function renderGiftList() {
   $('gl-list').innerHTML = html || '<p class="np-empty">Your gift list is empty.<br>Open someone\'s binder in <b>View</b> and tap <b>🎁 Gifts</b> to pick cards for them.</p>';
 }
 function giftBought(u, k) { const g = (GIFTS[u] || {})[k]; if (!g) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}/bought`).set(!g.bought).then(() => toast(g.bought ? `${g.card.name} is back on the list` : `🎁 ${g.card.name} bought`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error')); }
-function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !confirm(`Take ${g.card.name} off your gift list?`)) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
+async function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !(await askConfirm(`${g.card.name} comes off your gift list for ${titleOf(u)}.`, { title: 'Remove this gift?', ok: 'Remove', danger: true }))) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
 function clearBoughtGifts() {
   const up = {}; Object.entries(GIFTS).forEach(([u, gifts]) => Object.entries(gifts || {}).forEach(([k, g]) => { if (g && g.bought) up[`${u}/${k}`] = null; }));
   const n = Object.keys(up).length; if (!n) return toast('Nothing marked bought yet');
@@ -4056,22 +4165,22 @@ function toggleLockPage() {
   S.pages = pages; saveActivePages(pages); render();
   toast(pg.locked ? `🔒 Page ${S.cur + 1} locked` : `🔓 Page ${S.cur + 1} unlocked`);
 }
-function delPage() { 
+async function delPage() { 
   if (peerUser) return;
   if (pageLocked(S.cur)) return lockedToast(S.cur);
   const pages = getPagesArray();
   if (pages.length <= 1) return toast('Cannot delete the only page', 'error'); 
   const inPage = pages[S.cur].cards.filter(Boolean).length;
-  if (inPage && !confirm(`Delete this page and the ${inPage} card${inPage > 1 ? 's' : ''} on it?`)) return;
+  if (inPage && !(await askConfirm(`The ${inPage} card${inPage > 1 ? 's' : ''} on it ${inPage > 1 ? 'are' : 'is'} removed too.`, { title: `Delete page ${S.cur + 1}?`, ok: 'Delete page', danger: true }))) return;
   pages.splice(S.cur, 1); 
   S.cur = Math.min(S.cur, pages.length - 1); 
   saveActivePages(pages); 
   render(); 
   toast('Page deleted'); 
 }
-function clearBinder() { 
+async function clearBinder() { 
   if (peerUser) return toast('Cannot clear binder in read-only peer mode', 'error');
-  if (confirm('Clear the whole binder? This will remove all cards and reset pages across all phones.')) { 
+  if (await askConfirm('Every card on every page is removed and the pages are reset, on all phones. Backups & restore can bring an earlier copy back.', { title: 'Clear the whole binder?', ok: 'Clear binder', danger: true })) { 
     const pages = [{ title: 'Page 1', cards: Array(cap()).fill(null) }];
     S.cur = 0;
     saveActivePages(pages); 
@@ -4830,7 +4939,68 @@ function openInspect(p, s) {
   $('cb-controls').classList.toggle('hidden', !!peerUser);
   $('i-tcg-btn').classList.toggle('hidden', !!peerUser || c.source === 'custom');
   paintCardBack(c);
+  paintInspectExtra(c, p, s);
   $('flip').classList.remove('ry180');$('i-modal').classList.remove('hidden');
+}
+/* Card detail extras: condition prices, every place you have this card, and quick actions */
+function paintInspectExtra(c, p, s) {
+  const custom = c.source === 'custom';
+  $('i-conds').innerHTML = condRows(c.price);
+  $('i-conds').parentNode.classList.toggle('hidden', custom || c.price == null);
+  $('i-acts').classList.toggle('hidden', !!peerUser);
+  $('i-move').classList.toggle('hidden', !myOtherBinders().length || pageLocked(p));
+  $('i-alert').classList.toggle('hidden', c.status !== 'needed');
+  $('i-alert').textContent = c.alert ? `🔔 Alert ${fmt(c.alert)}` : '🔔 Price alert';
+  $('i-trade').textContent = c.status === 'needed' ? '⚖️ Trade: you get' : '⚖️ Trade: you give';
+  const box = $('i-where'); box.innerHTML = '<em>Looking…</em>';
+  const want = { key: dupKey(c), pid: pidOfCard(c) }, same = x => x && x.name && (want.pid && pidOfCard(x) ? pidOfCard(x) === want.pid : dupKey(x) === want.key);
+  const chip = (label, need, go) => go != null ? `<button type="button" class="${need ? 'nd' : ''}" data-go="${go}">${esc(label)}</button>` : `<em class="${need ? 'nd' : ''}">${esc(label)}</em>`;
+  const binder = peerUser || currentUser, open = { ...insp };
+  (async () => {
+    const out = [];
+    getPagesArray().forEach((pg, pi) => (pg.cards || []).forEach((x, si) => {
+      if (!same(x)) return;
+      const here = pi === p && si === s;
+      out.push(chip(`${here ? 'This pocket' : 'This binder'} · p${pi + 1} #${si + 1}${x.status === 'needed' ? ' · need' : ''}`, x.status === 'needed', here || peerUser ? null : pi));
+    }));
+    if (!peerUser) {
+      const others = await Promise.all(myOtherBinders().map(async b => { const raw = await loadBinderRaw(b.id); return { b, pages: raw ? rawBinderPages(raw.pages, POCKETS[raw.layout] || 12) : [] }; }));
+      others.forEach(({ b, pages }) => pages.forEach((pg, pi) => pg && (pg.cards || []).forEach(x => { if (same(x)) out.push(chip(`${b.title} · p${pi + 1}${x.status === 'needed' ? ' · need' : ''}`, x.status === 'needed', null)); })));
+      const data = COLLECTIONS[ownerOf(currentUser) + '|' + (c.game || S.game)];
+      let qty = 0;
+      Object.values((data && data.items) || {}).forEach(it => {
+        if (!it || isTotalRow(it.name)) return;
+        const pid = String(pidOf(it.image) || (String(it.match || '').startsWith('tcg:') ? String(it.match).slice(4) : ''));
+        if (want.pid ? pid === want.pid : dupKey({ name: it.name, number: it.number, lang: c.lang }) === want.key) qty += +it.qty || 1;
+      });
+      if (qty) out.push(chip(`Collection ×${qty}`, false, null));
+    }
+    if ((peerUser || currentUser) !== binder || insp.p !== open.p || insp.s !== open.s || $('i-modal').classList.contains('hidden')) return;
+    box.innerHTML = out.join('') || '<em>Only here</em>';
+    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { closeInspect(); S.cur = +b.dataset.go; render(); });
+  })().catch(() => { box.innerHTML = '<em>Only here</em>'; });
+}
+function inspMove() {
+  if (peerUser) return;
+  const { p, s } = insp; closeInspect();
+  toggleSelectMode(true); selSlots.add(p + '|' + s); render(); paintSelBar(); openMoveSheet();
+}
+function inspAlert() {
+  if (peerUser) return;
+  const { p, s } = insp; closeInspect();
+  openAlertSheet({ dataset: { b: currentUser, p: String(p), s: String(s) } });
+}
+// Add to the trade page: Owned cards go on "You give", Need cards on "You get" (read first, so nothing on it is lost)
+async function inspTrade() {
+  if (peerUser) return;
+  const c = getPagesArray()[insp.p].cards[insp.s]; if (!c) return;
+  const side = c.status === 'needed' ? 'get' : 'give', ref = db.ref(`trades/${ownerOf(currentUser)}/${side}`);
+  try {
+    const cur = (await withTimeout(ref.once('value'), 8000)).val(), list = Array.isArray(cur) ? cur.filter(Boolean) : Object.values(cur || {});
+    await ref.set([...list, tradeCard(c)]);
+    closeInspect();
+    toastUndo(`${c.name} added to the trade (${side === 'give' ? 'You give' : 'You get'})`, () => ref.set(list).then(() => toast('Taken off the trade')).catch(() => {}));
+  } catch (e) { toast('Couldn\'t reach your trade. Check your connection.', 'error'); }
 }
 
 const closeInspect = () => $('i-modal').classList.add('hidden');
@@ -5617,7 +5787,7 @@ function addSealedOwned(card) {
 function sealedQty(id, d) {
   const x = SEALED_OWNED[id]; if (!x) return;
   const q = (x.qty || 1) + d, ref = db.ref(`sealed/${ownerOf(currentUser)}/items/${id}`);
-  if (q < 1) { if (confirm(`Remove ${x.name} from your sealed product?`)) ref.remove(); return; }
+  if (q < 1) { askConfirm(`${x.name} comes off your sealed product list.`, { title: 'Remove this product?', ok: 'Remove', danger: true }).then(ok => ok && ref.remove()); return; }
   ref.child('qty').set(Math.min(999, q));
 }
 async function refreshSealedPrices() {
@@ -5733,9 +5903,9 @@ function saveSlab() {
     .catch(() => toast('Couldn\'t save. Check your connection.', 'error'));
   closeSlabSheet();
 }
-function deleteSlab() {
+async function deleteSlab() {
   const s = SS; if (!s || !s.id) return;
-  if (!confirm(`Remove ${s.card.name} (${slabLabel(s.company, s.grade)}) from your slabs?`)) return;
+  if (!(await askConfirm(`${s.card.name} (${slabLabel(s.company, s.grade)}) comes off your slab list.`, { title: 'Remove this slab?', ok: 'Remove', danger: true }))) return;
   db.ref(`${slabPath()}/${s.id}`).remove().then(() => toast('Slab removed')).catch(() => toast('Couldn\'t remove. Check your connection.', 'error'));
   closeSlabSheet();
 }
@@ -5820,8 +5990,8 @@ function tradeQty(side, tid, d) {
   c.qty = Math.min(99, q); saveTrade();
 }
 function removeTradeCard(side, tid) { TRADE[side] = TRADE[side].filter(c => c.tid !== tid); saveTrade(); }
-function clearTrade() {
-  if ((TRADE.give.length || TRADE.get.length) && !confirm('Clear both sides of this trade?')) return;
+async function clearTrade() {
+  if ((TRADE.give.length || TRADE.get.length) && !(await askConfirm('Everything on "You give" and "You get" is taken off.', { title: 'Clear this trade?', ok: 'Clear trade', danger: true }))) return;
   TRADE = { give: [], get: [], giveMult: 100, getMult: 100 }; saveTrade();
 }
 function addTradeCard(side, card) {
@@ -5913,7 +6083,7 @@ function markRaffleSeen(i) {
 }
 function paintNewsBadge() {
   const live = nwUnseen(), open = live.filter(r => nwStatus(r).k === 'open').length;
-  ['who-news', 'tt-news'].forEach(id => {
+  ['tab-more', 'tt-news'].forEach(id => {
     const b = $(id); if (!b) return;
     b.classList.toggle('has-raffle', live.length > 0);
     let a = b.querySelector('.nw-alert'); if (live.length && !a) { a = document.createElement('i'); a.className = 'nw-alert'; b.appendChild(a); }
@@ -6227,7 +6397,7 @@ const naUnseen = () => { const seen = recall(NA_SEEN_KEY, {}) || {}; return [...
 function naMarkSeen() { const seen = {}; NA.hits.forEach((h, k) => { seen[k] = h.price; }); remember(NA_SEEN_KEY, seen); paintNeedBadge(); }
 function paintNeedBadge() {
   const n = naUnseen().length;
-  ['tt-need', 'tab-need', 'tools-btn'].forEach(id => {
+  ['tab-need'].forEach(id => {
     const b = $(id); if (!b) return;
     let a = b.querySelector('.na-alert'); if (n && !a) { a = document.createElement('i'); a.className = 'nw-alert na-alert'; a.style.background = '#10b981'; b.style.position = 'relative'; b.appendChild(a); }
     if (a) { if (n) a.textContent = `🔔 ${n}`; else a.remove(); }
@@ -6850,7 +7020,7 @@ function shareFromAddress() {
     if (!(peopleLoaded && binfoLoaded) && tries++ < 40) return setTimeout(go, 200);
     if (!binders().some(b => b.id === id)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} return toast('That shared binder wasn\'t found. The link may be old.', 'error'); }
     if ($('landing').hidden || !$('peer-viewer').hidden) return;       // a binder is already open
-    openPeerViewer(id, false, kind);
+    openPeerViewer(id, false, kind, true);
     $('landing').hidden = true;                                   // straight to the viewer; Back brings the shelf
   };
   go();
@@ -7230,14 +7400,22 @@ function peerViewerHTML(u, data) {
   let pages; try { pages = normPages(d.pages).map((pg, i) => normPage(pg, i)); } finally { S.layout = keep; }
   const payload = { user: titleOf(u), coverTitle: binderCoverTitle(u), layout, pages, cover: d.cover || null, blankCover: true, cardBack: CARD_BACKS[gameOf(u)] || '', cardBacksByRarity: gameOf(u) === 'onepiece' ? OP_RAR_BACKS : {}, cardBackJP: gameOf(u) === 'pokemon' ? CARD_BACKS.pokemonjp || '' : '', exportedAt: new Date().toISOString() };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-  return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON);
+  return withAppStyles(BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON));
+}
+// Inside the app, the viewer uses the app's ready-made style file instead of building styles in the browser
+// (downloaded exports keep the in-browser builder, since they have to work on their own)
+function withAppStyles(html) {
+  const link = document.querySelector('link[rel="stylesheet"][href*="tw.css"]');
+  if (!link || window.__twFallback) return html;
+  return html.replace(/<script src="https:\/\/cdn\.tailwindcss\.com"><\/script>/, `<link rel="stylesheet" href="${link.href}">`)
+    .replace(/<script>\s*tailwind\.config = \{[\s\S]*?\}\s*<\/script>/, '');
 }
 // fromEdit: opened with "View" from inside your own binder, so "Back" returns there instead of the shelf
-function openPeerViewer(u, fromEdit, mode) {
+function openPeerViewer(u, fromEdit, mode, fromLink) {
   closePeerViewer(true);
   pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit; pvMode = mode === 'need' ? 'need' : 'binder';
-  // prices and gifts are for people who have this binder on their shelf; a link visitor only looks
-  const known = visibleBinders().some(b => b.id === u);
+  // prices and gifts are for people who know this binder (yours, or invited to it); someone who came by a share link only looks
+  const known = !fromLink || isUnlocked(ownerOf(u)) || Object.values(INVITED).includes(ownerOf(u));
   $('pv-prices').hidden = pvMode === 'need' || !known; document.querySelector('#peer-viewer .pv-gift').hidden = pvMode === 'need' || !known;
   $('pv-back').textContent = pvFromEdit ? '‹ Back' : '‹ Shelf';
   $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
@@ -7271,6 +7449,19 @@ function closePeerViewer(silent) {
 function cancelToShelf() { closeSheet(); if (staged && !$('landing').classList.contains('opening')) backToShelf(); }
 
 /* --- Sheets: PIN pad, email form, add person --- */
+/* Yes/no in the app's own sheet (instead of the phone's plain pop-up): a title, what happens, and a clear button */
+function askConfirm(msg, { title = '', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+  return new Promise(res => {
+    const lines = String(msg || '').split('\n').filter(Boolean);
+    const sh = sheet(`<h2 id="lb-sheet-title">${esc(title || lines.shift() || 'Are you sure?')}</h2>${lines.map(l => `<p class="sub" style="margin-top:.5rem">${esc(l)}</p>`).join('')}
+      <div class="lb-row" style="margin-top:1rem"><button type="button" class="lb-btn ${danger ? 'danger' : 'primary'}" id="ask-ok">${esc(ok)}</button><button type="button" class="lb-btn quiet" id="ask-no">${esc(cancel)}</button></div>`);
+    let done = false; const fin = v => { if (done) return; done = true; closeSheet(); res(v); };
+    $('ask-ok').onclick = () => fin(true); $('ask-no').onclick = () => fin(false);
+    sh.onclick = e => { if (e.target === sh) fin(false); };
+    sh.onkeydown = e => { if (e.key === 'Escape') fin(false); };
+    setTimeout(() => { const b = $('ask-ok'); if (b) b.focus(); }, 30);
+  });
+}
 function closeSheet() { const sh = $('lb-sheet'); if (sh) { sh.hidden = true; sh.innerHTML = ''; sh.onkeydown = null; } }
 function sheet(html) {
   const sh = $('lb-sheet'); sh.innerHTML = `<div class="lb-card">${html}</div>`; sh.hidden = false;
