@@ -25,7 +25,7 @@
     document.head.appendChild(s);
   }
 </script>
-<link rel="stylesheet" href="tw.css?h=8e0f6f2bda" onerror="twFallback()">
+<link rel="stylesheet" href="tw.css?h=e001592778" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase SDKs for Real-Time Multi-Phone Sync -->
@@ -919,7 +919,7 @@
     <div id="s-filters" class="p-4 border-b border-zinc-800 flex flex-col gap-3">
       <div class="flex flex-wrap gap-3 items-center justify-between panel p-2.5">
         <div class="flex flex-wrap bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-          <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">Card Name</button>
+          <button onclick="setMode('name')" id="m-name" class="px-3 py-1 text-xs font-semibold rounded-md">🔍 Cards</button>
           <button onclick="setMode('num')" id="m-num" class="px-3 py-1 text-xs font-semibold rounded-md">Pokémon + Number</button>
           <button onclick="setMode('set')" id="m-set" class="px-3 py-1 text-xs font-semibold rounded-md">Browse Set</button>
           <button onclick="setMode('custom')" id="m-custom" class="px-3 py-1 text-xs font-semibold rounded-md">📷 Custom</button>
@@ -936,10 +936,16 @@
         </select>
       </div>
       <div id="search-ui" class="flex flex-col gap-3">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="q" type="text" onkeydown="if(event.key==='Enter')search()" class="field flex-1" placeholder="Search cards...">
+      <div class="flex gap-2">
+        <input id="q" type="search" enterkeyhint="search" onkeydown="if(event.key==='Enter')search()" class="field flex-1 min-w-0" placeholder="Search cards...">
         <button onclick="search()" class="btn-p">Search</button>
       </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="filter-btn" onclick="toggleFilters()" aria-expanded="false" aria-controls="s-more" class="btn !py-1.5 flex items-center gap-1.5">⚙ Filters<b id="filter-n" class="hidden"></b><span id="filter-caret" class="text-zinc-500">▾</span></button>
+        <span id="filter-sum" class="flex-1 min-w-0 truncate text-[11px] text-zinc-400"></span>
+        <button type="button" id="st-btn" onclick="setStatus(addStatus === 'owned' ? 'needed' : 'owned')" class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap" title="Add cards as Owned or Need (tap to switch)"></button>
+      </div>
+      <div id="s-more" class="hidden flex flex-col gap-3">
       <div class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">Set:</span>
         <button type="button" id="set-btn" onclick="openSetPicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="set-btn-text" class="truncate">Any set</span><span class="text-zinc-500">▾</span></button>
@@ -963,17 +969,13 @@
       <!-- What's in the card's picture (English Pokémon): tags made by the art scan job, prices/art-tags.json -->
       <div id="art-row" class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">🎨 In the art:</span>
-        <input id="art-q" type="text" list="art-words" autocomplete="off" onfocus="loadArtTags()" onkeydown="if(event.key==='Enter')search()" class="field !py-1.5 !text-xs w-full" placeholder="e.g. moon, beach, snow, cake">
+        <input id="art-q" type="text" list="art-words" autocomplete="off" onfocus="loadArtTags()" oninput="paintFilterBtn()" onkeydown="if(event.key==='Enter')search()" class="field !py-1.5 !text-xs w-full" placeholder="e.g. moon, beach, snow, cake">
         <datalist id="art-words"></datalist>
       </div>
       </div>
-      <div class="flex items-center justify-between panel px-3 py-2">
-        <span class="text-xs text-zinc-400">Add selected card as:</span>
-        <div class="flex gap-2">
-          <button onclick="setStatus('owned')" id="a-owned" class="px-3 py-1 rounded-lg text-xs font-bold">✓ Owned</button>
-          <button onclick="setStatus('needed')" id="a-needed" class="px-3 py-1 rounded-lg text-xs font-bold">⏳ Need</button>
-        </div>
       </div>
+      <!-- older Owned / Need buttons, kept for code that paints them -->
+      <span class="hidden"><button onclick="setStatus('owned')" id="a-owned"></button><button onclick="setStatus('needed')" id="a-needed"></button></span>
     </div>
     <!-- Search Results View -->
     <div id="results" class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 min-h-[260px] content-start"></div>
@@ -1693,7 +1695,7 @@ function setPkLang(l) {
   const rd = $('op-rarity'); rd.innerHTML = '<option value="">Any rarity</option>'; rd.dataset.ready = ''; rd.value = ''; setRar([]);
   $('set').innerHTML = '<option value="">Any set</option>';
   pending = null;
-  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Search by name, Pokémon + number, set, or rarity.</div>`;
+  $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">🎴 Searching ${PK_LANGS[pkLang]} Pokémon cards. Type a name or a name + number, or pick a set under Filters.</div>`;
   if (mode !== 'custom' && mode !== 'coll') loadSets();
 }
 function paintArtRow() { const r = $('art-row'); if (r) r.classList.toggle('hidden', !(S.game === 'pokemon' && pkLang === 'en' && mode !== 'sealed')); }
@@ -1735,6 +1737,7 @@ function setGroups() {
 }
 const multiSets = groups => S.game === 'onepiece' || groups.some(g => g.items.some(it => it.prefix));
 function paintSetBtn() {
+  queueMicrotask(() => typeof paintFilterBtn === 'function' && paintFilterBtn());
   const dd = $('set'), t = $('set-btn-text'); if (!t || !dd) return;
   const o = dd.options[dd.selectedIndex];
   t.textContent = o && o.value ? o.textContent.replace(/\s*\((\d+)\)$/, '') : (dd.options[0] ? dd.options[0].textContent : 'Any set');
@@ -1750,6 +1753,7 @@ function rarLabel() {
   return !names.length ? any : names.length <= 2 ? names.join(' + ') : `${names[0]} + ${names.length - 1} more`;
 }
 function paintRarBtn() {
+  queueMicrotask(() => typeof paintFilterBtn === 'function' && paintFilterBtn());
   const opts = rarOptions();
   if (opts.length) RAR = RAR.filter(v => opts.some(o => o.value === v));      // choices from another game / list drop off
   const t = $('rar-btn-text'); if (!t) return;
@@ -1788,7 +1792,7 @@ function priceLabel() {
   const runs = []; r.forEach(i => { const last = runs[runs.length - 1]; if (last && last[1] === i - 1) last[1] = i; else runs.push([i, i]); });   // neighbours join up: $5 – $25
   return runs.map(([a, b]) => b === PRICE_RANGES.length - 1 ? `$${PRICE_RANGES[a][0]}+` : `$${PRICE_RANGES[a][0]} – $${PRICE_RANGES[b][1]}`).join(', ');
 }
-function paintPriceBtn() { const t = $('price-btn-text'); if (!t) return; t.textContent = priceLabel(); t.classList.toggle('text-zinc-400', !PRICE_SEL.length); }
+function paintPriceBtn() { queueMicrotask(() => paintFilterBtn()); const t = $('price-btn-text'); if (!t) return; t.textContent = priceLabel(); t.classList.toggle('text-zinc-400', !PRICE_SEL.length); }
 function openPriceRangePicker() {
   const on = new Set(PRICE_SEL);
   sheet(`<h2 id="lb-sheet-title">Choose price ranges</h2>
@@ -2864,13 +2868,15 @@ function setMode(m) {
   $('coll-panel').classList.toggle('hidden', !isColl); $('coll-panel').classList.toggle('flex', isColl);
   ['name', 'num', 'set', 'custom', 'coll', 'sealed'].forEach(k => $('m-' + k).className = `${k === 'sealed' && !sealedAllowed() ? 'hidden ' : ''}px-3 py-1 text-xs font-semibold rounded-md ${k === m ? ON : OFF}`);
   $('rar-label').textContent = m === 'sealed' ? 'Type:' : 'Rarity:';
+  // one "Cards" button: name, name + number and set browsing are told apart from what's typed (cardMode)
+  ['num', 'set'].forEach(k => { const b = $('m-' + k); if (b) b.classList.add('hidden'); });
+  if (m === 'num' || m === 'set') $('m-name').className = `px-3 py-1 text-xs font-semibold rounded-md ${ON}`;
+  paintFilterBtn();
   paintArtRow();
   if (isColl) return openCollection();
   if (isCustom) return;
   if (m === 'sealed') { $('q').placeholder = 'Product name (e.g. Elite Trainer Box, 151)'; return loadSets(); }
-  $('q').placeholder = S.game === 'onepiece'
-    ? (m === 'name' ? 'Card name (e.g. Roronoa Zoro)' : m === 'num' ? 'Card ID (e.g. OP01-001)' : 'Optional: filter the set by name or ID')
-    : (m === 'name' ? 'Card name (e.g. Charizard)' : m === 'num' ? 'Pokémon + number (e.g. Pikachu 25)' : 'Optional: filter the set by name, number, or prefix (e.g. GG)');
+  $('q').placeholder = S.game === 'onepiece' ? 'Zoro, or OP01-001' : 'Charizard, or Pikachu 25';
   loadSets();
 }
 
@@ -2943,6 +2949,8 @@ async function pkCardsOfRarities(lang, rars) {
   return out.sort((a, b) => (firstIdx.get(setOrder(a)) - firstIdx.get(setOrder(b))) || String(a.localId).localeCompare(String(b.localId), undefined, { numeric: true }));
 }
 async function search() {
+  if (mode === 'name' || mode === 'num' || mode === 'set') mode = cardMode($('q').value, $('set').value);
+  paintFilterBtn();
   if (mode === 'sealed') return sealedSearch();
   if (S.game === 'onepiece') return opSearch();
   if (pkLang === 'ja') return jpSearch();
@@ -3139,6 +3147,38 @@ function setStatus(st) {
   const cs = $('c-status'); if (cs) cs.textContent = (st === 'needed' ? 'need' : st).toUpperCase();
   $('a-owned').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'owned' ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
   $('a-needed').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
+  const sb2 = $('st-btn'); if (sb2) { sb2.textContent = st === 'needed' ? 'Add as ⏳ Need' : 'Add as ✓ Owned'; sb2.className = `px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`; }
+}
+/* Filters (set, rarity, price, in the art) fold behind one button; the button says how many are on */
+let filtersOpen = false;
+function toggleFilters(open) {
+  filtersOpen = open === undefined ? !filtersOpen : !!open;
+  $('s-more').classList.toggle('hidden', !filtersOpen);
+  $('filter-btn').setAttribute('aria-expanded', filtersOpen); $('filter-caret').textContent = filtersOpen ? '▴' : '▾';
+}
+function activeFilters() {
+  const out = [], pick = id => { const d = $(id); return d && d.value ? d.options[d.selectedIndex].textContent.replace(/\s*\((\d+|[A-Z0-9-]+)\)$/, '') : ''; };
+  const set = pick('set'); if (set) out.push(set);
+  if (rarPick().length) out.push(rarLabel());
+  if (PRICE_SEL.length) out.push(priceLabel());
+  if (typeof artQuery === 'function' && artQuery()) out.push('🎨 ' + artQuery());
+  return out;
+}
+function paintFilterBtn() {
+  const n = $('filter-n'), sum = $('filter-sum'); if (!n) return;
+  const f = activeFilters();
+  n.textContent = f.length; n.classList.toggle('hidden', !f.length);
+  n.className = f.length ? 'bg-indigo-600 text-white rounded-full px-1.5 text-[10px] leading-4' : 'hidden';
+  sum.textContent = f.join(' · ');
+}
+// Name, name + number, or browsing a set: worked out from what's typed
+function cardMode(text, setVal) {
+  const t = String(text || '').trim();
+  const isNum = S.game === 'onepiece'
+    ? /^[a-z]{1,4}\d{0,2}-?\d{3}$/i.test(t.replace(/\s+/g, ''))            // OP01-001, op01001, ST10-005, P-001
+    : /(^|\s)#?(?:[a-z]{1,5})?\d{1,4}[a-z]?(\/\w+)?$/i.test(t);      // "Pikachu 25", "mew 151/165", "Mewtwo GG44", "pikachu SWSH020", "25"
+  if (isNum) return 'num';
+  return setVal ? 'set' : 'name';
 }
 
 /* Custom cards (photo of a card that is not in the database) */
