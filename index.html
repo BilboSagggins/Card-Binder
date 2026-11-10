@@ -794,6 +794,7 @@
         <button type="button" onclick="openPricePage()" title="Look up any card or sealed price" class="tt" style="--tt:#059669"><span>💲</span>Prices</button>
         <button type="button" onclick="openGiftList()" title="Cards you plan to buy as gifts for others" class="tt" style="--tt:#be185d"><span>🎁</span>Gifts</button>
         <button type="button" onclick="openOfflineSheet()" title="Save your binders, pictures and prices on this phone for places with no signal" class="tt" style="--tt:#0f766e"><span>📴</span>Offline</button>
+        <button type="button" onclick="openShareSheet()" title="A link to this binder or its Need List that anyone can open to look" class="tt" style="--tt:#2563eb"><span>🔗</span>Share</button>
         <button type="button" onclick="openDuplicates()" title="Cards you have more than once across your binders" class="tt" style="--tt:#a16207"><span>🔁</span>Duplicates</button>
         <button type="button" id="tt-news" onclick="openNewsPage()" title="Upcoming sets, store lotteries and card previews" class="tt" style="--tt:#7c3aed"><span>📰</span>News</button>
       </div>
@@ -1143,7 +1144,7 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closeNeedPage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
-    <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
+    <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="shareNeedFromPage()" title="A link to this Need List that anyone can open">🔗 Share</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
     <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
     <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
@@ -1215,7 +1216,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-10.96';
+const APP_VERSION = '2026-11-10.97';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -5947,29 +5948,46 @@ function renderNeedPage() {
 }
 
 // Export the Need List as it looks now: your priority order, condition prices, and Acquired stamps
+// One binder's Need cards in its saved priority order (used for a shared Need List, where no binder is open)
+function needCardsFor(pages, n, order) {
+  const out = [], seen = {};
+  (pages || []).forEach((pg, p) => pg && (pg.cards || []).slice(0, n).forEach((c, s) => {
+    if (!c || !(c.status === 'needed' || c.acquired)) return;
+    const b0 = String(c.id || norm(c.name) + '|' + (c.number || '')), k = seen[b0] = (seen[b0] || 0) + 1;
+    out.push({ c, p, s, key: k > 1 ? b0 + '#' + k : b0, i: out.length });
+  }));
+  const rank = new Map((order || []).map((k, i) => [k, i]));
+  return out.sort((a, b) => (rank.has(a.key) ? rank.get(a.key) : 1e9 + a.i) - (rank.has(b.key) ? rank.get(b.key) : 1e9 + b.i));
+}
+// From the Need List: a link to one binder's list (the open one, or the single binder being shown)
+function shareNeedFromPage() { const ids = needBinderIds(); if (ids.length > 1) toast('The link shows one binder\'s list: sharing ' + titleOf(currentUser)); shareLink('need', ids.length === 1 ? ids[0] : currentUser); }
 function exportNeededList() {
   const all = needCards(); if (!all.length) return toast('No Need cards to export', 'error');
+  const name = npScopeLabel(), day = new Date(), html = needListDoc(name, all);
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url;
+  a.download = `Need_List_${name.replace(/[^\w-]+/g, '_')}_${day.toISOString().slice(0, 10)}.html`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast(`Exported ${all.length} card${all.length === 1 ? '' : 's'} in priority order`);
+}
+// The Need List as a page of its own (the export file, and what a shared Need List link shows)
+function needListDoc(name, all) {
+  const day = new Date();
   const list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
   const total = list.reduce((a, x) => a + (Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : 0), 0);
   // this page's own styles, so the export looks the same
   let css = '';
   for (const sh of document.styleSheets) { try { for (const r of sh.cssRules) { const t = r.cssText; if (/(^|[\s,])\.(np|jp-tag)|np-stamp/.test(t.split('{')[0]) || /^@keyframes np-/.test(t) || (r.media && /\.np/.test(t))) css += t + '\n'; } } catch (e) {} }
-  const name = npScopeLabel(), day = new Date();
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Need List · ${esc(name)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;background:#09090b;color:#f4f4f5;font-family:Inter,system-ui,sans-serif}.np{position:static;overflow:visible}.np-head{position:static}
 ${css}</style></head><body>
 <div class="np np-export"><div class="np-head"><div class="np-titles"><h2>Need List · ${esc(name)}</h2>
 <p><b>${list.length}</b> card${list.length === 1 ? '' : 's'} needed · ${fmt(total)} at market (NM) · other conditions estimated${got ? ` · ${got} acquired` : ''}<br>In priority order · ${day.toLocaleDateString()}</p></div></div>
-<div class="np-grid">${all.map(needCardHTML).join('')}</div></div>
+<div class="np-grid">${all.length ? all.map(needCardHTML).join('') : '<p class="np-empty">Nothing on this Need List right now.</p>'}</div></div>
 <script>function imgErr(i){var a=(i.dataset.alts||'').split('|').filter(function(u){return u&&u!==i.src});var n=a.shift();i.dataset.alts=a.join('|');if(n)i.src=n;else{i.onerror=null;i.style.visibility='hidden';}}<\/script>
 </body></html>`;
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  const a = document.createElement('a'); a.href = url;
-  a.download = `Need_List_${name.replace(/[^\w-]+/g, '_')}_${day.toISOString().slice(0, 10)}.html`;
-  a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast(`Exported ${all.length} card${all.length === 1 ? '' : 's'} in priority order`);
 }
 
 function importData(e) {
@@ -6161,6 +6179,40 @@ async function acceptInvite(raw, quiet) {
   return true;
 }
 // An invite link looks like …/Card-Binder/?invite=CODE (or #invite=CODE); accept it and tidy the address
+/* --- Share links: ?view=<binder> opens that binder in the read-only viewer, ?need=<binder> its Need List.
+   Anyone with the link can look (no PIN); nothing can be changed from it. */
+const shareUrl = (kind, id) => location.origin + location.pathname + '?' + kind + '=' + encodeURIComponent(id);
+function openShareSheet() {
+  if (!currentUser || peerUser) return;
+  const t = titleOf(currentUser), needs = getPagesArray().flatMap(p => p.cards).filter(c => c && c.status === 'needed').length;
+  sheet(`<h2 id="lb-sheet-title">🔗 Share</h2>
+    <p class="sub">Send a link to <b>${esc(t)}</b>. Anyone who opens it can look, but can't change anything and doesn't need a PIN. It always shows the binder as it is now.</p>
+    <div class="mv-list" style="margin-top:.6rem">
+      <button type="button" class="mv-b" data-kind="view">📖 Share this binder<small>Flip through every page</small></button>
+      <button type="button" class="mv-b" data-kind="need">📝 Share the Need List<small>${needs} card${needs === 1 ? '' : 's'} needed, in priority order</small></button>
+    </div>
+    <div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('#lb-sheet .mv-b[data-kind]').forEach(b => b.onclick = () => shareLink(b.dataset.kind, currentUser));
+}
+async function shareLink(kind, id) {
+  const url = shareUrl(kind, id), title = (kind === 'need' ? 'Need List · ' : '') + titleOf(id);
+  try { if (navigator.share) { await navigator.share({ title, url }); closeSheet(); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(url); closeSheet(); toast('Link copied. Paste it in a message.'); }
+  catch (e) { sheet(`<h2 id="lb-sheet-title">🔗 Share</h2><p class="sub">Copy this link:</p><input class="sp-find" readonly value="${esc(url)}" onfocus="this.select()"><div class="lb-row" style="margin-top:.6rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = ev => { if (ev.target === $('lb-sheet')) closeSheet(); }; }
+}
+function shareFromAddress() {
+  const m = location.search.match(/[?&](view|need)=([^&]+)/); if (!m) return;
+  const kind = m[1], id = decodeURIComponent(m[2]);
+  let tries = 0;
+  const go = () => {
+    if (!(peopleLoaded && binfoLoaded) && tries++ < 40) return setTimeout(go, 200);
+    if (!binders().some(b => b.id === id)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} return toast('That shared binder wasn\'t found. The link may be old.', 'error'); }
+    if ($('landing').hidden || !$('peer-viewer').hidden) return;       // a binder is already open
+    openPeerViewer(id, false, kind);
+    $('landing').hidden = true;                                   // straight to the viewer; Back brings the shelf
+  };
+  go();
+}
 function inviteFromAddress() {
   const m = (location.search + location.hash).match(/invite[=-]([A-Za-z0-9]+)/);
   if (!m) return;
@@ -6521,7 +6573,13 @@ function removeCardBack(path, label) {
 }
 
 /* --- View only: flip through someone else's binder in the export's 3D view --- */
-let pvUser = null, pvRef = null, pvData = null, pvShown = null, pvFromEdit = false;
+let pvUser = null, pvRef = null, pvData = null, pvShown = null, pvFromEdit = false, pvMode = 'binder';
+// What the viewer shows: the binder itself, or (from a shared Need List link) its Need List
+function pvDoc(u, data) {
+  if (pvMode !== 'need') return peerViewerHTML(u, data);
+  const d = data || {}, n = POCKETS[d.layout] || 12, order = Array.isArray(d.needOrder) ? d.needOrder : Object.values(d.needOrder || {});
+  return needListDoc(titleOf(u), needCardsFor(rawBinderPages(d.pages, n), n, order)).replace('</head>', '<style>.np.np-export{padding-top:3.3rem}.np-titles h2{display:none}</style></head>');   // room for the viewer's bar, which already shows the title
+}
 function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
@@ -6531,13 +6589,16 @@ function peerViewerHTML(u, data) {
   return BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON);
 }
 // fromEdit: opened with "View" from inside your own binder, so "Back" returns there instead of the shelf
-function openPeerViewer(u, fromEdit) {
+function openPeerViewer(u, fromEdit, mode) {
   closePeerViewer(true);
-  pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit;
+  pvUser = u; pvData = undefined; pvShown = null; pvFromEdit = !!fromEdit; pvMode = mode === 'need' ? 'need' : 'binder';
+  // prices and gifts are for people who have this binder on their shelf; a link visitor only looks
+  const known = visibleBinders().some(b => b.id === u);
+  $('pv-prices').hidden = pvMode === 'need' || !known; document.querySelector('#peer-viewer .pv-gift').hidden = pvMode === 'need' || !known;
   $('pv-back').textContent = pvFromEdit ? '‹ Back' : '‹ Shelf';
   $('pv-back').setAttribute('aria-label', pvFromEdit ? 'Back to editing' : 'Back to shelf');
   if (pvFromEdit) document.body.style.overflow = 'hidden';
-  $('pv-name').textContent = titleOf(u);
+  $('pv-name').textContent = (pvMode === 'need' ? 'Need List · ' : '') + titleOf(u);
   $('pv-refresh').hidden = true;
   $('peer-frame').srcdoc = '';
   $('peer-viewer').hidden = false;
@@ -6545,19 +6606,20 @@ function openPeerViewer(u, fromEdit) {
   pvRef.on('value', snap => {
     pvData = snap.val();
     const json = JSON.stringify(pvData || null);
-    if (pvShown === null) { pvShown = json; $('peer-frame').srcdoc = peerViewerHTML(u, pvData); }
+    if (pvShown === null) { pvShown = json; $('peer-frame').srcdoc = pvDoc(u, pvData); }
     else if (json !== pvShown) $('pv-refresh').hidden = false;   // they changed something while you're looking
   }, () => toast('Couldn\'t load that binder. Check your connection.', 'error'));
 }
 function refreshPeerViewer() {
   if (!pvUser) return;
   pvShown = JSON.stringify(pvData || null);
-  $('peer-frame').srcdoc = peerViewerHTML(pvUser, pvData);
+  $('peer-frame').srcdoc = pvDoc(pvUser, pvData);
   $('pv-refresh').hidden = true;
 }
 function closePeerViewer(silent) {
   const backToEdit = pvFromEdit; pvFromEdit = false;
   if (pvRef) pvRef.off(); pvRef = null; pvUser = null;
+  if (!silent && /[?&](view|need)=/.test(location.search)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} }   // leaving a shared link
   const v = $('peer-viewer'); if (v) { v.hidden = true; $('peer-frame').srcdoc = ''; }
   if (backToEdit) document.body.style.overflow = '';
   if (!silent && !backToEdit) showLanding();
@@ -6935,7 +6997,8 @@ function checkForNewVersion() {
     let tried = ''; try { tried = sessionStorage.getItem('cardBinder.reloadedFor') || ''; } catch (e) {}
     if (tried === v) return 'current';   // already tried once this visit; don't loop
     try { sessionStorage.setItem('cardBinder.reloadedFor', v); } catch (e) {}
-    location.replace(location.pathname + '?v=' + encodeURIComponent(v));
+    const keep = (location.search.match(/[?&]((?:view|need)=[^&]+)/) || [])[1];      // stay on a shared link
+    location.replace(location.pathname + '?' + (keep ? keep + '&' : '') + 'v=' + encodeURIComponent(v));
     return 'reloading';
   }).catch(() => 'current');
 }
@@ -6973,7 +7036,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('Offline helper not started', e));
   const versionCheck = checkForNewVersion();
   await quietSignIn();   // before anything is read, so locked-down rules let the app in
-  paintShelfToggle(); loadInvites(); inviteFromAddress();
+  paintShelfToggle(); loadInvites(); inviteFromAddress(); shareFromAddress();
   fillSelects();
   watchPeople();
   watchBinderInfo();
