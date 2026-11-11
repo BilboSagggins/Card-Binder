@@ -1,45 +1,15 @@
-== product 517048
-  cdn _200w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 29591 CODE 200
-  cdn _400w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 95499 CODE 200
-  cdn _600w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _800w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_200x200.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 11227 CODE 200
-  cdn _in_400x400.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 37932 CODE 200
-  cdn _in_500x500.jpg    content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_600x600.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 71828 CODE 200
-  cdn _in_800x800.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 111874 CODE 200
-  cdn _in_1000x1000.jpg  content-type: image/jpeg | access-control-allow-origin: * | SIZE 157135 CODE 200
-  product-images fit-in/200x279   content-type: image/jpeg | SIZE 21707 CODE 200
-  product-images fit-in/437x610   content-type: image/jpeg | SIZE 82476 CODE 200
-  product-images fit-in/600x838   content-type: image/jpeg | SIZE 132410 CODE 200
-  product-images fit-in/874x1220  content-type: image/jpeg | SIZE 224993 CODE 200
-== product 197726
-  cdn _200w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 31296 CODE 200
-  cdn _400w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 101525 CODE 200
-  cdn _600w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _800w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_200x200.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 11620 CODE 200
-  cdn _in_400x400.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 39665 CODE 200
-  cdn _in_500x500.jpg    content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_600x600.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 77051 CODE 200
-  cdn _in_800x800.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 119991 CODE 200
-  cdn _in_1000x1000.jpg  content-type: image/jpeg | access-control-allow-origin: * | SIZE 168624 CODE 200
-  product-images fit-in/200x279   content-type: image/jpeg | SIZE 23293 CODE 200
-  product-images fit-in/437x610   content-type: image/jpeg | SIZE 86438 CODE 200
-  product-images fit-in/600x838   content-type: image/jpeg | SIZE 139626 CODE 200
-  product-images fit-in/874x1220  content-type: image/jpeg | SIZE 235029 CODE 200
-== product 718681
-  cdn _200w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 15238 CODE 200
-  cdn _400w.jpg          content-type: image/jpeg | access-control-allow-origin: * | SIZE 51272 CODE 200
-  cdn _600w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _800w.jpg          content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_200x200.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 8413 CODE 200
-  cdn _in_400x400.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 28556 CODE 200
-  cdn _in_500x500.jpg    content-type: application/xml | access-control-allow-origin: * | SIZE 111 CODE 403
-  cdn _in_600x600.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 58041 CODE 200
-  cdn _in_800x800.jpg    content-type: image/jpeg | access-control-allow-origin: * | SIZE 92956 CODE 200
-  cdn _in_1000x1000.jpg  content-type: image/jpeg | access-control-allow-origin: * | SIZE 114439 CODE 200
-  product-images fit-in/200x279   content-type: image/jpeg | SIZE 18885 CODE 200
-  product-images fit-in/437x610   content-type: image/jpeg | SIZE 74756 CODE 200
-  product-images fit-in/600x838   content-type: image/jpeg | SIZE 119233 CODE 200
-  product-images fit-in/874x1220  content-type: image/jpeg | SIZE 210026 CODE 200
+== 353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-s
+  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
+  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
+  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
+  www.               content-type: image/png | SIZE 572721 CODE 200
+== 353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-
+  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
+  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
+  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
+  www.               content-type: image/png | SIZE 608675 CODE 200
+== 353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining
+  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
+  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
+  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
+  www.               content-type: image/png | SIZE 547911 CODE 200
