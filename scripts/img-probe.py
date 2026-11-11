@@ -1,11 +1,13 @@
 import subprocess
-def head(url):
-    out = subprocess.run(["curl", "-s", "-o", "/dev/null", "-D", "-", "-w", "SIZE %{size_download} CODE %{http_code}\n", "-H", "Origin: https://bilbosagggins.github.io", url], capture_output=True, text=True).stdout
-    keep = [l.strip() for l in out.splitlines() if l.lower().startswith(("access-control-allow-origin", "content-type", "size"))]
-    return " | ".join(keep)
-for pid in ["517048", "197726", "718681"]:
-    print("== product", pid)
-    for suf in ["_200w.jpg", "_400w.jpg", "_600w.jpg", "_800w.jpg", "_in_200x200.jpg", "_in_400x400.jpg", "_in_500x500.jpg", "_in_600x600.jpg", "_in_800x800.jpg", "_in_1000x1000.jpg"]:
-        print(f"  cdn {suf:18s}", head(f"https://tcgplayer-cdn.tcgplayer.com/product/{pid}{suf}"))
-    for fit in ["fit-in/200x279", "fit-in/437x610", "fit-in/600x838", "fit-in/874x1220"]:
-        print(f"  product-images {fit:16s}", head(f"https://product-images.tcgplayer.com/{fit}/{pid}.jpg"))
+def get(url, *hdr):
+    a = ["curl", "-s", "-o", "/dev/null", "-D", "-", "-w", "SIZE %{size_download} CODE %{http_code}\n", url]
+    for h in hdr: a[1:1] = ["-H", h]
+    out = subprocess.run(a, capture_output=True, text=True).stdout
+    return " | ".join(l.strip() for l in out.splitlines() if l.lower().startswith(("access-control-allow-origin", "content-type", "size", "location", "cross-origin")))
+base = "https://cardtrader.com/uploads/blueprints/image/"
+for path in ["353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png", "353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png", "353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png"]:
+    print("==", path[:60])
+    print("  plain             ", get(base + path))
+    print("  from the site     ", get(base + path, "Referer: https://bilbosagggins.github.io/", "Origin: https://bilbosagggins.github.io", "Sec-Fetch-Mode: cors"))
+    print("  img, no referrer  ", get(base + path, "Accept: image/avif,image/webp,image/*,*/*;q=0.8", "Sec-Fetch-Dest: image", "User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36"))
+    print("  www.              ", get(base.replace("://", "://www.") + path))
