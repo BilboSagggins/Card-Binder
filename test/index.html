@@ -1365,7 +1365,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-10.103';
+const APP_VERSION = '2026-11-11.105';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1491,7 +1491,16 @@ function buildImages(d, lang, pid) {
   return { low: first, high: first, alts };
 }
 
-const imgTag = (src, alts, name, cls) => `<img src="${esc(src)}" data-alts="${esc((alts || []).join('|'))}" alt="${esc(name)}" class="${cls}" referrerpolicy="no-referrer" onerror="imgErr(this)">`;
+// Picture addresses that moved: CardTrader now serves pictures only from www.cardtrader.com (the old address just redirects,
+// which some phones don't follow for pictures). Cards saved before keep the old address, so it's corrected when shown.
+const fixImg = u => typeof u === 'string' ? u.replace(/^https?:\/\/cardtrader\.com\//, 'https://www.cardtrader.com/') : u;
+function fixCardImgs(c) {
+  if (!c || typeof c !== 'object') return c;
+  const out = { ...c, image: fixImg(c.image), thumb: fixImg(c.thumb) };
+  if (Array.isArray(c.alts)) out.alts = c.alts.map(fixImg);
+  return out;
+}
+const imgTag = (src, alts, name, cls) => `<img src="${esc(fixImg(src))}" data-alts="${esc((alts || []).map(fixImg).join('|'))}" alt="${esc(name)}" class="${cls}" referrerpolicy="no-referrer" onerror="imgErr(this)">`;
 
 function cardLink(c) {
   if (c.url) return c.url;
@@ -2155,7 +2164,7 @@ async function matchPokemonJP(card) {
 
 /* --- Chinese Pokémon: CardTrader's Chinese sets (prices/pokemon-zh.json, built daily by the price job; English card names).
    Prices are the lowest current Chinese-language listing on CardTrader (Near Mint when there is one), in US dollars. */
-const CT_IMG = 'https://cardtrader.com/uploads/blueprints/image/';
+const CT_IMG = 'https://www.cardtrader.com/uploads/blueprints/image/';
 const zhList = () => loadTcgList('pokemon-zh');
 function cardFromCT(id, L) {
   const e = L && L.p && L.p[String(id)]; if (!e) return null;
@@ -2477,7 +2486,7 @@ function renderTray() {
     const el = document.createElement('div');
     el.className = 'ctray-item'; el.setAttribute('role', 'button'); el.tabIndex = 0;
     el.setAttribute('aria-label', `${it.name}. Drag onto a slot, or press to add to the next empty slot.`);
-    el.innerHTML = `${it.image ? `<img alt="" draggable="false" src="${esc(it.image)}">` : '<div class="ph">🎴</div>'}
+    el.innerHTML = `${it.image ? `<img alt="" draggable="false" src="${esc(fixImg(it.image))}">` : '<div class="ph">🎴</div>'}
       ${it.qty > 1 ? `<i class="q">×${it.qty}</i>` : ''}${inBinder.has(it.id) ? '<i class="in">✓</i>' : ''}<span>${esc(it.name)}</span>`;
     paintTrayPick(el, it.id);
     el.onpointerdown = e => trayPointerDown(e, it, el);
@@ -4095,7 +4104,7 @@ const OFFLINE_LISTS = ['pokemon', 'pokemon-jp', 'pokemon-zh', 'onepiece', 'pokem
 const OFFLINE_AT = 'cardBinder.offlineSavedAt';
 function offlineImageUrls() {
   const px = gridSlotPx($('grid'));      // the binder grid's own (smaller) picture too, so pages show offline without a detour
-  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb, gridImg(c, px).src].forEach(u => { if (u && /^https?:/.test(u)) urls.add(u); }); };
+  const urls = new Set(), add = c => { if (!c) return; [c.image, c.thumb, gridImg(c, px).src].forEach(u => { u = fixImg(u); if (u && /^https?:/.test(u)) urls.add(u); }); };
   const binders = [];
   try { Object.keys(localStorage).filter(k => k.startsWith(BCACHE)).forEach(k => { const d = JSON.parse(localStorage.getItem(k) || 'null'); if (d && d.pages) binders.push(d.pages); }); } catch (e) {}
   binders.forEach(pages => normPages(pages).forEach(pg => pg.cards.forEach(add)));
@@ -4850,7 +4859,7 @@ function paintDuplicates() {
     const label = `${esc(x.b.title)} · p${x.p + 1} #${x.s + 1}${need ? ' · need' : ''}`;
     return here ? `<button type="button" class="${need ? 'nd' : ''}" data-go="${x.p}">${label}</button>` : `<em class="${need ? 'nd' : ''}">${label}</em>`;
   };
-  const row = g => `<div class="dup-row"><img src="${esc(g.card.thumb || g.card.image || '')}" alt="" loading="lazy" referrerpolicy="no-referrer">
+  const row = g => `<div class="dup-row"><img src="${esc(fixImg(g.card.thumb || g.card.image || ''))}" alt="" loading="lazy" referrerpolicy="no-referrer">
     <div><b>${esc(g.card.name)}${g.at.filter(x => x.c.status !== 'needed').length > 1 ? ` <span style="color:#fbbf24">×${g.at.filter(x => x.c.status !== 'needed').length}</span>` : ''}</b>
     <span class="meta">${esc(g.card.set || '')}${g.card.number ? ' · ' + esc(g.card.number) : ''}${g.card.price != null ? ' · ' + fmt(g.card.price) : ''}</span>
     <div class="dup-where">${g.at.map(where).join('')}</div></div></div>`;
@@ -4921,7 +4930,7 @@ document.addEventListener('touchmove', e => { if (dragSt && dragSt.active) e.pre
 function openInspect(p, s) {
   const pages = getPagesArray();
   const c = pages[p].cards[s]; if (!c) return; insp = { p, s };
-  const im = $('i-img'); im.dataset.alts = (c.alts || []).join('|'); im.alt = c.name; im.src = c.image;
+  const im = $('i-img'); im.dataset.alts = (c.alts || []).map(fixImg).join('|'); im.alt = c.name; im.src = fixImg(c.image);
   $('i-title').textContent = c.name; $('i-set').textContent = c.set + (c.lang === 'ja' ? ' (Japanese)' : c.lang === 'zh' ? ' (Chinese)' : ''); $('i-num').textContent = c.number; $('i-rar').textContent = c.rarity;
   $('i-price').textContent = fmt(c.price);$('i-link').href = cardLink(c);
   const isCustomCard = c.source === 'custom';
@@ -5537,7 +5546,7 @@ function exportBinderHTML() {
     user: titleOf(activeUser),
     coverTitle: binderCoverTitle(activeUser),
     layout: S.layout || '4x3',
-    pages: pages,
+    pages: pages.map(pg => ({ ...pg, cards: (pg.cards || []).map(fixCardImgs) })),
     cover: S.cover || null,
     cardBack: CARD_BACKS[S.game] || '',
     cardBacksByRarity: S.game === 'onepiece' ? OP_RAR_BACKS : {},
@@ -7398,7 +7407,7 @@ function peerViewerHTML(u, data) {
   const d = data || {}, layout = d.layout || '4x3';
   const keep = S.layout; S.layout = layout;          // page helpers size pages by the current layout
   let pages; try { pages = normPages(d.pages).map((pg, i) => normPage(pg, i)); } finally { S.layout = keep; }
-  const payload = { user: titleOf(u), coverTitle: binderCoverTitle(u), layout, pages, cover: d.cover || null, blankCover: true, cardBack: CARD_BACKS[gameOf(u)] || '', cardBacksByRarity: gameOf(u) === 'onepiece' ? OP_RAR_BACKS : {}, cardBackJP: gameOf(u) === 'pokemon' ? CARD_BACKS.pokemonjp || '' : '', exportedAt: new Date().toISOString() };
+  const payload = { user: titleOf(u), coverTitle: binderCoverTitle(u), layout, pages: pages.map(pg => ({ ...pg, cards: (pg.cards || []).map(fixCardImgs) })), cover: d.cover || null, blankCover: true, cardBack: CARD_BACKS[gameOf(u)] || '', cardBacksByRarity: gameOf(u) === 'onepiece' ? OP_RAR_BACKS : {}, cardBackJP: gameOf(u) === 'pokemon' ? CARD_BACKS.pokemonjp || '' : '', exportedAt: new Date().toISOString() };
   const safeJSON = JSON.stringify(payload).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   return withAppStyles(BINDER_EXPORT_TEMPLATE.replace(/__TITLE__/g, () => esc(titleOf(u))).replace('__PAYLOAD__', () => safeJSON));
 }
