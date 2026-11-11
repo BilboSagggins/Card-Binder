@@ -1,15 +1,5 @@
-== 353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-s
-  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
-  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
-  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
-  www.               content-type: image/png | SIZE 572721 CODE 200
-== 353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-
-  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
-  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
-  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/show_moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 470 CODE 301
-  www.               content-type: image/png | SIZE 608675 CODE 200
-== 353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining
-  plain              content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
-  from the site      content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
-  img, no referrer   content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353449/moltres-zapdos-articuno-gx-ultra-rare-104-150-shining-synergy-set-c.png | SIZE 459 CODE 301
-  www.               content-type: image/png | SIZE 547911 CODE 200
+www plain                 content-type: image/png | SIZE 572721 CODE 200
+www + site referrer       content-type: image/png | SIZE 572721 CODE 200
+www + cors from site      content-type: image/png | SIZE 626500 CODE 200
+www + test-page referrer  content-type: image/png | SIZE 572721 CODE 200
+old host + site referrer  content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
