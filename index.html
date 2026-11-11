@@ -1249,7 +1249,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-11.104';
+const APP_VERSION = '2026-11-11.106';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4947,6 +4947,10 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
       const flipped = i < cur;
       const z = flipped ? i * GAP : (TOTAL - i) * GAP;
       s.el.style.transform = \`translateZ(\${z}px) rotateY(\${flipped ? -180 : 0}deg)\`;
+      // only the two open pages take taps (the left one is the back of the last turned sheet, the right one the front of the
+      // next), so a tap never lands on a card of a page stacked underneath
+      if (s.f) s.f.style.pointerEvents = i === cur ? '' : 'none';
+      if (s.b) s.b.style.pointerEvents = i === cur - 1 ? '' : 'none';
     });
     for (let i = cur - 2; i <= cur + 3; i++) fill(i);
     const sh = cur === 0 ? -(pw + pw * .03) / 2 : (cur === TOTAL ? (pw + pw * .03) / 2 : 0);
@@ -5050,9 +5054,22 @@ const BINDER_EXPORT_TEMPLATE = `<!DOCTYPE html>
     if (e.target === stage) document.getElementById('zreset').onclick();
   });
 
+  // Which card is under the finger: worked out from where the cards on the two open pages appear on screen, instead of
+  // the browser's 3D hit test (which can pick a card on a page stacked underneath)
+  function cardAt(x, y) {
+    let best = null, bestD = Infinity;
+    document.querySelectorAll('.face .card').forEach(c => {
+      const face = c.closest('.face'); if (!face || face.style.pointerEvents === 'none') return;
+      const r = c.getBoundingClientRect(); if (r.width < 2) return;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+      const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      if (d < bestD) { bestD = d; best = c; }
+    });
+    return best;
+  }
   stage.addEventListener('click', e => {
     if (moved) { moved = false; return; }
-    const card = e.target.closest('.card');
+    const card = cardAt(e.clientX, e.clientY);
     if (card) { pullOut(card, P[+card.dataset.p].cards[+card.dataset.i]); return; }
     const sh = e.target.closest('.sheet');
     if (!sh) return;
