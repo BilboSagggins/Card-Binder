@@ -25,6 +25,7 @@
     document.head.appendChild(s);
   }
 </script>
+<link rel="stylesheet" href="tw.css?h=104c9db317" onerror="twFallback()">
 <link rel="stylesheet" href="tw.css?h=1006d2ddaf" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -356,6 +357,26 @@
   .nw-links { display: flex; flex-wrap: wrap; gap: .35rem; }
   .nw-links a { display: inline-flex; align-items: center; gap: .25rem; padding: .5rem .65rem; border-radius: 10px; background: #4f46e5; color: #fff; font: 700 .7rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
   .nw-links a.alt { background: #27272a; color: #e4e4e7; border: 1px solid #3f3f46; }
+  .nw-cal { background: #18181b; border: 1px solid #27272a; border-radius: 14px; padding: .7rem .6rem .6rem; }
+  .nw-cal-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .45rem; }
+  .nw-cal-head b { font: 800 .9rem/1 Inter, system-ui, sans-serif; color: #fff; }
+  .nw-cal-head button { appearance: none; background: #27272a; border: 1px solid #3f3f46; color: #e4e4e7; border-radius: 8px; width: 2rem; height: 1.8rem; font-size: .9rem; cursor: pointer; }
+  .nw-cal-head button:disabled { opacity: .3; cursor: default; }
+  .nw-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .nw-cal-grid > span { text-align: center; font: 700 .58rem/1.6 Inter, system-ui, sans-serif; color: #71717a; text-transform: uppercase; }
+  .nw-cal-grid > button, .nw-cal-grid > i { appearance: none; aspect-ratio: 1 / 1; min-height: 2rem; border-radius: 8px; border: 1px solid transparent; background: #0f0f12; color: #a1a1aa; font: 600 .74rem/1 Inter, system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-style: normal; padding: 0; }
+  .nw-cal-grid > i.blank { background: none; }
+  .nw-cal-grid > i.past { color: #52525b; }
+  .nw-cal-grid > .today { border-color: #818cf8; color: #fff; }
+  .nw-cal-grid > button { cursor: pointer; color: #fff; background: #27272a; border-color: #3f3f46; font-weight: 800; }
+  .nw-cal-grid > button.past { opacity: .55; }
+  .nw-cal-grid > button:active { transform: scale(.94); }
+  .nw-dots { display: flex; gap: 2px; justify-content: center; }
+  .nw-dots s { width: 6px; height: 6px; border-radius: 50%; background: var(--g); }
+  .nw-cal-key { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin-top: .55rem; font: 600 .62rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .nw-cal-key s { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--g); margin-right: 4px; vertical-align: 0; }
+  .nw-card.flash { animation: nwflash 1.4s ease; }
+  @keyframes nwflash { 0%, 40% { box-shadow: 0 0 0 2px #818cf8; } 100% { box-shadow: 0 0 0 0 transparent; } }
   .nw-rel { display: grid; grid-template-columns: 3.4rem 1fr; gap: .65rem; align-items: start; }
   .nw-date { text-align: center; background: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: .4rem .2rem; }
   .nw-date b { display: block; font: 800 1.15rem/1 Inter, system-ui, sans-serif; color: #fff; }
@@ -727,6 +748,12 @@
   :root { --tabh: calc(3.5rem + env(safe-area-inset-bottom)); }
   .who-chip { appearance: none; flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: .1rem .2rem; cursor: pointer; border-radius: 10px; }
   .who-chip:active { background: #27272a; }
+  .hdr-eye { appearance: none; width: 2.25rem; height: 2.25rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border-radius: .75rem; background: #27272a; border: 1px solid #3f3f46; color: #fff; cursor: pointer; }
+  .hdr-eye:active { transform: scale(.94); background: #3f3f46; }
+  .need-px { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); z-index: 10; background: rgba(9,9,11,.88); color: #fda4af; border: 1px solid rgba(244,63,94,.65); font: 700 9px/1 Inter, system-ui, sans-serif; padding: 2px 5px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+  .need-px.drop { color: #fff; background: #059669; border-color: #34d399; }
+  @media (min-width: 640px) { .need-px { font-size: 11px; bottom: 7px; padding: 3px 7px; } }
+  .grid-layout-4x3 .need-px { font-size: 8px; padding: 1px 4px; }
   .who-chip-name { display: flex; align-items: center; gap: .35rem; font: 700 1rem/1.2 Cinzel, Georgia, serif; letter-spacing: .03em; color: #fff; }
   .who-chip-name #who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .who-chip-name i { font: 400 .7rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; font-style: normal; }
@@ -829,6 +856,7 @@
       <span class="who-chip-name"><span id="who-name"></span><i id="who-caret">▾</i></span>
       <span class="who-chip-sub"><span id="who-mode" class="text-[10px] uppercase font-semibold text-emerald-400">Editing</span> · <b id="n-own" class="text-emerald-400">0</b> owned · <b id="n-need" class="text-rose-400">0</b> need</span>
     </button>
+    <button type="button" id="hdr-view" onclick="openPeerViewer(currentUser, true)" class="hdr-eye" title="Flip through this binder in 3D" aria-label="View this binder in 3D">👁</button>
     <div class="panel px-3 py-1 text-right shrink-0">
       <span class="text-[10px] text-zinc-400 uppercase block leading-tight">Value</span>
       <span id="val-m" class="font-bold text-emerald-400 text-sm leading-tight">$0.00</span><span id="val" class="hidden"></span>
@@ -917,6 +945,7 @@
       <span class="text-xs text-zinc-400 whitespace-nowrap">Title:</span>
       <input type="text" id="page-title-input" oninput="updatePageTitle(this.value)" placeholder="e.g. Charizard Collection" class="field !py-1 !text-xs w-full">
       <button type="button" id="sel-btn" onclick="toggleSelectMode()" class="btn !py-1 whitespace-nowrap" aria-pressed="false" title="Select several cards to remove">☑ Select</button>
+      <button type="button" id="pg-sort" onclick="sortPageSheet()" class="btn !py-1 !px-2.5" title="Sort the cards on this page by price, number or name">↕️</button>
       <button type="button" id="pg-lock" onclick="toggleLockPage()" class="btn !py-1 !px-2.5" aria-pressed="false" title="Lock this page so nothing on it changes">🔓</button>
     </div>
   </div>
@@ -1365,7 +1394,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-11.109';
+const APP_VERSION = '2026-11-11.111';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -3777,7 +3806,7 @@ function render() {
     
     const gi = c ? gridImg(c, slotPx) : null;
     el.innerHTML = c ? `<div class="w-full h-full holo-card rounded-xl">${imgTag(gi.src, gi.alts, c.name, 'w-full h-full object-cover rounded-xl')}
-        ${langTag(c)}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
+        ${langTag(c)}${c.status === 'needed' && +c.price > 0 ? (h => `<span class="need-px${h ? ' drop' : ''}">${h ? '🔔 ' : ''}${fmt(h ? h.price : c.price)}</span>`)(needHit(c)) : ''}<span class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 z-10 ${c.status === 'needed' ? 'bg-rose-600/90' : 'bg-emerald-600/90'} text-white font-bold px-0.5 py-px sm:px-1.5 sm:py-0.5 rounded-sm sm:rounded text-[4.5px] leading-none sm:text-[9px] sm:leading-normal tracking-tight sm:tracking-normal uppercase">${c.status === 'needed' ? 'need' : esc(c.status)}</span>
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
           <div class="flex justify-between"><div class="flex gap-1">
             ${!peerUser ? `<button onclick="toggleStatus(${S.cur},${i},event)" class="act btn !p-1.5">${c.status === 'needed' ? '⏳' : '✓'}</button>` : ''}
@@ -3917,6 +3946,45 @@ async function sortByName() {
   S.pages = pages; saveActivePages(pages); render();
   const binder = currentUser;
   toastUndo(`Sorted ${cards.length} cards by name`, () => {
+    if (currentUser !== binder) return;
+    S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
+  });
+}
+/* Sort one page: by price, card number or name. Cards fill from the first pocket, empty pockets go last. Undo puts it back. */
+const PAGE_SORTS = [
+  ['price-down', '💲 Price: high to low'], ['price-up', '💲 Price: low to high'],
+  ['number', '#️⃣ Card number'], ['name', '🔤 Name'], ['need', '⏳ Need cards first'], ['owned', '✓ Owned cards first']];
+// A Need card's price alert that has gone off (NA is set up further down, so this waits until it exists)
+function needHit(c) { try { return NA.hits.get(naKey(currentUser, c)) || null; } catch (e) { return null; } }
+function sortPageSheet() {
+  if (peerUser) return;
+  const pages = getPagesArray(), pg = pages[S.cur]; if (!pg) return;
+  if (pg.locked) return lockedToast(S.cur);
+  if ((pg.cards || []).filter(Boolean).length < 2) return toast('Nothing to sort on this page yet', 'error');
+  sheet(`<h2 id="lb-sheet-title">↕️ Sort this page</h2>
+    <p class="sub">Only page ${S.cur + 1} changes. Empty pockets move to the end. You can undo it.</p>
+    <div class="mv-list">${PAGE_SORTS.map(([k, l]) => `<button type="button" class="mv-b" data-k="${k}">${l}<small>›</small></button>`).join('')}</div>
+    <div class="lb-row" style="margin-top:.5rem"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Cancel</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+  document.querySelectorAll('.mv-b[data-k]').forEach(b => b.onclick = () => { closeSheet(); sortPage(b.dataset.k); });
+}
+function sortPage(how) {
+  if (peerUser) return;
+  const pages = getPagesArray(), p = S.cur, pg = pages[p], n = cap(); if (!pg || pg.locked) return;
+  const cards = (pg.cards || []).slice(0, n).filter(Boolean);
+  const pr = c => +c.price || 0, num = c => String(c.number || '').split('/')[0];
+  const byNum = (a, b) => String(a.set || '').localeCompare(String(b.set || '')) || num(a).localeCompare(num(b), undefined, { numeric: true });
+  const byName = nameSorted(cards), nameIx = new Map(byName.map((c, i) => [c, i]));
+  const need = c => c.status === 'needed' ? 0 : 1;
+  const cmp = { 'price-down': (a, b) => pr(b) - pr(a), 'price-up': (a, b) => pr(a) - pr(b), number: byNum, name: (a, b) => nameIx.get(a) - nameIx.get(b),
+    need: (a, b) => need(a) - need(b), owned: (a, b) => need(b) - need(a) }[how];
+  if (!cmp) return;
+  const idx = new Map(cards.map((c, i) => [c, i]));
+  const sorted = [...cards].sort((a, b) => cmp(a, b) || idx.get(a) - idx.get(b));
+  const before = JSON.parse(JSON.stringify(pages));
+  pg.cards = Array.from({ length: n }, (_, i) => sorted[i] || null);
+  S.pages = pages; saveActivePages(pages); render();
+  const binder = currentUser, label = (PAGE_SORTS.find(x => x[0] === how) || [, ''])[1].replace(/^\S+\s/, '');
+  toastUndo(`Sorted page ${p + 1}: ${label}`, () => {
     if (currentUser !== binder) return;
     S.pages = before; saveActivePages(before); render(); toast('Put the cards back where they were');
   });
@@ -6172,19 +6240,21 @@ function nwPaint() {
     const all = (d.releases || []).filter(r => nwPick(r.game)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const rel = [...all.filter(r => nwDay(r.date) >= today), ...all.filter(r => nwDay(r.date) < today).reverse()];   // upcoming first, just released after
     let month = '';
-    h += rel.map(r => {
+    h += nwCalendar(all);
+    NW.rel = rel;
+    h += rel.map((r, ri) => {
       const day = nwDay(r.date), days = Math.round((day - today) / 86400000);
       const m = days < 0 ? 'Just released' : day.toLocaleDateString([], { month: 'long', year: 'numeric' });
       const head = m !== month ? `<p class="nw-h">${esc(m)}</p>` : ''; month = m;
       const when = days > 1 ? `in ${days} days` : days === 1 ? 'tomorrow' : days === 0 ? 'today' : `out ${-days} day${days === -1 ? '' : 's'} ago`;
-      return head + `<div class="nw-card${days < 0 ? ' dim' : ''}"><div class="nw-rel">
+      return head + `<div class="nw-card${days < 0 ? ' dim' : ''}" data-day="${esc(String(r.date).slice(0, 10))}"><div class="nw-rel">
           <div class="nw-date"><span>${esc(day.toLocaleDateString([], { month: 'short' }))}</span><b>${day.getDate()}</b><span>${esc(day.toLocaleDateString([], { weekday: 'short' }))}</span></div>
           <div style="min-width:0;display:flex;flex-direction:column;gap:.4rem">
             <div class="nw-top">${nwBadge(r.game)}<span class="nw-pill ${days < 0 ? 'out' : days <= 14 ? 'open' : 'closed'}">${esc(when)}</span>${r.special ? '<span class="nw-pill soon">Special product</span>' : ''}${r.abbr ? `<span>${esc(r.abbr)}</span>` : ''}</div>
             <h3 class="nw-t">${esc(r.set)}</h3>
             ${r.cards ? `<p class="nw-p">${r.cards} cards listed so far</p>` : ''}
             ${r.products && r.products.length ? `<div class="nw-prods">${r.products.map(([pid, name]) => `<a href="https://www.tcgplayer.com/product/${pid}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${tcgImg(pid, true)}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"><span>${esc(name)}</span></a>`).join('')}</div>` : ''}
-            <div class="nw-links">${nwLink(r.url, 'See on TCGplayer ↗', 'alt')}</div>
+            <div class="nw-links">${nwLink(r.url, 'See on TCGplayer ↗', 'alt')}${days >= 0 ? `<a href="#" class="alt" onclick="event.preventDefault();nwAddToCalendar(${ri})">📅 Add to my calendar</a>` : ''}</div>
           </div></div></div>`;
     }).join('') || '<p class="pc-note">No upcoming releases listed for this game yet.</p>';
   } else {
@@ -6208,6 +6278,59 @@ function nwPaint() {
   box.innerHTML = h; box.scrollTop = 0;
 }
 
+/* Release calendar: a month grid at the top of Coming, a coloured dot per game on each release day. Tap a day to jump to it. */
+function nwCalendar(all) {
+  if (!all.length) return '';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const last = all.reduce((m, r) => { const d = nwDay(r.date); return d && d > m ? d : m; }, today);
+  const months = (last.getFullYear() - first.getFullYear()) * 12 + last.getMonth() - first.getMonth() + 1;
+  NW.calMax = Math.max(0, months - 1);
+  if (NW.calM == null || NW.calM > NW.calMax) NW.calM = 0;
+  const m0 = new Date(first.getFullYear(), first.getMonth() + NW.calM, 1);
+  const byDay = {};
+  all.forEach(r => { const k = String(r.date).slice(0, 10); (byDay[k] ||= []).push(r); });
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const pad = m0.getDay(), n = new Date(m0.getFullYear(), m0.getMonth() + 1, 0).getDate();
+  let cells = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<span>${d}</span>`).join('') + '<i class="blank"></i>'.repeat(pad);
+  const games = new Set();
+  for (let i = 1; i <= n; i++) {
+    const d = new Date(m0.getFullYear(), m0.getMonth(), i), k = ymd(d), rs = byDay[k] || [], cls = [d < today ? 'past' : '', +d === +today ? 'today' : ''].filter(Boolean).join(' ');
+    if (rs.length) {
+      rs.forEach(r => games.add(r.game));
+      cells += `<button type="button" class="${cls}" onclick="nwJump('${k}')" title="${esc(rs.map(r => r.set).join(' · '))}">${i}<span class="nw-dots">${rs.slice(0, 4).map(r => `<s style="--g:${NW_COLORS[r.game] || '#a1a1aa'}"></s>`).join('')}</span></button>`;
+    } else cells += `<i class="${cls}">${i}</i>`;
+  }
+  return `<div class="nw-cal">
+    <div class="nw-cal-head"><button type="button" onclick="NW.calM--;nwPaint()" ${NW.calM <= 0 ? 'disabled' : ''} aria-label="Previous month">‹</button>
+      <b>${esc(m0.toLocaleDateString([], { month: 'long', year: 'numeric' }))}</b>
+      <button type="button" onclick="NW.calM++;nwPaint()" ${NW.calM >= NW.calMax ? 'disabled' : ''} aria-label="Next month">›</button></div>
+    <div class="nw-cal-grid">${cells}</div>
+    ${games.size ? `<div class="nw-cal-key">${[...games].map(g => `<span><s style="--g:${NW_COLORS[g] || '#a1a1aa'}"></s>${esc(NW_LABELS[g] || g)}</span>`).join('')}</div>` : '<div class="nw-cal-key">No releases listed this month.</div>'}
+  </div>`;
+}
+function nwJump(day) {
+  const el = document.querySelector(`#nw-list .nw-card[data-day="${day}"]`); if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+// Adds an all-day event for the release to the phone's calendar (an .ics file the phone opens in Calendar)
+function nwAddToCalendar(i) {
+  const r = (NW.rel || [])[i]; if (!r) return;
+  const d = String(r.date).slice(0, 10).replace(/-/g, ''), nd = nwDay(r.date); nd.setDate(nd.getDate() + 1);
+  const end = `${nd.getFullYear()}${String(nd.getMonth() + 1).padStart(2, '0')}${String(nd.getDate()).padStart(2, '0')}`;
+  const tx = v => String(v || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  const title = `${NW_LABELS[r.game] || r.game}: ${r.set}${r.abbr ? ` (${r.abbr})` : ''} release`;
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Card Binder//Releases//EN', 'BEGIN:VEVENT',
+    `UID:${d}-${String(r.gid || r.set).replace(/\W+/g, '')}@card-binder`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')}`,
+    `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${end}`, `SUMMARY:${tx(title)}`, r.url ? `URL:${r.url}` : '', `DESCRIPTION:${tx(r.url || '')}`,
+    'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${tx(title)} tomorrow`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = `${String(r.abbr || r.set).replace(/[^\w-]+/g, '_')}-release.ics`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
 async function openPricePage() {
   $('price-page').hidden = false; document.body.style.overflow = 'hidden';
   if (!PC.ready) {
@@ -6417,7 +6540,7 @@ async function checkNeedAlerts() {
     if (price != null && +price <= +x.c.alert) hits.set(naKey(x.b, x.c), { ...x, price: +price });
   });
   if (currentUser !== binder) return;
-  NA.hits = hits; paintNeedBadge(); renderNeedPage();
+  NA.hits = hits; paintNeedBadge(); renderNeedPage(); if (NA.hits.size && !dragSt) render();
 }
 const naUnseen = () => { const seen = recall(NA_SEEN_KEY, {}) || {}; return [...NA.hits].filter(([k, h]) => !(seen[k] != null && h.price >= seen[k])); };
 function naMarkSeen() { const seen = {}; NA.hits.forEach((h, k) => { seen[k] = h.price; }); remember(NA_SEEN_KEY, seen); paintNeedBadge(); }
@@ -6970,6 +7093,8 @@ function updateWho() {
   $('who-lock').classList.toggle('hidden', !!peerUser);
   $('who-binders').classList.toggle('hidden', !!peerUser);
   $('who-view').classList.toggle('hidden', !!peerUser);
+  const hv = $('hdr-view'); if (hv) hv.classList.toggle('hidden', !!peerUser);
+  const ps = $('pg-sort'); if (ps) ps.hidden = !!peerUser;
   $('who-coll').classList.toggle('hidden', !!peerUser);
   if (peerUser) closeTray();
 }
