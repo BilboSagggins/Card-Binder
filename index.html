@@ -1277,7 +1277,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-12.101';
+const APP_VERSION = '2026-11-13.101';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -1526,7 +1526,12 @@ async function refreshPrices() {
   let ok = 0;
   await pool(cards, 4, async c => { const r = await lookupPrice(c); if (r) { c.price = r.price; if (r.url) c.url = r.url; ok++; } });
   saveActivePages(getPagesArray()); render(); toast(`Updated ${ok} of ${cards.length} prices`, ok ? 'info' : 'error');
+  checkNeedAlerts();   // new prices may set off a price alert
 }
+// Coming back to the app after an hour or more checks the price alerts again (prices update during the day)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && typeof NA !== 'undefined' && NA.at && Date.now() - NA.at > 3600000 && S.loadedFor === currentUser && !peerUser) freshenTcgLists().then(checkNeedAlerts);
+});
 
 /* One Piece TCG (optcgapi.com: free, no key) */
 const OPAPI = 'https://optcgapi.com/api/';
@@ -2520,11 +2525,19 @@ function loadTcgList(game) {
   if (!tcgListP[game]) tcgListP[game] = (async () => {
     // the repo copy is current the moment the daily job finishes; the site's own copy is the backup
     for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/${game}.json`, `prices/${game}.json`]) {
-      try { const d = await fetchJSON(u, 25000); if (d && d.p) return (TCG_LISTS[game] = d); } catch (e) {}
+      try { const d = await fetchJSON(u, 25000); if (d && d.p) { d._at = Date.now(); return (TCG_LISTS[game] = d); } } catch (e) {}
     }
     tcgListP[game] = null; return null;   // try again next time
   })();
   return tcgListP[game];
+}
+// Price lists loaded more than 3 hours ago are fetched again (the old one stays in use until the new one arrives)
+async function freshenTcgLists() {
+  await Promise.all(Object.keys(TCG_LISTS).filter(k => Date.now() - (TCG_LISTS[k]._at || 0) > 3 * 3600000).map(async k => {
+    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/${k}.json?t=${Date.now()}`, `prices/${k}.json`]) {
+      try { const d = await fetchJSON(u, 25000); if (d && d.p) { d._at = Date.now(); TCG_LISTS[k] = d; tcgListP[k] = Promise.resolve(d); return; } } catch (e) {}
+    }
+  }));
 }
 const tcgImg = (pid, small) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${small ? '200w' : 'in_1000x1000'}.jpg`;
 /* The binder grid shows a picture sized for the pocket: TCGplayer serves 400 / 600 / 800 / 1000 px versions (a card fills
@@ -5897,7 +5910,8 @@ async function checkNeedAlerts() {
     if (price != null && +price <= +x.c.alert) hits.set(naKey(x.b, x.c), { ...x, price: +price });
   });
   if (currentUser !== binder) return;
-  NA.hits = hits; paintNeedBadge(); renderNeedPage(); if (NA.hits.size && !dragSt) render();
+  const was = [...NA.hits.keys()].join(), now = [...hits.keys()].join();
+  NA.hits = hits; NA.at = Date.now(); paintNeedBadge(); renderNeedPage(); if (was !== now && !dragSt) render();
 }
 const naUnseen = () => { const seen = recall(NA_SEEN_KEY, {}) || {}; return [...NA.hits].filter(([k, h]) => !(seen[k] != null && h.price >= seen[k])); };
 function naMarkSeen() { const seen = {}; NA.hits.forEach((h, k) => { seen[k] = h.price; }); remember(NA_SEEN_KEY, seen); paintNeedBadge(); }
