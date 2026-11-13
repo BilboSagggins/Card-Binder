@@ -1374,7 +1374,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.120';
+const APP_VERSION = '2026-11-13.122';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4052,6 +4052,7 @@ function peerCards(u) {
 }
 function openGiftPicker(u) {
   if (!u) return;
+  loadShop().then(d => { if (d) renderGiftPicker(); });
   if (!watchGifts()) return toast('Open your own binder once first, so the app knows whose gift list this is.', 'error');
   GP = { u, tab: peerCards(u).some(x => x.c.status === 'needed') ? 'need' : 'all' };
   $('gp-title').textContent = `🎁 Gifts for ${titleOf(u)}`; $('gp-find').value = '';
@@ -4069,12 +4070,16 @@ function renderGiftPicker() {
       <div class="np-img">${(g => imgTag(g.src || x.c.thumb, g.alts, x.c.name, ''))(gridImg(x.c, Math.min(innerWidth, 1024) / 3 * (window.devicePixelRatio || 1)))}${langTag(x.c)}</div>
       <div class="np-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
       <div class="np-meta"><span>${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}</span><b>${fmt(x.c.price)}</b></div>
+      ${shopChip(x.c, `event.stopPropagation();giftPickShop(${x.p},${x.s})`)}
     </div>`; }).join('')
     : `<p class="np-empty">${GP.tab === 'need' ? `${esc(titleOf(GP.u))} hasn't marked any cards as Need.<br>Switch to <b>All cards</b> to pick from everything.` : 'No cards match.'}</p>`;
   const picked = Object.values(mine).filter(g => g && !g.bought), total = picked.reduce((a, g) => a + (+g.card.price || 0), 0);
   $('gp-total').textContent = picked.length ? `${fmt(total)} for ${picked.length} gift${picked.length === 1 ? '' : 's'}` : 'No gifts picked yet';
   $('gp-count').textContent = picked.length ? `on your list for ${titleOf(GP.u)} · tap a card again to take it off` : 'Tap cards to add them to your gift list';
 }
+// Card Quest's copies of a card in someone's binder, or of a gift on your list
+function giftPickShop(p, s) { const x = peerCards(GP.u).find(y => y.p === p && y.s === s); if (x) openShopSheet(x.c); }
+function giftShop(u, k) { const g = (GIFTS[u] || {})[k]; if (g && g.card) openShopSheet(g.card); }
 function toggleGift(el) {
   const me = giftMe(), u = GP.u; if (!me || !u) return;
   const x = peerCards(u).find(y => y.p === +el.dataset.p && y.s === +el.dataset.s); if (!x) return;
@@ -4088,6 +4093,7 @@ function openGiftList() {
   if (!watchGifts()) return toast('Open your own binder once first, so the app knows whose gift list this is.', 'error');
   $('gift-page').hidden = false; document.body.style.overflow = 'hidden';
   renderGiftList();
+  loadShop().then(d => { if (d) renderGiftList(); });
 }
 function closeGiftList() { $('gift-page').hidden = true; if ($('peer-viewer').hidden) document.body.style.overflow = ''; }
 function renderGiftList() {
@@ -4105,11 +4111,22 @@ function renderGiftList() {
           <div class="np-meta"><span>${esc([c.set, c.number].filter(Boolean).join(' · '))}</span></div>
           ${condRows(c.price)}
           <a class="np-link" href="${esc(cardLink(c))}" target="_blank" rel="noopener noreferrer">${c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+          ${g.bought ? '' : shopChip(c, `giftShop('${esc(u)}','${esc(k)}')`)}
           <div class="gf-btns"><button type="button" class="buy" onclick="giftBought('${esc(u)}','${esc(k)}')">${g.bought ? '↩ Not bought' : '✓ Bought'}</button><button type="button" onclick="giftRemove('${esc(u)}','${esc(k)}')" aria-label="Remove">✕</button></div>
         </div>`; }).join('');
   }).join('');
   $('gl-sub').innerHTML = count ? `<b>${count}</b> gift${count === 1 ? '' : 's'} to buy · ${fmt(total)} at market (NM)` : people.length ? 'Everything on your list is bought!' : 'No gifts yet';
-  $('gl-list').innerHTML = html || '<p class="np-empty">Your gift list is empty.<br>Open someone\'s binder in <b>View</b> and tap <b>🎁 Gifts</b> to pick cards for them.</p>';
+  // Card Quest: which gifts still to buy they have in stock
+  let shopTop = '';
+  if (SHOP.data && count) {
+    const hits = [];
+    people.forEach(([u, gifts]) => Object.entries(gifts).forEach(([k, g]) => { if (g && g.card && !g.bought) { const r = shopFor(g.card); if (r && r.exact) hits.push({ u, k, c: g.card, r }); } }));
+    const sum = hits.reduce((a, h) => a + h.r.best[2], 0);
+    shopTop = `<div class="np-shopsum">🏪 <b>${hits.length ? `${esc(SHOP.data.name)} has ${hits.length} of your gifts in stock` : `${esc(SHOP.data.name)} has none of your gifts in stock right now`}</b>${hits.length ? ` · from ${fmt(sum)}` : ''}
+      ${hits.map(h => `<button type="button" onclick="giftShop('${esc(h.u)}','${esc(h.k)}')">${esc(h.c.name)}${people.length > 1 ? ` (for ${esc(titleOf(h.u) || h.u)})` : ''}: <b>${fmt(h.r.best[2])}</b> ${esc(shCond(h.r.best[0]))}${shPrint(h.r.best)}${h.c.price != null ? ` (market ${fmt(h.c.price)})` : ''}</button>`).join('')}
+      <small>Stock checked ${esc(nwAgo(SHOP.data.updated))}. Tap one for every condition and a link to their site.</small></div>`;
+  }
+  $('gl-list').innerHTML = (html ? shopTop : '') + html || '<p class="np-empty">Your gift list is empty.<br>Open someone\'s binder in <b>View</b> and tap <b>🎁 Gifts</b> to pick cards for them.</p>';
 }
 function giftBought(u, k) { const g = (GIFTS[u] || {})[k]; if (!g) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}/bought`).set(!g.bought).then(() => toast(g.bought ? `${g.card.name} is back on the list` : `🎁 ${g.card.name} bought`)).catch(() => toast('Couldn\'t save. Check your connection.', 'error')); }
 async function giftRemove(u, k) { const g = (GIFTS[u] || {})[k]; if (!g || !(await askConfirm(`${g.card.name} comes off your gift list for ${titleOf(u)}.`, { title: 'Remove this gift?', ok: 'Remove', danger: true }))) return; db.ref(`collections/${giftMe()}/gifts/${u}/${k}`).remove().catch(() => toast('Couldn\'t remove. Check your connection.', 'error')); }
@@ -6569,10 +6586,10 @@ const SH_COND = { 'near mint': 'NM', 'lightly played': 'LP', 'moderately played'
 const shCond = s => SH_COND[String(s).toLowerCase()] || s;
 // a special printing (reverse holo, cosmos foil, 1st edition…) has its own price, so it isn't compared with the regular card's market
 const shPrint = v => /reverse/i.test(v[1] || '') ? ' rev holo' : /^(normal|foil|holofoil|unlimited)?$/i.test(String(v[1] || '').trim()) ? '' : ' ' + String(v[1]).toLowerCase();
-function shopChip(c) {
+function shopChip(c, onclick) {
   const r = shopFor(c); if (!r) return '';
   const n = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + v[3], 0), 0);
-  return `<button type="button" class="np-shop${r.exact ? '' : ' maybe'}" title="${esc(SHOP.data.name)}: ${n} in stock">🏪 ${r.exact ? '' : 'Similar · '}${fmt(r.best[2])} ${esc(shCond(r.best[0]))}${shPrint(r.best)}${n > 1 ? ` · ${n} left` : ''}</button>`;
+  return `<button type="button" class="np-shop${r.exact ? '' : ' maybe'}"${onclick ? ` onclick="${onclick}"` : ''} title="${esc(SHOP.data.name)}: ${n} in stock">🏪 ${r.exact ? '' : 'Similar · '}${fmt(r.best[2])} ${esc(shCond(r.best[0]))}${shPrint(r.best)}${n > 1 ? ` · ${n} left` : ''}</button>`;
 }
 function shopSummaryHTML(list) {
   if (!SHOP.data) return '';
