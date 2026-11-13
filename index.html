@@ -403,10 +403,31 @@
   /* Trade picker */
   .tk { z-index: 62; padding-bottom: 5rem; }
   .pc { z-index: 61; }
+  .pc-mode { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
+  .pc-mode button { appearance: none; border: 0; border-radius: 9px; padding: .5rem; background: none; color: #a1a1aa; font: 800 .74rem/1 Inter, system-ui, sans-serif; }
+  .pc-mode button[aria-selected="true"] { background: #059669; color: #fff; }
+  .sc-ctrl { flex: 0 0 100%; display: flex; flex-direction: column; gap: .4rem; }
+  .sc-ctrl[hidden] { display: none; }
+  .sc-set { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 10px; padding: .55rem .6rem; color: #f4f4f5; font: 600 16px Inter, system-ui, sans-serif; }
+  .sc-views button[aria-selected="true"] { background: #059669; border-color: #34d399; }
+  .sc-opts { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; font: 600 .64rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .sc-opts:empty { display: none; }
+  .sc-opts button { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 999px; padding: .35rem .55rem; font: 700 .64rem/1 Inter, system-ui, sans-serif; }
+  .sc-opts button[aria-selected="true"] { background: #27272a; border-color: #a1a1aa; color: #fff; }
+  .sc-opts button:disabled { opacity: .35; }
+  .sc-opts span { margin: 0 .1rem 0 .3rem; }
+  .pc-rank { font-style: normal; font-weight: 800; color: #e4e4e7; margin-right: .3rem; }
+  .pc-ch { display: block; margin-top: .15rem; font: 800 .62rem/1.2 Inter, system-ui, sans-serif; }
+  .pc-ch.up { color: #34d399; } .pc-ch.down { color: #f87171; } .pc-ch.flat { color: #71717a; }
+  .pc-p.mv { color: #f4f4f5; }
+  .sc-sum { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: .55rem .7rem; font: 500 .7rem/1.45 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .sc-sum b { color: #f4f4f5; }
+  .sc-more { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #e4e4e7; border-radius: 10px; padding: .6rem; font: 700 .72rem/1 Inter, system-ui, sans-serif; }
   .pc .tk-find { flex: 0 0 100%; font-size: 16px; }   /* 16px keeps iPhone from zooming in */
   .pc-t .jp-tag { display: inline-block; vertical-align: 1px; margin-right: .25rem; }
   .tk-tabs { flex: 0 0 100%; display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .1rem; }
   .tk-tabs::-webkit-scrollbar { display: none; }
+  .tk-tabs[hidden], .tk-find[hidden] { display: none; }
   .tk-tabs button { appearance: none; flex: 1 1 auto; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 999px; padding: .45rem .55rem; white-space: nowrap; font: 700 .7rem/1 Inter, system-ui, sans-serif; }
   .tk-tabs button[aria-selected="true"] { background: #4f46e5; border-color: #818cf8; color: #fff; }
   .tk-tabs button i { font-style: normal; opacity: .7; margin-left: .2rem; }
@@ -1163,6 +1184,13 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closePricePage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="pc-title">Price check</h2><p id="pc-sub">Loading prices…</p></div>
+    <div class="pc-mode" role="tablist" aria-label="Mode"><button type="button" role="tab" id="pcm-search" onclick="pcMode('search')">🔍 Search</button><button type="button" role="tab" id="pcm-chart" onclick="pcMode('chart')">📊 Set charts</button></div>
+    <div id="sc-ctrl" class="sc-ctrl" hidden>
+      <div class="tk-tabs" id="sc-games" role="tablist" aria-label="Game"></div>
+      <select id="sc-set" class="sc-set" aria-label="Set" onchange="SC.set=this.value;scSave();scRender()"></select>
+      <div class="tk-tabs sc-views" id="sc-views" role="tablist" aria-label="Show"></div>
+      <div class="sc-opts" id="sc-opts"></div>
+    </div>
     <input type="search" id="pc-q" class="tk-find" placeholder="Card or product name, number, or set" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="pcSearchSoon()">
     <div class="tk-tabs" id="pc-tabs" role="tablist"></div>
   </div>
@@ -1325,7 +1353,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.113';
+const APP_VERSION = '2026-11-13.114';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -5766,8 +5794,95 @@ async function openPricePage() {
   const L = TCG_LISTS.pokemon || Object.values(TCG_LISTS).find(x => x && x.updated);
   const when = L && L.updated ? new Date(L.updated) : null;
   $('pc-sub').textContent = when ? `Prices updated ${when.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · TCGplayer market, daily` : 'Daily TCGplayer market prices';
-  pcTabs(); pcSearch();
-  setTimeout(() => $('pc-q').focus(), 60);
+  pcTabs(); pcMode(PC.mode || 'search', true);
+}
+/* ===== Set charts: a set's cards from most to least valuable, or the biggest risers and fallers over 1 / 7 / 30 days
+   (prices/moves-<game>.json, worked out daily from the saved price lists) ===== */
+const SC_GAMES = [['pokemon', 'Pokémon'], ['pokemon-jp', 'Japanese'], ['onepiece', 'One Piece']];
+const SC_VIEWS = [['top', '💰 Highest'], ['up', '📈 Risers'], ['down', '📉 Fallers']];
+const SC_MINS = [0.5, 1, 5, 20, 100];
+const SC = (() => { const d = { game: 'pokemon', set: null, view: 'top', win: 7, min: 5, all: false }; try { return { ...d, ...JSON.parse(localStorage.getItem('cardBinder.setCharts') || '{}'), all: false }; } catch (e) { return d; } })();
+const MOVES = {}, movesP = {};
+function scSave() { try { const { all, ...keep } = SC; localStorage.setItem('cardBinder.setCharts', JSON.stringify(keep)); } catch (e) {} }
+function loadMoves(g) {
+  if (MOVES[g]) return Promise.resolve(MOVES[g]);
+  if (!movesP[g]) movesP[g] = (async () => {
+    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/prices/moves-${g}.json?t=${Math.floor(Date.now() / 3600000)}`, `prices/moves-${g}.json`]) {
+      try { const d = await fetchJSON(u, 20000); if (d && d.p) return (MOVES[g] = d); } catch (e) {}
+    }
+    movesP[g] = null; return null;
+  })();
+  return movesP[g];
+}
+function pcMode(m, first) {
+  PC.mode = m === 'chart' ? 'chart' : 'search';
+  $('pcm-search').setAttribute('aria-selected', PC.mode === 'search'); $('pcm-chart').setAttribute('aria-selected', PC.mode === 'chart');
+  $('pc-q').hidden = $('pc-tabs').hidden = PC.mode === 'chart'; $('sc-ctrl').hidden = PC.mode !== 'chart';
+  if (PC.mode === 'chart') scRender(); else { pcSearch(); if (first) setTimeout(() => $('pc-q').focus(), 60); }
+}
+// The sets of a game, newest first: [value, label, group ids]; English Pokémon follows the set guide's series
+function scSets(g) {
+  const L = TCG_LISTS[g]; if (!L || !L.groups) return [];
+  const byName = {}; Object.entries(L.groups).forEach(([gid, n]) => { byName[n] = gid; });
+  const out = [];
+  if (g === 'pokemon') {
+    const used = new Set();
+    SET_GUIDE.forEach(([head, , sets]) => sets.forEach(([label, names]) => { const ids = names.map(n => byName[n]).filter(Boolean); if (ids.length) { ids.forEach(i => used.add(i)); out.push([ids.join(','), label, ids, head]); } }));
+    Object.entries(L.groups).filter(([gid]) => !used.has(gid)).sort((a, b) => +b[0] - +a[0]).forEach(([gid, n]) => out.push([gid, n, [gid], 'More sets']));
+  } else Object.entries(L.groups).sort((a, b) => +b[0] - +a[0]).forEach(([gid, n]) => out.push([gid, n, [gid], '']));
+  return out;
+}
+function scPaintCtrl(sets) {
+  $('sc-games').innerHTML = SC_GAMES.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === SC.game}" onclick="SC.game='${k}';SC.set=null;SC.all=false;scSave();scRender()">${l}</button>`).join('');
+  const sel = $('sc-set'); let h = `<option value="">All ${esc(SC_GAMES.find(x => x[0] === SC.game)[1])} sets</option>`, grp = null;
+  sets.forEach(([v, l, , head]) => { if (head !== grp) { if (grp !== null && grp !== '') h += '</optgroup>'; if (head) h += `<optgroup label="${esc(head)}">`; grp = head; } h += `<option value="${esc(v)}">${esc(l)}</option>`; });
+  if (grp) h += '</optgroup>';
+  sel.innerHTML = h; sel.value = SC.set; if (sel.value !== SC.set) { SC.set = ''; sel.value = ''; }
+  $('sc-views').innerHTML = SC_VIEWS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === SC.view}" onclick="SC.view='${k}';SC.all=false;scSave();scRender()">${l}</button>`).join('');
+  const M = MOVES[SC.game], days = (M && M.days) || {};
+  const winLabel = w => { const d = days[String(w)]; if (!d) return `${w} day${w === 1 ? '' : 's'}`; const n = Math.round((Date.now() - nwDay(d)) / 86400000); return w === 30 && n < 28 ? `Since ${nwShort(nwDay(d))}` : `${w} day${w === 1 ? '' : 's'}`; };
+  $('sc-opts').innerHTML = `<span>Change over</span>${[1, 7, 30].map(w => `<button type="button" aria-selected="${SC.win === w}" ${M && !days[String(w)] ? 'disabled' : ''} onclick="SC.win=${w};scSave();scRender()">${winLabel(w)}</button>`).join('')}`
+    + (SC.view !== 'top' ? `<span>Worth</span>${SC_MINS.map(m => `<button type="button" aria-selected="${SC.min === m}" onclick="SC.min=${m};SC.all=false;scSave();scRender()">${m < 1 ? '50¢' : '$' + m}+</button>`).join('')}` : '');
+}
+async function scRender() {
+  const box = $('pc-list'), g = SC.game;
+  if (!TCG_LISTS[g]) { box.innerHTML = '<p class="pc-note">⏳ Loading prices…</p>'; await loadTcgList(g); }
+  const L = TCG_LISTS[g]; if (!L) { box.innerHTML = '<p class="pc-note">Couldn\u2019t load the prices. Check your connection.</p>'; return; }
+  const sets = scSets(g); if (SC.set == null) SC.set = sets[0] ? sets[0][0] : '';   // first time: the newest set
+  scPaintCtrl(sets);
+  const M = await loadMoves(g); if (PC.mode !== 'chart' || SC.game !== g) return;
+  scPaintCtrl(sets);
+  const ids = SC.set ? new Set(SC.set.split(',')) : null, wi = { 1: 0, 7: 1, 30: 2 }[SC.win] ?? 1;
+  const src = PC_SOURCES.find(x => x.key === g);
+  let rows = Object.entries(L.p).filter(([, e]) => !ids || ids.has(String(e[3]))).map(([pid, e]) => {
+    const now = e[0], m = M && M.p[pid], old = m ? m[wi] : null;
+    return { pid, now, old: old ?? (M && now != null ? now : null), src };
+  }).filter(r => r.now != null);
+  const ch = r => r.old ? (r.now - r.old) / r.old : 0;
+  if (SC.view === 'top') rows.sort((a, b) => b.now - a.now);
+  else {
+    rows = rows.filter(r => r.old != null && Math.max(r.now, r.old) >= SC.min && Math.abs(r.now - r.old) >= 0.01 && (SC.view === 'up' ? r.now > r.old : r.now < r.old));
+    rows.sort((a, b) => SC.view === 'up' ? ch(b) - ch(a) || (b.now - b.old) - (a.now - a.old) : ch(a) - ch(b) || (a.now - a.old) - (b.now - b.old));
+  }
+  const setName = SC.set ? (sets.find(x => x[0] === SC.set) || [, ''])[1] : `all ${SC_GAMES.find(x => x[0] === g)[1]} sets`;
+  const total = rows.reduce((a, r) => a + r.now, 0), cap = SC.all ? 500 : 100, shown = rows.slice(0, cap);
+  const day = M && M.days && M.days[String(SC.win)];
+  const since = day ? nwShort(nwDay(day)) : '';
+  PC.top = shown;
+  const change = r => {
+    if (r.old == null || !M) return '';
+    const d = r.now - r.old, pct = r.old ? Math.round(d / r.old * 100) : 0;
+    if (Math.abs(d) < 0.01) return '<span class="pc-ch flat">no change</span>';
+    return `<span class="pc-ch ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'} ${fmt(Math.abs(d))} · ${d > 0 ? '+' : '−'}${Math.abs(pct)}%</span>`;
+  };
+  const sum = SC.view === 'top'
+    ? `<b>${esc(setName)}</b>: ${rows.length} card${rows.length === 1 ? '' : 's'} priced${SC.set ? ` · whole set ${fmt(total)} at market` : ''}${since ? ` · change since ${esc(since)}` : ''}`
+    : `<b>${rows.length}</b> card${rows.length === 1 ? '' : 's'} ${SC.view === 'up' ? 'went up' : 'went down'} in <b>${esc(setName)}</b> since ${esc(since || '—')} (worth ${SC.min < 1 ? '50¢' : '$' + SC.min}+). Market prices can jump on a single sale, so check before buying or selling.`;
+  box.innerHTML = (M ? '' : '<p class="pc-note">Price moves aren\u2019t ready yet. They\u2019re worked out with the daily prices.</p>')
+    + `<div class="sc-sum">${sum}</div>`
+    + (shown.length ? shown.map((r, i) => pcRowHTML(pcCard(r.src, r.pid), i, { rank: i + 1, change: change(r), noSet: !!SC.set })).join('') : `<p class="pc-note">${SC.view === 'top' ? 'No priced cards in this set.' : 'No cards moved that way. Try a longer time or a lower price.'}</p>`)
+    + (rows.length > shown.length ? `<button type="button" class="sc-more" onclick="SC.all=true;scRender()">Show ${Math.min(500, rows.length) - shown.length} more</button>` : '');
+  box.scrollTop = 0; $('price-page').scrollTop = 0;
 }
 function closePricePage() { $('price-page').hidden = true; document.body.style.overflow = ''; }
 function pcTabs() { $('pc-tabs').innerHTML = PC_TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === PC.tab}" onclick="PC.tab='${k}';pcTabs();pcSearch()">${l}</button>`).join(''); }
@@ -5805,20 +5920,22 @@ function pcSearch() {
   }
   hits.sort((a, b) => b.score - a.score || (b.price || 0) - (a.price || 0));
   const top = hits.slice(0, 60);
-  box.innerHTML = top.length ? top.map((h, i) => {
-    const c = pcCard(h.src, h.pid); if (!c) return '';
-    const sub = [c.sealed ? c.rarity : '', c.set, c.number !== '—' ? c.number : '', !c.sealed && !/^(—|None)$/.test(c.rarity) ? c.rarity : ''].filter(Boolean).join(' · ');
-    return `<div class="pc-row${c.sealed ? ' sealed' : ''}" data-i="${i}">
+  box.innerHTML = top.length ? top.map((h, i) => pcRowHTML(pcCard(h.src, h.pid), i)).join('') + (hits.length > 60 ? `<p class="pc-note">Showing the top 60 of ${hits.length >= 4000 ? '4,000+' : hits.length}. Add a word to narrow it down.</p>` : '')
+    : '<p class="pc-note">Nothing matches that. Try fewer words, or another tab.</p>';
+  PC.top = top;
+}
+// One result row; opts.rank puts a number in front, opts.change adds a price move under the price
+function pcRowHTML(c, i, opts = {}) {
+  if (!c) return '';
+  const sub = [c.sealed ? c.rarity : '', opts.noSet ? '' : c.set, c.number !== '—' ? c.number : '', !c.sealed && !/^(—|None)$/.test(c.rarity) ? c.rarity : ''].filter(Boolean).join(' · ');
+  return `<div class="pc-row${c.sealed ? ' sealed' : ''}" data-i="${i}">
       <button type="button" class="pc-main" onclick="pcToggle(this.parentNode)">${imgTag(c.thumb, c.alts, c.name, '')}
-        <div class="pc-t"><b>${esc(c.name)}</b><span>${langTag(c, 'jp-inline')}${esc(sub)}</span></div>
-        <div class="pc-p${c.price == null ? ' none' : ''}">${c.price == null ? 'No price' : fmt(c.price)}${c.price != null ? `<small>${c.ctId ? 'CardTrader low' : 'market'}</small>` : ''}</div></button>
+        <div class="pc-t"><b>${esc(c.name)}</b><span>${opts.rank ? `<i class="pc-rank">#${opts.rank}</i>` : ''}${langTag(c, 'jp-inline')}${esc(sub)}</span></div>
+        <div class="pc-p${c.price == null ? ' none' : ''}${opts.change ? ' mv' : ''}">${c.price == null ? 'No price' : fmt(c.price)}${opts.change || (c.price != null ? `<small>${c.ctId ? 'CardTrader low' : 'market'}</small>` : '')}</div></button>
       <div class="pc-more"><div class="pc-big"><img alt="${esc(c.name)}" data-src="${esc(c.image || c.thumb)}" data-alts="${esc((c.alts || []).join('|'))}" referrerpolicy="no-referrer" onerror="imgErr(this)"></div>${c.sealed || c.ctId ? '<div></div>' : condRows(c.price)}<div class="pc-acts">
         <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${c.ctId ? 'CardTrader' : 'TCGplayer'} live ↗</a>
         <button type="button" onclick="pcToTrade(${i},'give')">＋ You give</button><button type="button" onclick="pcToTrade(${i},'get')">＋ You get</button></div></div>
     </div>`;
-  }).join('') + (hits.length > 60 ? `<p class="pc-note">Showing the top 60 of ${hits.length >= 4000 ? '4,000+' : hits.length}. Add a word to narrow it down.</p>` : '')
-    : '<p class="pc-note">Nothing matches that. Try fewer words, or another tab.</p>';
-  PC.top = top;
 }
 // Open a result: show the card big (loaded only now, to save data) with its prices and buttons
 function pcToggle(row) {
