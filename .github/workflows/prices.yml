@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - scripts/build-prices.py
+      - scripts/build-moves.py
       - .github/workflows/prices.yml
 
 permissions:
@@ -25,6 +26,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the saved daily price lists, for the 1 / 7 / 30-day moves
       - name: Install 7-Zip (for the 7-day price archive)
         run: command -v 7z || (sudo apt-get update -qq && sudo apt-get install -y -qq p7zip-full)
       - name: Bring back the last two weeks of daily prices (for the 7-day spike check)
@@ -37,6 +40,8 @@ jobs:
         env:
           CARDTRADER_TOKEN: ${{ secrets.CARDTRADER_TOKEN }}
         run: python3 scripts/build-prices.py
+      - name: Work out price moves (1, 7 and 30 days)
+        run: python3 scripts/build-moves.py
       - name: Keep today's prices for next week
         if: always()
         uses: actions/cache/save@v4
