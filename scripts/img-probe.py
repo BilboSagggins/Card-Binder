@@ -1,14 +1,24 @@
-import subprocess
-def get(url, *hdr):
-    a = ["curl", "-s", "-o", "/dev/null", "-D", "-", "-w", "SIZE %{size_download} CODE %{http_code}\n", url]
-    for h in hdr: a[1:1] = ["-H", h]
-    out = subprocess.run(a, capture_output=True, text=True).stdout
-    return " | ".join(l.strip() for l in out.splitlines() if l.lower().startswith(("access-control-allow-origin", "content-type", "size", "location", "cross-origin")))
-base = "https://www.cardtrader.com/uploads/blueprints/image/"
-path = "353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png"
-UA = "User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36"
-print("www plain                ", get(base + path))
-print("www + site referrer      ", get(base + path, UA, "Referer: https://bilbosagggins.github.io/", "Sec-Fetch-Dest: image", "Sec-Fetch-Mode: no-cors", "Sec-Fetch-Site: cross-site"))
-print("www + cors from site     ", get(base + path, UA, "Origin: https://bilbosagggins.github.io", "Sec-Fetch-Mode: cors", "Sec-Fetch-Site: cross-site"))
-print("www + test-page referrer ", get(base + path, UA, "Referer: https://bilbosagggins.github.io/Card-Binder/", "Sec-Fetch-Dest: image"))
-print("old host + site referrer ", get(base.replace("www.", "") + path, UA, "Referer: https://bilbosagggins.github.io/", "Sec-Fetch-Dest: image"))
+import urllib.request, re, json, sys
+UA={'User-Agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1','Accept':'*/*'}
+def get(u, n=4000, show=True):
+    try:
+        r=urllib.request.urlopen(urllib.request.Request(u,headers=UA),timeout=30); b=r.read().decode('utf-8','replace')
+        print(f'== {u} -> {r.status} {r.headers.get("content-type")} len={len(b)}')
+        if show: print(b[:n])
+        return b
+    except Exception as e: print(f'== {u} -> ERR {e}'); return ''
+home=get('https://cardquestlgs.com/', 0, False)
+print('scripts:', re.findall(r'<script[^>]*src="([^"]+)"', home)[:30])
+print('next data?', '__NEXT_DATA__' in home, 'nuxt' in home.lower())
+for m in re.findall(r'https?://[a-z0-9.-]*shadowpos[a-z0-9./_-]*', home)[:20]: print('sp url:', m)
+print('links:', sorted(set(re.findall(r'href="(/[^"#?]*)', home)))[:80])
+s=get('https://cardquestlgs.com/advanced-search-pokemon?inStockOnly=true&orderBy=price-desc', 0, False)
+print('adv scripts:', re.findall(r'<script[^>]*src="([^"]+)"', s)[:30])
+i=s.find('Umbreon'); print('adv snippet:', s[:1500])
+print('---- product cards in adv search:', len(re.findall(r'/products/product_', s)))
+for js in re.findall(r'<script[^>]*src="([^"]+)"', s)[:12]:
+    u = js if js.startswith('http') else 'https://cardquestlgs.com'+js
+    b=get(u,0,False)
+    for m in sorted(set(re.findall(r'["\'`](/api/[^"\'`]{2,80}|https://[a-z0-9.-]*(?:api|shadowpos)[^"\'`]{0,100})["\'`]', b)))[:40]: print('  endpoint in', js[-40:], ':', m)
+for u in ['https://cardquestlgs.com/products.json','https://cardquestlgs.com/collections/pokemon-singles','https://cardquestlgs.com/sitemap.xml','https://cardquestlgs.com/robots.txt','https://cardquestlgs.com/search?q=charizard']:
+    get(u, 1500)
