@@ -1,34 +1,25 @@
-== https://cardquestlgs.com/search?q=charizard -> 200 len=493929 0.6s
-data-attrs near product: ['data-benefit-current', 'data-benefit-value', 'data-cfasync', 'data-cfemail', 'data-customer-label', 'data-default-image', 'data-member-label', 'data-price-label', 'data-savings-label', 'data-search-error', 'data-small-savings-label', 'data-variant-combo', 'data-variant-combo-display', 'data-variants']
-('/products/product_01k8rc3k7jfvgs2g994q3cebsm', 'Shining Charizard (107/105)', 'Neo Destiny Unlimited', [])
-('/products/product_49jvk5j0v4b1rtajgs9zxssnes', 'Charizard (136/135)', 'Black & White: Plasma Storm', [])
-('/products/product_3d3xzmbf24a1htjaxc6ymmpwwa', 'Mega Charizard X ex (110/080)', 'M2: Inferno X [Japanese]', [('Foil / Near Mint', 715, 3)])
-('/products/product_072ssp0dqqb36t93t2x0pamhj4', "Blaine's Charizard (2/132)", 'Gym Challenge 1st Edition', [])
-('/products/product_01kd65267yesmapjzhy1dffd3y', 'Charizard UPC', '', [('DEFAULT', 580, 2)])
-('/products/product_01k8rc3k1qfvgs2cav5qq189ek', 'Charizard (4/102)', 'Base Set Unlimited (Shadowless)', [])
-== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=100&offset=0&orderBy=price-desc -> 200 len=3374000 1.8s
-items 100 links 100
-   ('/products/product_7despdzt85bga9g9bf1atbx1xe', 'Umbreon (41/147)', 'Aquapolis', [('Reverse Foil / Near Mint', 1300, 1)])
-   ('/products/product_76fa8xkvwkbpyrcyf7atx6vc34', 'Pikachu (7/16)', 'Pokemon Rumble', [('Foil / Lightly Played', 1200, 1)])
-   ('/products/product_01kv127j99eczakrgbgm9spccy', 'Gengar (5/92 — EX Legend Maker Stamp)', 'EX Legend Maker', [('Reverse Foil / Lightly Played', 1100, 1)])
-   ('/products/product_76gxxk75c8b3r99xj1zzaq9yyk', 'Gengar VMAX (271/264)', 'Sword & Shield: Fusion Strike', [('Foil / Near Mint', 1000, 2)])
-   ('/products/product_61fnkkbcf2b5arm6hr0x9xxw17', 'Garchomp (120/116)', 'Black & White: Plasma Freeze', [('Foil / Near Mint', 1000, 1)])
-  totals text: [] []
-== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=100&offset=100&orderBy=price-desc -> 200 len=3375164 1.4s
-items 100 links 100
-   ('/products/product_549qjzfaaaag2rywh6ecmhcfg8', 'Latias ex (239/191)', 'Scarlet & Violet: Surging Sparks', [('Foil / Near Mint', 189, 1)])
-   ('/products/product_1ytjf3kwd9btgsty83wa00d5dn', 'Charmander (9/108 — Toys "R" Us)', 'XY Evolutions', [('Foil / Near Mint', 185, 1)])
-   ('/products/product_01kv127j8zeczakqpb7pm5k5gm', 'Metang (49/113 — EX Delta Species Stamp)', 'EX Delta Species', [('Reverse Foil / Lightly Played', 185, 1)])
-   ('/products/product_5vq80k348cb4ka7chdn8mp6w0s', 'Cynthia (SV82/SV94)', 'Sun & Moon: Hidden Fates Shiny Vault', [('Foil / Near Mint', 180, 2)])
-   ('/products/product_2n5t4agjrmbj7bdjqj00pbewcy', "Lillie's Full Force (230/236 — Full Art)", 'Sun & Moon: Cosmic Eclipse', [('Foil / Near Mint', 180, 3)])
-  totals text: [] []
-== https://cardquestlgs.com/api/advanced-search?initialLoad=true&inStockOnly=true&limit=100&offset=0 -> 200 len=3538665 1.3s
-items 100 links 100
-   ('/products/product_6rftxsash8am1aavw7b64fywsa', "Aang's Shelter — Teferi's Protection (0007)", 'Avatar: The Last Airbender Eternal', [('Normal / Near Mint', 40.25, 1)])
-   ('/products/product_51q4at8gssbhfb0h1kbtjdee9x', "Aang, Swift Savior // Aang and La, Ocean's Fury (0204)", 'Avatar: The Last Airbender', [('Normal / Near Mint', 1.5, 1)])
-   ('/products/product_336b1dcctkbker100v8mkeg08s', 'Abandoned Air Temple (0263)', 'Avatar: The Last Airbender', [('Normal / Near Mint', 6.75, 2)])
-   ('/products/product_7hdbpyjbcabft84xnqq58ecymz', 'Abandoned Air Temple (0386)', 'Avatar: The Last Airbender', [('Normal / Near Mint', 9.25, 2), ('Foil / Near Mint', 9.5, 1)])
-   ('/products/product_2kjy61s2rgazzbh741f8x59rb0', 'Aberrant (086/168)', 'Warhammer 40,000 Commander', [('Normal / Near Mint', 4.3, 1), ('Surge Foil / Near Mint', 7.75, 2)])
-  totals text: [] []
-== https://cardquestlgs.com/search?q=luffy -> 200 len=499598 0.4s
-luffy items 12 [('Monkey.D.Luffy (OP17-079 — Extended Art)', "The World's Strongest Warriors"), ('Monkey.D.Luffy (EB02-010 — Alternate Art)', 'Extra Booster: Anime 25th Collection'), ('Monkey.D.Luffy (ST10-006 — Otton Art)', 'One Piece Promotion Cards'), ('Monkey.D.Luffy (PRB02-005 — White Border / Red Bull Double Don!! Stamp)', 'One Piece Promotion Cards'), ('Monkey.D.Luffy (ST01-012)', 'Pillars of Strength')]
+== https://cardquestlgs.com/advanced-search-pokemon -> 200 len=1019130 0.7s
+game inputs: ['<input type="hidden" name="game" value="pokemon">', '<input type="hidden" name="game" value="pokemon">']
+game values in page: []
+== https://cardquestlgs.com/search?q=luffy -> 200 len=499598 0.6s
+search more links: ['/search/more']
+luffy set/game hints: []
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=onepiece&inStockOnly=true&limit=20&offset=0 -> 200 len=673971 0.5s
+onepiece 20 ['Alvida (EB05-021)', 'Are You That Afraid of the New Era?!! (OP17-037 — Alternate Art)', 'Baby 5 (EB05-004 — Alternate Art)']
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=one-piece&inStockOnly=true&limit=20&offset=0 -> ERR HTTP Error 400: Bad Request
+one-piece 0 []
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=one_piece&inStockOnly=true&limit=20&offset=0 -> ERR HTTP Error 400: Bad Request
+one_piece 0 []
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=optcg&inStockOnly=true&limit=20&offset=0 -> ERR HTTP Error 400: Bad Request
+optcg 0 []
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=500&offset=0 -> 200 len=16848745 4.3s
+offset 0 items 500
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=500&offset=500 -> 200 len=16880256 4.0s
+offset 500 items 500
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=500&offset=1000 -> 200 len=16829898 4.1s
+offset 1000 items 500
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=500&offset=1500 -> 200 len=16897532 4.7s
+offset 1500 items 500
+== https://cardquestlgs.com/api/advanced-search?initialLoad=true&game=pokemon&inStockOnly=true&limit=500&offset=2000 -> 200 len=14660885 3.2s
+offset 2000 items 435
+POKEMON IN STOCK TOTAL 2435
