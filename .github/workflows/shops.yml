@@ -1,0 +1,38 @@
+name: Update shop stock
+
+# Builds shops/<shop>.json (the singles a local shop has in stock: condition, price, quantity)
+# for the binder app's Need list, twice a day.
+on:
+  schedule:
+    - cron: "41 12,23 * * *"   # about 6:41 am and 5:41 pm Central
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-shops.py
+      - .github/workflows/shops.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shops
+  cancel-in-progress: false
+
+jobs:
+  shops:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the shop stock lists
+        run: python3 scripts/build-shops.py
+      - name: Save them to the site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shops
+          if git diff --cached --quiet; then echo "No stock changes"; exit 0; fi
+          git commit -m "Update shop stock"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push
