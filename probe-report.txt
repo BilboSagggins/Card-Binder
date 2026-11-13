@@ -1,252 +1,96 @@
-== https://cardquestlgs.com/ -> 200 text/html; charset=UTF-8 len=597059
-scripts: ['https://unpkg.com/htmx.org@2.0.4', 'https://unpkg.com/htmx-ext-preload@2.1.0/preload.js', 'https://unpkg.com/@tailwindcss/browser@4', '/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js']
-next data? False False
-sp url: https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png
-sp url: https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png
-sp url: https://images.shadowpos.com/yugi_charizard_jace.png
-sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
-sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
-sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
-sp url: https://images.shadowpos.com/image_58qjn0n38cb5mat0tgf1zfmbqe.png
-sp url: https://images.shadowpos.com/image_58qjn0n38cb5mat0tgf1zfmbqe.png
-sp url: https://images.shadowpos.com/image_4apxcsggt8a7waamw6mdjhvc9c.png
-sp url: https://images.shadowpos.com/image_4apxcsggt8a7waamw6mdjhvc9c.png
-sp url: https://images.shadowpos.com/image_28bdaarv02ab5sa1g3jk4dqdfk
-sp url: https://images.shadowpos.com/image_28bdaarv02ab5sa1g3jk4dqdfk
-sp url: https://images.shadowpos.com/image_0h7fn5sbrcaqqasm9jd2hkeb01.png
-sp url: https://images.shadowpos.com/image_0h7fn5sbrcaqqasm9jd2hkeb01.png
-sp url: https://images.shadowpos.com/image_6gjmxaj0kzbfpv0hfjh1cs9fhr.webp
-sp url: https://images.shadowpos.com/image_6gjmxaj0kzbfpv0hfjh1cs9fhr.webp
-sp url: https://images.shadowpos.com/image_08g987m2avb9mr2tx6pbv90dpe.webp
-sp url: https://images.shadowpos.com/image_08g987m2avb9mr2tx6pbv90dpe.webp
-sp url: https://images.shadowpos.com/image_45qtab2m2pby8bk63jv1pgymkm.png
-sp url: https://images.shadowpos.com/image_45qtab2m2pby8bk63jv1pgymkm.png
-links: ['/', '/advanced-search-mtg', '/advanced-search-pokemon', '/auth/login', '/auth/register', '/bulk', '/cart', '/cdn-cgi/l/email-protection', '/checkout', '/collections/preorders', '/collections/riftbound-singles', '/events', '/products/product_01kv127j99eczakrgbgm9spccy', '/products/product_18rmk9s5mcatasprj0wp6y9qvg', '/products/product_1vy0v0dhaqaprrfsfkejmgenjx', '/products/product_1z4y231c3qar6b9vz91yc62q9m', '/products/product_2bt3btta8xbvyvt1kx6hg8raqn', '/products/product_360xyg7dhdagd8rredtm27ddn6', '/products/product_4jb1c6pfmdbcza5vgt7zey14fd', '/products/product_6gn15k761xb7ft2yx1a63kpbps', '/products/product_76fa8xkvwkbpyrcyf7atx6vc34', '/products/product_76gxxk75c8b3r99xj1zzaq9yyk', '/products/product_7despdzt85bga9g9bf1atbx1xe', '/products/product_7vs5d0s7rnb94awe97qrdsmgp4', '/search', '/static/membership-storefront.css']
-== https://cardquestlgs.com/advanced-search-pokemon?inStockOnly=true&orderBy=price-desc -> 200 text/html; charset=UTF-8 len=1019130
-adv scripts: ['https://unpkg.com/htmx.org@2.0.4', 'https://unpkg.com/htmx-ext-preload@2.1.0/preload.js', 'https://unpkg.com/@tailwindcss/browser@4']
-adv snippet: <!DOCTYPE html>
-<html lang="en-US">
-
-
-<head>
-    
-    
-    
-    
-      
-    
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title>Pokemon Advanced Search | Card Quest</title>
-    <meta name="description" content="" />
-    <meta name="keywords" content="trading cardstabletop gamesgaming" />
-    <link rel="canonical" href="https://cardquestlgs.com/advanced-search-pokemon" />
-    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
-    
-    
-    
-    
-      
-    
-    
-      
-    
-
-    <!-- Open Graph / Facebook Meta Tags -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Pokemon Advanced Search | Card Quest" />
-    <meta property="og:description" content="" />
-    <meta property="og:url" content="https://cardquestlgs.com/advanced-search-pokemon" />
-    <meta property="og:site_name" content="Card Quest" />
-    
-    
-    
-    
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Pokemon Advanced Search | Card Quest" />
-    <meta name="twitter:description" content="" />
-    
-    
-    <!-- Additional SEO tags -->
-    <meta name="robots" content="index, follow" />
-    
-    
-    <!-- Preload critical assets -->
-    <link rel="preconnect" href="https://unpkg.com" crossorigin />
-    <link rel="preload" href="https://unp
----- product cards in adv search: 0
-== https://unpkg.com/htmx.org@2.0.4 -> 200 text/javascript; charset=utf-8 len=50917
-== https://unpkg.com/htmx-ext-preload@2.1.0/preload.js -> 200 text/javascript; charset=utf-8 len=14000
-== https://unpkg.com/@tailwindcss/browser@4 -> 200 text/javascript; charset=utf-8 len=287414
-== https://cardquestlgs.com/products.json -> ERR HTTP Error 404: Not Found
-== https://cardquestlgs.com/collections/pokemon-singles -> 200 text/html len=100220
-
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en-US">
-<head>
-    
-    
-    
-    
-      
-    
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title> | Card Quest</title>
-    <meta name="description" content="" />
-    <meta name="keywords" content=", " />
-    <link rel="canonical" href="https://cardquestlgs.com/collections/pokemon-singles" />
-    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
-    
-    
-    
-    
-      
-    
-    
-      
-    
-
-    <!-- Open Graph / Facebook Meta Tags -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content=" | Card Quest" />
-    <meta property="og:description" content="" />
-    <meta property="og:url" content="https://cardquestlgs.com/collections/pokemon-singles" />
-    <meta property="og:site_name" content="Card Quest" />
-    
-    
-    
-    
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content=" | Card Quest" />
-    <meta name="twitter:description" content="" />
-    
-    
-    <!-- Additional SEO tags -->
-    <meta name="robots" content="index, follow" />
-    
-    
-    <!-- Preload critical assets -->
-    <link rel="preconnect" href="https://unpkg.com" crossorigin />
-    <link rel="preload" href="https://unpkg.com/htmx.org@2.0.4" as="script" />
-    
-    <!-- Scripts -->
-    <script src="https:
-== https://cardquestlgs.com/sitemap.xml -> 200 application/xml; charset=utf-8 len=466
+== https://cardquestlgs.com/search?q=charizard -> 200 len=493929
+hx attrs: ['/api/cart/add', '/api/cart/count', '/api/search', '/search/more']
+---- first product snippet ----
+rately Played&#34;,&#34;price&#34;:0,&#34;price_money&#34;:null,&#34;buy_price_cash&#34;:0.01,&#34;buy_price_credit&#34;:0.01,&#34;inventory_quantity&#34;:0,&#34;tracks_inventory&#34;:true,&#34;options&#34;:[{&#34;name&#34;:&#34;Printing&#34;,&#34;value&#34;:&#34;Foil&#34;},{&#34;name&#34;:&#34;Condition&#34;,&#34;value&#34;:&#34;Moderately Played&#34;}],&#34;available&#34;:false,&#34;images&#34;:[]},{&#34;id&#34;:&#34;product_variant_1tv9e8q4m7bphvbrz5sb16r1jv&#34;,&#34;title&#34;:&#34;Foil / Heavily Played&#34;,&#34;price&#34;:0,&#34;price_money&#34;:null,&#34;buy_price_cash&#34;:0.01,&#34;buy_price_credit&#34;:0.01,&#34;inventory_quantity&#34;:0,&#34;tracks_inventory&#34;:true,&#34;options&#34;:[{&#34;name&#34;:&#34;Printing&#34;,&#34;value&#34;:&#34;Foil&#34;},{&#34;name&#34;:&#34;Condition&#34;,&#34;value&#34;:&#34;Heavily Played&#34;}],&#34;available&#34;:false,&#34;images&#34;:[]},{&#34;id&#34;:&#34;product_variant_6ke79wz4m4ab6trynadbh3bq67&#34;,&#34;title&#34;:&#34;Foil / Damaged&#34;,&#34;price&#34;:1000,&#34;price_money&#34;:{&#34;rawAmount&#34;:&#34;10000000&#34;,&#34;currency&#34;:null,&#34;precision&#34;:4},&#34;buy_price_cash&#34;:0.01,&#34;buy_price_credit&#34;:0.01,&#34;inventory_quantity&#34;:0,&#34;tracks_inventory&#34;:true,&#34;options&#34;:[{&#34;name&#34;:&#34;Printing&#34;,&#34;value&#34;:&#34;Foil&#34;},{&#34;name&#34;:&#34;Condition&#34;,&#34;value&#34;:&#34;Damaged&#34;}],&#34;available&#34;:false,&#34;images&#34;:[]}]'>
+    <a href="/products/product_01k8rc3k7jfvgs2g994q3cebsm" class="block flex-grow" preload="mouseover">
+        <div class="cursor-pointer">
+            <div class="relative">
+                <img src="https://images.shadowpos.com/image_24vq68p00wb48tvqrmk5yy742k.webp" alt="Shining Charizard (107/105)"
+                    class="product-image w-full h-64 mt-4 object-cover object-top rounded-lg shadow-md transition-transform group-hover:scale-105"
+                    data-default-image="https://images.shadowpos.com/image_24vq68p00wb48tvqrmk5yy742k.webp" />
+            </div>
+              <div class="p-4">
+                  <h2 class="text-lg font-semibold text-[#000] group-hover:text-gray-700 productTitle"
+                    style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                      Shining Charizard (107/105)
+                  </h2>
+                <h3 class="text-sm text-#FFF productSubtitle" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.25;">Neo Destiny Unlimited</h3>
+              </div>
+        </div>
+    </a>
+    <div class="px-4 flex-grow">
+    </div>
+    <div class="px-4 py-2 flex flex-col min-h-[3.5rem]"> <!-- Changed to min-height and responsive -->
+        <div class="membership-catalog-row flex justify-between items-center gap-2" data-product-price-row>
+            <div class="membership-catalog-pricing flex-1 min-w-0"> <!-- flex-1 allows it to take available space, min-w-0 allows shrinking -->
+                <span data-variant-price class="text-[#000] font-bold leading-tight productPrice block truncate text-2xl">
+                    $ 0.00
+                </span>
+                <span data-benefit-price data-benefit-current="null" data-benefit-value="" data-savings-label="Save __PERCENT__" data-small-savings-label="Save under 1%" data-price-label="__NAME__ price" data-member-label="Member" data-customer-label="Customer" class="membership-benefit  mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-tight hidden">
+  <span data-benefit-label class="membership-price-badge min-w-0 break-words font-medium bg-[#d867ff] text-white secondary secondaryText">Customer price</span>
+  <span class="membership-price-comparison" hidden><span data-benefit-savings class="membership-savings-text"></span>
+  <span class="membership-regular-price"><span class="membership-regular-label">Regular</span> <s data-benefit-regular class="text-#FFF" title="Regular price"><span class="sr-only">Regular price: </span>$ 0.00</s></span>
+  </span>
+</span>
+            </div>
+            <div class="membership-catalog-inventory flex-shrink-0 text-right flex items-center"> <!-- Added flex items-center for vertical centering -->
+                <span data-variant-inventory class="text-sm font-bold whitespace-nowrap">
+                    <span class="text-#FFF inventoryOutOfStock">Out of Stock</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="p-4 pt-0" data-cart-actions>
+        <!-- Inline Error Message -->
+        <div data-product-erro
+product links: 12
+== https://cardquestlgs.com/advanced-search-pokemon?inStockOnly=true&orderBy=price-desc -> 200 len=1019130
+adv hx attrs: ['#advanced-search-results', '#mobile-search-results', '#search-results', '/api/advanced-search?initialLoad=true', '/api/cart/add', '/api/cart/count', '/api/search', 'load, cartUpdated from:body', 'search-request queue:none', 'submit queue:none, change delay:500ms queue:none, advanced-search-retry queue:none']
+adv forms: ['<form class="search-form flex lg:block hidden" id="searchForm"\n                    action="/search" method="GET" autocomplete="off">', '<form class="search-form flex-1" id="mobileSearchForm" action="/search" method="GET" autocomplete="off">', '<form id="advanced-search-form" \n              hx-get="/api/advanced-search?initialLoad=true" \n              hx-target="#advanced-search-results"\n              data-advanced-search-request="initial"\n              hx-trigger="submit queue:none, change delay:500ms queue:none, advanced-search-retry queue:none"\n              hx-sync="this:drop"\n              hx-swap="innerHTML show:none swap:0 settle:0">', '<form\n  id="pokemon-search-form"\n  autocomplete="off"\n  data-lpignore="true"\n  data-bwignore\n  data-form-type="custom"\n  onsubmit="event.preventDefault(); syncPokemonTextInputs(\'false\'); performAdvancedSearch(false); return false;"\n>', '<form id="mobile-advanced-search-form" \n            hx-get="/api/advanced-search?initialLoad=true" \n            hx-target="#advanced-search-results"\n            data-advanced-search-request="initial"\n              hx-trigger="submit queue:none, change delay:500ms queue:none, advanced-search-retry queue:none"\n              hx-sync="this:drop"\n            hx-swap="innerHTML show:none swap:0 settle:0">']
+adv selects names: ['${CSS.escape(e.target.name)}', '${CSS.escape(key)}', '${CSS.escape(name)}', 'advancedSearchRoutePath', 'attacks', 'cardType', 'cardType-search', 'cardTypeOperator', 'description', 'game', 'inStockOnly', 'keywords', 'limit', 'number', 'offset', 'options', 'optionsOperator', 'orderBy', 'pokemonSearchCode', 'pokemonType', 'pokemonType-search', 'pokemonTypeOperator', 'q', 'rarity', 'rarity-search', 'rarityOperator', 'resistance', 'resistance-search', 'resistanceOperator', 'robots', 'setName', 'setName-search', 'setNameOperator', 'title', 'truecardType-search', 'truepokemonType-search', 'truerarity-search', 'trueresistance-search', 'truesetName-search', 'twitter:card', 'twitter:description', 'twitter:title', 'viewport']
+== https://cardquestlgs.com/sitemap/products.xml?cursor=0000c2eb-6a53-5add-9e4d-4caaa730f23d -> 200 len=1350087
 <?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
-    <loc>https://cardquestlgs.com/sitemap/static.xml</loc>
-  </sitemap>
-  <sitemap>
-    <loc>https://cardquestlgs.com/sitemap/products.xml?cursor=0000c2eb-6a53-5add-9e4d-4caaa730f23d</loc>
-  </sitemap>
-  <sitemap>
-    <loc>https://cardquestlgs.com/sitemap/products.xml?cursor=796d5969-a663-54af-99d3-fbdfb5b77fb1</loc>
-  </sitemap>
-</sitemapindex>
-
-== https://cardquestlgs.com/robots.txt -> 200 text/plain; charset=utf-8 len=4412
-# As a condition of accessing this website, you agree to abide by the following
-# content signals:
-
-# (a)  If a Content-Signal = yes, you may collect content for the corresponding
-#      use.
-# (b)  If a Content-Signal = no, you may not collect content for the
-#      corresponding use.
-# (c)  If the website operator does not include a Content-Signal for a
-#      corresponding use, the website operator neither grants nor restricts
-#      permission via Content-Signal with respect to the corresponding use.
-
-# The content signals and their meanings are:
-
-# search:   building a search index and providing search results (e.g., returning
-#           hyperlinks and short excerpts from your website's contents). Search does not
-#           include providing AI-generated search summaries.
-# ai-input: inputting content into one or more AI models (e.g., retrieval
-#           augmented generation, grounding, or other real-time taking of content for
-#           generative AI search answers).
-# ai-train: training or fine-tuning AI models.
-# use:      how AI systems may consume the content (immediate, reference, or full).
-
-# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF
-# RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT
-# AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
-
-# BEGIN Cloudflare Managed content
-
-
-User-agent: *
-Content-Signal: search=yes,ai-train=no,use=reference
-Allow: /
-
-# Training crawlers
-User-agent: Amazonbot
-Disallow: /
-== https://cardquestlgs.com/search?q=charizard -> 200 text/html; charset=UTF-8 len=493929
-
-
-
-<!DOCTYPE html>
-<html lang="en-US" hx-ext="preload">
-
-
-<head>
-    
-    
-    
-    
-      
-    
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title>charizard - Search Results | Card Quest</title>
-    <meta name="description" content="Search results for charizard at Card Quest" />
-    <meta name="keywords" content="trading cardstabletop gamesgaming" />
-    <link rel="canonical" href="https://cardquestlgs.com/search" />
-    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
-    
-    
-    
-    
-      
-    
-    
-      
-    
-
-    <!-- Open Graph / Facebook Meta Tags -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="charizard - Search Results | Card Quest" />
-    <meta property="og:description" content="Search results for charizard at Card Quest" />
-    <meta property="og:url" content="https://cardquestlgs.com/search" />
-    <meta property="og:site_name" content="Card Quest" />
-    
-    
-    
-    
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="charizard - Search Results | Card Quest" />
-    <meta name="twitter:description" content="Search results for charizard at Card Quest" />
-    
-    
-    <!-- Additional SEO tags -->
-    <meta name="robots" content="noindex, follow" />
-    
-    
-    <!-- Preload criti
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://cardquestlgs.com/products/product_00031eptjkbbeswkacnakk1whx</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_000ax1m4pebh2awsd4ezw67e4w</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_000gr1qhk4avtan1hp7g69ajjk</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_000zbepxq0aa0b4syaa3s0ehyv</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_001f2jk505bw9thcnexe1ak5qp</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_001x4sga7tbwf9eb8yqe06x23k</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_002pe7w6gbanrbn3hh6gpwsv7k</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_003q5spd1aa80tsbvq4bnvrxrs</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_003zfgx6aha4jbh1jptvm4jay1</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products/product_004vf01qj3ara92mzxn1z05jw9</loc>
+    <lastmod>2026-11-13</lastmod>
+  </url>
+  <url>
+    <loc>https://cardquestlgs.com/products
+locs: 10000
