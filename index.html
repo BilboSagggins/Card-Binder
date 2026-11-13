@@ -178,6 +178,24 @@
   .np-drops b { color: #6ee7b7; }
   .np-drops button { appearance: none; display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: .2rem 0; cursor: pointer; }
   .np-export .np-drops { display: none; }
+  .np-card.flash { animation: nwflash 1.4s ease; }
+  .np-shopsum { grid-column: 1 / -1; border: 1px solid #0e7490; background: #082f3a; border-radius: 12px; padding: .55rem .7rem; font: 600 .74rem/1.4 Inter, system-ui, sans-serif; color: #cffafe; }
+  .np-shopsum b { color: #67e8f9; }
+  .np-shopsum small { display: block; color: #94a3b8; font-weight: 500; margin-top: .15rem; }
+  .np-shopsum button { appearance: none; display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: .2rem 0; cursor: pointer; }
+  .np-shopsum button.more { color: #67e8f9; font-weight: 700; }
+  .np-export .np-shopsum, .np-export .np-shop { display: none; }
+  .np-shop { appearance: none; margin-top: .1rem; border: 1px solid #0e7490; background: #083344; color: #a5f3fc; border-radius: 8px; padding: .35rem .3rem; font: 700 .6rem/1.15 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np-shop.maybe { border-color: #3f3f46; background: #18181b; color: #a1a1aa; font-weight: 600; }
+  .np-card.got .np-shop { display: none; }
+  .sh-list { display: flex; flex-direction: column; gap: .45rem; margin: .6rem 0; }
+  .sh-item { border: 1px solid #27272a; background: #0f0f12; border-radius: 12px; padding: .6rem .7rem; text-align: left; }
+  .sh-item h3 { margin: 0; font: 700 .85rem/1.25 Inter, system-ui, sans-serif; color: #fff; }
+  .sh-item p { margin: .15rem 0 .4rem; font: 500 .7rem/1.3 Inter, system-ui, sans-serif; color: #a1a1aa; }
+  .sh-item p.warn { color: #fbbf24; }
+  .sh-row { display: flex; justify-content: space-between; gap: .5rem; font: 600 .76rem/1.6 Inter, system-ui, sans-serif; color: #e4e4e7; }
+  .sh-row b { color: #67e8f9; }
+  .sh-item a { display: block; margin-top: .45rem; text-align: center; background: #0e7490; color: #fff; border-radius: 8px; padding: .5rem; font: 700 .75rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
   .na-row { display: flex; align-items: center; gap: .4rem; margin: .5rem 0; font: 700 1rem/1 Inter, system-ui, sans-serif; color: #e4e4e7; }
   .na-row input { flex: 1; margin: 0; }
   .np-got { appearance: none; margin-top: .1rem; border: 1px solid #059669; background: #064e3b; color: #d1fae5; border-radius: 8px; padding: .45rem .3rem; font: 800 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
@@ -1277,7 +1295,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.101';
+const APP_VERSION = '2026-11-13.103';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -6045,6 +6063,7 @@ function needCardHTML(x, i, opts) {
       ${x.b && npMulti() ? `<div class="np-from">📒 ${esc(titleOf(x.b))} · p${x.p + 1}</div>` : ''}
       ${condRows(x.c.price)}
       <a class="np-link" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>
+      ${x.c.status === 'needed' ? shopChip(x.c) : ''}
       ${x.c.status === 'needed' ? (h => `<button type="button" class="np-bell${h ? ' hit' : x.c.alert ? ' on' : ''}" title="Price alert">${h ? `🔔 Dropped to ${fmt(h.price)}` : x.c.alert ? `🔔 at ${fmt(x.c.alert)}` : '🔔 Price alert'}</button>`)(NA.hits.get(naKey(x.b || currentUser, x.c))) : ''}
       ${opts && opts.gotBtn ? `<button type="button" class="np-got">${x.c.status === 'needed' ? '✓ Mark acquired' : '↩ Not acquired'}</button>` : ''}
     </div>`;
@@ -6054,10 +6073,12 @@ function openNeedPage() {
   $('need-page').hidden = false; document.body.style.overflow = 'hidden';
   watchNeedBinders(); renderNeedPage();
   checkNeedAlerts().then(naMarkSeen);
+  loadShop().then(d => { if (d) renderNeedPage(); });
 }
 /* Drag to reorder: hold a card (or drag it with a mouse), the others shift to make room, and the order is saved on drop */
 let npDrag = null;
 function npDown(e) {
+  if (e.target.closest('.np-shop')) return;
   const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag || npLocked || npView === 'price') return;
   npDrag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', active: false };
   if (npDrag.touch) npDrag.timer = setTimeout(npBegin, 320);
@@ -6153,6 +6174,10 @@ function npToggleAcquired(el) {
   saveActivePages(pages); render();
 }
 function npTap(e) {
+  const sb = e.target.closest('#np-grid .np-shop');
+  if (sb) { e.preventDefault(); e.stopPropagation(); const el = sb.closest('.np-card'); const x = needCards().find(y => y.key === el.dataset.key && (y.b || '') === (el.dataset.b || '')); return x && openShopSheet(x.c); }
+  const ss = e.target.closest('#np-grid .np-shopsum button');
+  if (ss) { if (ss.classList.contains('more')) { SHOP.all = !SHOP.all; return renderNeedPage(); } const el = [...document.querySelectorAll('#np-grid .np-card')].find(c => c.dataset.key === ss.dataset.key); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } return; }
   const bell = e.target.closest('#np-grid .np-bell');
   if (bell) { e.preventDefault(); e.stopPropagation(); return openAlertSheet(bell.closest('.np-card')); }
   const drop = e.target.closest('#np-grid .np-drops button');
@@ -6256,6 +6281,96 @@ function needByPriceHTML(all) {
   }).join('');
 }
 function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; unwatchNeedBinders(); }
+/* ===== A local shop's stock (shops/cardquest.json, rebuilt twice a day by .github/workflows/shops.yml):
+   your Need cards they have in stock, with condition, price and how many are left ===== */
+const SHOP = { key: 'cardquest', data: null, idx: null, loading: null, all: false };
+const SHOP_STOP = new Set('pokemon the and of sword shield scarlet violet sun moon xy sv swsh sm unlimited 1st edition set series cards card trainer kit me'.split(' '));
+const SHOP_SPECIAL = /stamp|pattern|ball|prerelease|staff|winner|championship|regional|judge|serial|signed|error|jumbo|expo|together|league|gym|finalist|participant/i;
+const SHOP_PRINTING = /jumbo|classic collection|shadowless|exclusive|league|championship|prize pack|trick or trade|mcdonald|celebrations/i;
+const shNum = n => String(n || '').toUpperCase().replace(/\s+/g, '').split('/').map(p => p.replace(/^0+(?=\w)/, '')).join('/');
+const shBase = n => String(n || '').toLowerCase().replace(/é/g, 'e').replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/\s+-\s+.*$/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const shLabels = n => (String(n || '').match(/\(([^)]*)\)/g) || []).map(x => x.slice(1, -1)).filter(x => !/^\s*\d+\s*$/.test(x)).join(' ').toLowerCase();
+const shAlt = s => String(s || '').trim().toLowerCase().replace(/\bparallel\b/g, 'alternate art');
+const shWords = s => new Set((String(s).toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => w.length > 2 && w !== 'stamp' && w !== 'the' && w !== 'pokemon'));
+function shToks(s) {
+  const w = (String(s || '').toLowerCase().replace(/&/g, ' ').replace(/^[a-z]{1,4}\d{1,3}[a-z]?:\s*/, '').match(/[a-z0-9]+/g) || []).filter(x => x.length > 1);
+  const k = w.filter(x => !SHOP_STOP.has(x)); return new Set(k.length ? k : w);
+}
+function loadShop() {
+  if (SHOP.data) return Promise.resolve(SHOP.data);
+  if (SHOP.loading) return SHOP.loading;
+  SHOP.loading = (async () => {
+    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/shops/${SHOP.key}.json?t=${Math.floor(Date.now() / 1800000)}`, `shops/${SHOP.key}.json`]) {
+      try { const d = await fetchJSON(u, 20000); if (d && d.games) { SHOP.data = d; break; } } catch (e) {}
+    }
+    if (SHOP.data) {
+      SHOP.idx = {};
+      Object.entries(SHOP.data.games).forEach(([g, items]) => { const m = SHOP.idx[g] = new Map(); items.forEach(it => { const k = shNum(it[1]); if (!k) return; if (!m.has(k)) m.set(k, []); m.get(k).push(it); }); });
+    }
+    SHOP.loading = null; return SHOP.data;
+  })();
+  return SHOP.loading;
+}
+// How well a shop listing fits a card: null = not this card; above 0 = same set too; 0 or less = same card number and name, set named differently
+function shopScore(c, it) {
+  const [name, num, label, set, ja] = it, game = c.game === 'onepiece' ? 'onepiece' : 'pokemon';
+  const bc = shBase(c.name), bs = shBase(name);
+  if (!(bc === bs || (Math.min(bc.length, bs.length) > 3 && (bc.includes(bs) || bs.includes(bc))))) return null;
+  if ((c.lang === 'ja') !== !!ja || c.lang === 'zh') return null;
+  const sl = shAlt(label);
+  if (game === 'onepiece') { if (shAlt(shLabels(c.name)) !== sl) return null; }
+  else {
+    const sp = (String(c.name).match(/\s-\s+[^()]*\(([^)]*)\)/) || [])[1];
+    if (sp) { const a = shWords(sp), b = shWords(sl + ' ' + set); if (![...a].some(w => b.has(w))) return null; }
+    else if (sl && SHOP_SPECIAL.test(sl)) return null;
+  }
+  const cp = (String(c.set || '').match(SHOP_PRINTING) || [''])[0].toLowerCase(), sp2 = (String(set).match(SHOP_PRINTING) || [''])[0].toLowerCase();
+  if (cp !== sp2) return null;   // a Jumbo / Classic Collection / deck-exclusive printing is a different card
+  const a = shToks(c.set), b = shToks(set); let both = 0; a.forEach(w => { if (b.has(w)) both++; });
+  return both - 0.5 * (a.size + b.size - 2 * both);
+}
+// { items: listings with stock, exact: whether the set agrees, best: cheapest [cond, printing, price, qty] }
+function shopFor(c) {
+  if (!SHOP.idx || !c || !c.number) return null;
+  const m = SHOP.idx[c.game === 'onepiece' ? 'onepiece' : 'pokemon']; if (!m) return null;
+  const sc = (m.get(shNum(c.number)) || []).map(it => [shopScore(c, it), it]).filter(x => x[0] != null);
+  if (!sc.length) return null;
+  const top = Math.max(...sc.map(x => x[0])), items = sc.filter(x => x[0] === top).map(x => x[1]);
+  let best = null; items.forEach(it => it[6].forEach(v => { if (!best || v[2] < best[2]) best = v; }));
+  return { items, exact: top > 0, best };
+}
+const SH_COND = { 'near mint': 'NM', 'lightly played': 'LP', 'moderately played': 'MP', 'heavily played': 'HP', damaged: 'DMG' };
+const shCond = s => SH_COND[String(s).toLowerCase()] || s;
+const shPrint = v => /reverse/i.test(v[1] || '') ? ' rev holo' : '';
+function shopChip(c) {
+  const r = shopFor(c); if (!r) return '';
+  const n = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + v[3], 0), 0);
+  return `<button type="button" class="np-shop${r.exact ? '' : ' maybe'}" title="${esc(SHOP.data.name)}: ${n} in stock">🏪 ${r.exact ? '' : 'Similar · '}${fmt(r.best[2])} ${esc(shCond(r.best[0]))}${shPrint(r.best)}${n > 1 ? ` · ${n} left` : ''}</button>`;
+}
+function shopSummaryHTML(list) {
+  if (!SHOP.data) return '';
+  const found = list.map(x => ({ x, r: shopFor(x.c) })).filter(y => y.r), exact = found.filter(y => y.r.exact), maybe = found.length - exact.length;
+  const when = SHOP.data.updated ? nwAgo(SHOP.data.updated) : '';
+  if (!found.length) return `<div class="np-shopsum">🏪 <b>${esc(SHOP.data.name)}</b> has none of these Need cards in stock right now.<small>Their stock was checked ${esc(when)}.</small></div>`;
+  const shown = SHOP.all ? exact : exact.slice(0, 6);
+  return `<div class="np-shopsum">🏪 <b>${esc(SHOP.data.name)} has ${exact.length} of your Need card${exact.length === 1 ? '' : 's'}</b>${maybe ? ` · ${maybe} similar` : ''}
+    ${shown.map(({ x, r }) => `<button type="button" data-key="${esc(x.key)}">${esc(x.c.name)}: <b>${fmt(r.best[2])}</b> ${esc(shCond(r.best[0]))}${shPrint(r.best)}${x.c.price != null ? ` (market ${fmt(x.c.price)})` : ''}</button>`).join('')}
+    ${exact.length > 6 ? `<button type="button" class="more">${SHOP.all ? 'Show fewer' : `Show all ${exact.length}`}</button>` : ''}
+    <small>Stock checked ${esc(when)}. Tap 🏪 on a card for every condition, then reserve or buy on their site.</small></div>`;
+}
+function openShopSheet(c) {
+  const r = shopFor(c); if (!r) return;
+  const d = SHOP.data;
+  sheet(`<h2 id="lb-sheet-title">🏪 ${esc(d.name)}</h2>
+    <p class="sub">${esc(c.name)} · ${esc([c.set, c.number].filter(Boolean).join(' · '))}${c.price != null ? ` · market ${fmt(c.price)}` : ''}</p>
+    <div class="sh-list">${r.items.map(it => `<div class="sh-item">
+      <h3>${esc(it[0])} (${esc(it[1])}${it[2] ? ` — ${esc(it[2])}` : ''})</h3>
+      <p${r.exact ? '' : ' class="warn"'}>${esc(it[3])}${it[4] ? ' · Japanese' : ''}${r.exact ? '' : ' · listed under a different set name, so check it\u2019s the printing you want'}</p>
+      ${it[6].slice().sort((a, b) => a[2] - b[2]).map(v => `<div class="sh-row"><span>${esc(v[0])}${v[1] && !/^normal$/i.test(v[1]) ? ` · ${esc(v[1])}` : ''}</span><span><b>${fmt(v[2])}</b> · ${v[3]} left</span></div>`).join('')}
+      <a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open on ${esc(d.name)} ↗</a></div>`).join('')}</div>
+    <p class="sub" style="text-align:left">Stock and prices as of ${esc(nwAgo(d.updated))}; it's checked twice a day, so it may have sold since.</p>
+    <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
+}
 function renderNeedPage() {
   const page = $('need-page'); if (!page || page.hidden || npDrag) return;
   const all = needCards(), list = all.filter(x => x.c.status === 'needed'), got = all.length - list.length;
@@ -6274,7 +6389,8 @@ function renderNeedPage() {
   const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
   const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
     return `<button type="button" data-key="${x ? esc(x.key) : ''}">${esc(h.c.name)}: now <b>${fmt(h.price)}</b> (your alert: ${fmt(h.c.alert)})${x ? '' : ` · in ${esc(titleOf(h.b))}`}</button>`; }).join('')}</div>` : '';
-  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + (all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
+  const shopHTML = shopSummaryHTML(list);
+  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + shopHTML + (all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
     : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
 }
