@@ -1442,7 +1442,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.110';
+const APP_VERSION = '2026-11-13.112';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -7114,7 +7114,7 @@ function renderNeedPage() {
   const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
   const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
     return `<button type="button" data-key="${x ? esc(x.key) : ''}">${esc(h.c.name)}: now <b>${fmt(h.price)}</b> (your alert: ${fmt(h.c.alert)})${x ? '' : ` · in ${esc(titleOf(h.b))}`}</button>`; }).join('')}</div>` : '';
-  const shopHTML = npView === 'shop' ? '' : shopSummaryHTML(list);
+  const shopHTML = npView === 'price' ? shopSummaryHTML(list) : '';   // Priority stays clean; the Card Quest tab has the full comparison
   $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + shopHTML + (all.length ? (npView === 'shop' ? shopViewHTML(list) : npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
     : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
