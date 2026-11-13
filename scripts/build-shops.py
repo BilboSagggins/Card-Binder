@@ -103,9 +103,6 @@ def main():
         data = {'updated': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'name': shop['name'], 'url': shop['url'],
                 'fields': ['name', 'number', 'label', 'set', 'japanese', 'product', 'stock: [condition, printing, price, qty]'],
                 'games': games}
-        if old and old.get('games') == games:
-            print(f'{key}: no stock changes')
-            continue
         with open(path, 'w') as f:
             json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
         print(f'{key}: wrote {path} ({os.path.getsize(path)} bytes): ' + ', '.join(f'{g} {len(v)}' for g, v in games.items()))
