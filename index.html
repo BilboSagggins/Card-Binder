@@ -160,9 +160,39 @@
   .gf-btns button { appearance: none; border: 1px solid #3f3f46; background: #27272a; color: #e4e4e7; border-radius: 8px; padding: .45rem .3rem; font: 800 .62rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .gf-btns .buy { border-color: #059669; background: #064e3b; color: #d1fae5; }
   .np-card.got .gf-btns .buy { border-color: #3f3f46; background: #27272a; color: #d4d4d8; }
-  .np-views { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
+  .np-views { flex: 0 0 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .3rem; padding: .2rem; border-radius: 12px; background: #18181b; border: 1px solid #27272a; }
   .np-views button { appearance: none; border: 0; border-radius: 9px; padding: .5rem; background: none; color: #a1a1aa; font: 800 .74rem/1 Inter, system-ui, sans-serif; }
   .np-views button[aria-selected="true"] { background: #e11d48; color: #fff; }
+  .np-views #npv-shop[aria-selected="true"] { background: #0e7490; }
+  .cq-head { grid-column: 1 / -1; border: 1px solid #0e7490; background: #082f3a; border-radius: 12px; padding: .65rem .75rem; color: #cffafe; font: 600 .76rem/1.45 Inter, system-ui, sans-serif; }
+  .cq-head h3 { margin: 0 0 .15rem; font: 800 .95rem/1.2 Inter, system-ui, sans-serif; color: #fff; }
+  .cq-head .cq-tot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .4rem; margin-top: .5rem; }
+  .cq-head .cq-tot div { background: #0b3b48; border-radius: 9px; padding: .4rem .45rem; text-align: center; }
+  .cq-head .cq-tot span { display: block; font: 700 .58rem/1.2 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
+  .cq-head .cq-tot b { display: block; font: 800 .95rem/1.3 Inter, system-ui, sans-serif; color: #fff; }
+  .cq-head .cq-tot b.good { color: #6ee7b7; } .cq-head .cq-tot b.bad { color: #fbbf24; }
+  .cq-head small { display: block; color: #94a3b8; font-weight: 500; margin-top: .45rem; }
+  .cq-h { grid-column: 1 / -1; margin: .5rem .1rem 0; font: 800 .66rem/1 Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #a1a1aa; }
+  .cq-row { grid-column: 1 / -1; display: grid; grid-template-columns: 3.6rem 1fr; gap: .6rem; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: .55rem; align-items: start; }
+  .cq-row.maybe { border-style: dashed; }
+  .cq-img img { width: 100%; aspect-ratio: 2.5 / 3.5; object-fit: cover; border-radius: 6px; display: block; background: #09090b; }
+  .cq-body { min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
+  .cq-name { font: 800 .82rem/1.2 Inter, system-ui, sans-serif; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cq-meta { font: 500 .66rem/1.25 Inter, system-ui, sans-serif; color: #a1a1aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cq-meta.warn { color: #fbbf24; white-space: normal; }
+  .cq-cmp { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+  .cq-cmp div { background: #0f0f12; border: 1px solid #27272a; border-radius: 8px; padding: .3rem .4rem; }
+  .cq-cmp div.shop { border-color: #0e7490; background: #082f3a; }
+  .cq-cmp span { display: block; font: 700 .56rem/1.2 Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; color: #94a3b8; }
+  .cq-cmp b { font: 800 .9rem/1.3 Inter, system-ui, sans-serif; color: #fff; }
+  .cq-cmp div.shop b { color: #67e8f9; }
+  .cq-cmp i { font: 600 .62rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; font-style: normal; margin-left: .2rem; }
+  .cq-foot { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+  .cq-diff { font: 800 .64rem/1 Inter, system-ui, sans-serif; padding: .3rem .45rem; border-radius: 999px; }
+  .cq-diff.good { background: #064e3b; color: #6ee7b7; } .cq-diff.bad { background: #451a03; color: #fbbf24; } .cq-diff.even { background: #27272a; color: #d4d4d8; }
+  .cq-foot button, .cq-foot a { appearance: none; margin-left: auto; border: 1px solid #0e7490; background: #083344; color: #a5f3fc; border-radius: 8px; padding: .35rem .5rem; font: 700 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; text-decoration: none; }
+  .cq-foot a { margin-left: 0; background: #0e7490; color: #fff; }
+  .cq-miss { grid-column: 1 / -1; font: 500 .7rem/1.5 Inter, system-ui, sans-serif; color: #a1a1aa; padding: 0 .2rem; }
   .np-find { flex: 0 0 100%; font-size: 16px; }
   .np-find[hidden] { display: none; }
   .np-bucket { appearance: none; width: 100%; text-align: left; cursor: pointer; grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: .5rem 0 -.1rem; padding: .6rem .75rem; border-radius: 10px; background: #18181b; border: 1px solid #27272a; color: inherit; }
@@ -1225,7 +1255,7 @@
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
     <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="shareNeedFromPage()" title="A link to this Need List that anyone can open">🔗 Share</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
-    <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button></div>
+    <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button><button type="button" role="tab" id="npv-shop" onclick="setNeedView('shop')">🏪 Card Quest</button></div>
     <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
@@ -1295,7 +1325,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.105';
+const APP_VERSION = '2026-11-13.107';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -6079,7 +6109,7 @@ function openNeedPage() {
 let npDrag = null;
 function npDown(e) {
   if (e.target.closest('.np-shop')) return;
-  const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag || npLocked || npView === 'price') return;
+  const el = e.target.closest('.np-card'); if (!el || e.button > 0 || npDrag || npLocked || npView !== 'priority') return;
   npDrag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', active: false };
   if (npDrag.touch) npDrag.timer = setTimeout(npBegin, 320);
   addEventListener('pointermove', npMove, { passive: false }); addEventListener('pointerup', npUp); addEventListener('pointercancel', npCancel);
@@ -6174,6 +6204,9 @@ function npToggleAcquired(el) {
   saveActivePages(pages); render();
 }
 function npTap(e) {
+  const cq = e.target.closest('#np-grid .cq-more');
+  if (cq) { e.preventDefault(); e.stopPropagation(); const row = cq.closest('.cq-row'); const x = needCards().find(y => y.key === row.dataset.key && (y.b || '') === (row.dataset.b || '')); return x && openShopSheet(x.c); }
+  if (e.target.closest('#np-grid .cq-row, #np-grid .cq-head, #np-grid .cq-miss')) return;
   const sb = e.target.closest('#np-grid .np-shop');
   if (sb) { e.preventDefault(); e.stopPropagation(); const el = sb.closest('.np-card'); const x = needCards().find(y => y.key === el.dataset.key && (y.b || '') === (el.dataset.b || '')); return x && openShopSheet(x.c); }
   const ss = e.target.closest('#np-grid .np-shopsum button');
@@ -6251,8 +6284,9 @@ function clearAcquired() {
 document.addEventListener('DOMContentLoaded', () => { const g = $('np-grid'); if (g) g.addEventListener('click', npTap); });
 // Second view: the same cards grouped by price, cheapest first (drag to reorder only works in Priority)
 const NP_VIEW_KEY = 'cardBinder.needView';
-let npView = (() => { try { return localStorage.getItem(NP_VIEW_KEY) === 'price' ? 'price' : 'priority'; } catch (e) { return 'priority'; } })();
-function setNeedView(v) { npView = v === 'price' ? 'price' : 'priority'; try { localStorage.setItem(NP_VIEW_KEY, npView); } catch (e) {} renderNeedPage(); $('need-page').scrollTop = 0; }
+const NP_VIEWS = ['priority', 'price', 'shop'];
+let npView = (() => { try { const v = localStorage.getItem(NP_VIEW_KEY); return NP_VIEWS.includes(v) ? v : 'priority'; } catch (e) { return 'priority'; } })();
+function setNeedView(v) { npView = NP_VIEWS.includes(v) ? v : 'priority'; if (npView === 'shop' && !SHOP.data) loadShop().then(() => renderNeedPage()); try { localStorage.setItem(NP_VIEW_KEY, npView); } catch (e) {} renderNeedPage(); $('need-page').scrollTop = 0; }
 let npFind = '';
 const NP_SHUT_KEY = 'cardBinder.needShut';
 function npShut() { try { return new Set(JSON.parse(localStorage.getItem(NP_SHUT_KEY) || '[]')); } catch (e) { return new Set(); } }
@@ -6358,6 +6392,54 @@ function shopSummaryHTML(list) {
     ${exact.length > 6 ? `<button type="button" class="more">${SHOP.all ? 'Show fewer' : `Show all ${exact.length}`}</button>` : ''}
     <small>Stock checked ${esc(when)}. Tap 🏪 on a card for every condition, then reserve or buy on their site.</small></div>`;
 }
+// The Card Quest tab: every Need card they have, their price against market for the same condition, best deals first
+function shopViewHTML(list) {
+  if (!SHOP.data) { loadShop().then(d => { if (d && npView === 'shop') renderNeedPage(); }); return '<p class="np-empty">⏳ Loading Card Quest\u2019s stock…</p>'; }
+  const d = SHOP.data, cf = Object.fromEntries(CONDITIONS.map(([k, f]) => [k, f]));
+  const rows = list.map(x => {
+    const r = shopFor(x.c); if (!r) return null;
+    const mk = Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : null;
+    // the listing that's the best deal against market for its own condition (or simply the cheapest when there's no market price)
+    let pick = null;
+    r.items.forEach(it => it[6].forEach(v => {
+      // the market price is for the regular card, so a reverse holo isn't compared with it
+      const est = mk != null && !shPrint(v) ? mk * (cf[shCond(v[0])] ?? 1) : null, diff = est != null ? v[2] - est : null;
+      const cand = { it, v, est, diff };
+      if (!pick || (diff != null && pick.diff == null) || (diff != null && pick.diff != null ? diff < pick.diff : diff == null && pick.diff == null && v[2] < pick.v[2])) pick = cand;
+    }));
+    const qty = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + v[3], 0), 0);
+    return { x, r, mk, pick, qty };
+  }).filter(Boolean);
+  const exact = rows.filter(y => y.r.exact).sort((a, b) => (a.pick.diff ?? 1e9) - (b.pick.diff ?? 1e9)), maybe = rows.filter(y => !y.r.exact);
+  const cmp = exact.filter(y => y.pick.est != null), sumShop = cmp.reduce((a, y) => a + y.pick.v[2], 0), sumMk = cmp.reduce((a, y) => a + y.pick.est, 0), save = sumMk - sumShop;
+  const missing = list.length - rows.length;
+  const row = y => {
+    const { x, r, pick, qty } = y, v = pick.v, it = pick.it, diff = pick.diff;
+    const pct = pick.est ? Math.round(Math.abs(diff) / pick.est * 100) : 0;
+    const badge = diff == null ? `<span class="cq-diff even">${shPrint(v) ? 'Reverse holo · no market to compare' : 'No market price'}</span>` : Math.abs(diff) < 0.5 || pct < 3 ? '<span class="cq-diff even">About market</span>'
+      : diff < 0 ? `<span class="cq-diff good">${fmt(-diff)} under (${pct}%)</span>` : `<span class="cq-diff bad">${fmt(diff)} over (${pct}%)</span>`;
+    const g = gridImg(x.c, 120 * (window.devicePixelRatio || 1));
+    return `<div class="cq-row${r.exact ? '' : ' maybe'}" data-key="${esc(x.key)}" data-b="${esc(x.b || '')}">
+      <div class="cq-img">${imgTag(g.src || x.c.thumb, g.alts, x.c.name, '')}</div>
+      <div class="cq-body">
+        <div class="cq-name" title="${esc(x.c.name)}">${esc(x.c.name)}</div>
+        <div class="cq-meta">${esc([x.c.set, x.c.number].filter(Boolean).join(' · '))}${x.b && npMulti() ? ` · 📒 ${esc(titleOf(x.b))}` : ''}</div>
+        ${r.exact ? '' : `<div class="cq-meta warn">They list it under ${esc(it[3])}. Check it\u2019s the printing you want.</div>`}
+        <div class="cq-cmp">
+          <div><span>Market · ${esc(shCond(v[0]))}</span><b>${pick.est != null ? fmt(pick.est) : '—'}</b></div>
+          <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}</span><b>${fmt(v[2])}</b><i>${v[3]} left</i></div>
+        </div>
+        <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > v[3] ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+      </div></div>`;
+  };
+  return `<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
+      ${exact.length ? `Best deal for each card, against the market price for the same condition${cmp.length < exact.length ? ` (totals cover the ${cmp.length} with a market price to compare)` : ''}.
+      <div class="cq-tot"><div><span>At ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>Market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'You save' : 'Extra'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
+      <small>Stock checked ${esc(nwAgo(d.updated))} (twice a day), so a card may have sold since. Pokémon and One Piece, English only.</small></div>
+    ${exact.map(row).join('')}
+    ${maybe.length ? `<p class="cq-h">Similar listings (${maybe.length})</p>${maybe.map(row).join('')}` : ''}
+    ${missing ? `<p class="cq-miss">${missing} other Need card${missing === 1 ? ' isn\u2019t' : 's aren\u2019t'} in stock at ${esc(d.name)}.</p>` : ''}`;
+}
 function openShopSheet(c) {
   const r = shopFor(c); if (!r) return;
   const d = SHOP.data;
@@ -6382,15 +6464,15 @@ function renderNeedPage() {
   $('np-title').textContent = `Need List · ${npScopeLabel()}`;
   const sc = $('np-scope'); sc.textContent = `📚 ${needBinderIds().length > 1 ? npScopeLabel() : needBinderIds()[0] === currentUser ? 'This binder' : titleOf(needBinderIds()[0])}`; sc.classList.toggle('on', npMulti());
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
-  $('npv-priority').setAttribute('aria-selected', npView === 'priority'); $('npv-price').setAttribute('aria-selected', npView === 'price');
+  NP_VIEWS.forEach(v => $('npv-' + v).setAttribute('aria-selected', npView === v));
   $('np-find').hidden = npView !== 'price' || !all.length;
-  $('np-hint').textContent = !all.length ? '' : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
+  $('np-hint').textContent = !all.length ? '' : npView === 'shop' ? `${SHOP.data ? SHOP.data.name : 'Card Quest'}'s stock against market price · best deals first` : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
   // every drop, also in binders this list isn't showing right now (those say where they are)
   const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
   const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
     return `<button type="button" data-key="${x ? esc(x.key) : ''}">${esc(h.c.name)}: now <b>${fmt(h.price)}</b> (your alert: ${fmt(h.c.alert)})${x ? '' : ` · in ${esc(titleOf(h.b))}`}</button>`; }).join('')}</div>` : '';
-  const shopHTML = shopSummaryHTML(list);
-  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + shopHTML + (all.length ? (npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
+  const shopHTML = npView === 'shop' ? '' : shopSummaryHTML(list);
+  $('np-grid').innerHTML = all.length || drops.length ? dropsHTML + shopHTML + (all.length ? (npView === 'shop' ? shopViewHTML(list) : npView === 'price' ? needByPriceHTML(all) : all.map(needCardHTML).join('')) : '')
     : `<p class="np-empty">No cards are marked Need in ${npMulti() ? 'these binders' : 'this binder'}.<br>Mark cards as ⏳ Need and they show up here.</p>`;
   paintNpSel();
 }
