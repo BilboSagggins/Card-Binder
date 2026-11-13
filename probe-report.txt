@@ -1,5 +1,252 @@
-www plain                 content-type: image/png | SIZE 572721 CODE 200
-www + site referrer       content-type: image/png | SIZE 572721 CODE 200
-www + cors from site      content-type: image/png | SIZE 626500 CODE 200
-www + test-page referrer  content-type: image/png | SIZE 572721 CODE 200
-old host + site referrer  content-type: text/html; charset=iso-8859-1 | location: https://www.cardtrader.com/uploads/blueprints/image/353723/moltres-zapdos-articuno-gx-gold-secret-rare-185-150-shining-synergy-set-c.png | SIZE 465 CODE 301
+== https://cardquestlgs.com/ -> 200 text/html; charset=UTF-8 len=597059
+scripts: ['https://unpkg.com/htmx.org@2.0.4', 'https://unpkg.com/htmx-ext-preload@2.1.0/preload.js', 'https://unpkg.com/@tailwindcss/browser@4', '/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js']
+next data? False False
+sp url: https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png
+sp url: https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png
+sp url: https://images.shadowpos.com/yugi_charizard_jace.png
+sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
+sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
+sp url: https://images.shadowpos.com/store_01k4n1pwkwf239yds3fw7zp6nt/collections/upload_2026-05-19
+sp url: https://images.shadowpos.com/image_58qjn0n38cb5mat0tgf1zfmbqe.png
+sp url: https://images.shadowpos.com/image_58qjn0n38cb5mat0tgf1zfmbqe.png
+sp url: https://images.shadowpos.com/image_4apxcsggt8a7waamw6mdjhvc9c.png
+sp url: https://images.shadowpos.com/image_4apxcsggt8a7waamw6mdjhvc9c.png
+sp url: https://images.shadowpos.com/image_28bdaarv02ab5sa1g3jk4dqdfk
+sp url: https://images.shadowpos.com/image_28bdaarv02ab5sa1g3jk4dqdfk
+sp url: https://images.shadowpos.com/image_0h7fn5sbrcaqqasm9jd2hkeb01.png
+sp url: https://images.shadowpos.com/image_0h7fn5sbrcaqqasm9jd2hkeb01.png
+sp url: https://images.shadowpos.com/image_6gjmxaj0kzbfpv0hfjh1cs9fhr.webp
+sp url: https://images.shadowpos.com/image_6gjmxaj0kzbfpv0hfjh1cs9fhr.webp
+sp url: https://images.shadowpos.com/image_08g987m2avb9mr2tx6pbv90dpe.webp
+sp url: https://images.shadowpos.com/image_08g987m2avb9mr2tx6pbv90dpe.webp
+sp url: https://images.shadowpos.com/image_45qtab2m2pby8bk63jv1pgymkm.png
+sp url: https://images.shadowpos.com/image_45qtab2m2pby8bk63jv1pgymkm.png
+links: ['/', '/advanced-search-mtg', '/advanced-search-pokemon', '/auth/login', '/auth/register', '/bulk', '/cart', '/cdn-cgi/l/email-protection', '/checkout', '/collections/preorders', '/collections/riftbound-singles', '/events', '/products/product_01kv127j99eczakrgbgm9spccy', '/products/product_18rmk9s5mcatasprj0wp6y9qvg', '/products/product_1vy0v0dhaqaprrfsfkejmgenjx', '/products/product_1z4y231c3qar6b9vz91yc62q9m', '/products/product_2bt3btta8xbvyvt1kx6hg8raqn', '/products/product_360xyg7dhdagd8rredtm27ddn6', '/products/product_4jb1c6pfmdbcza5vgt7zey14fd', '/products/product_6gn15k761xb7ft2yx1a63kpbps', '/products/product_76fa8xkvwkbpyrcyf7atx6vc34', '/products/product_76gxxk75c8b3r99xj1zzaq9yyk', '/products/product_7despdzt85bga9g9bf1atbx1xe', '/products/product_7vs5d0s7rnb94awe97qrdsmgp4', '/search', '/static/membership-storefront.css']
+== https://cardquestlgs.com/advanced-search-pokemon?inStockOnly=true&orderBy=price-desc -> 200 text/html; charset=UTF-8 len=1019130
+adv scripts: ['https://unpkg.com/htmx.org@2.0.4', 'https://unpkg.com/htmx-ext-preload@2.1.0/preload.js', 'https://unpkg.com/@tailwindcss/browser@4']
+adv snippet: <!DOCTYPE html>
+<html lang="en-US">
+
+
+<head>
+    
+    
+    
+    
+      
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>Pokemon Advanced Search | Card Quest</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="trading cardstabletop gamesgaming" />
+    <link rel="canonical" href="https://cardquestlgs.com/advanced-search-pokemon" />
+    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
+    
+    
+    
+    
+      
+    
+    
+      
+    
+
+    <!-- Open Graph / Facebook Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pokemon Advanced Search | Card Quest" />
+    <meta property="og:description" content="" />
+    <meta property="og:url" content="https://cardquestlgs.com/advanced-search-pokemon" />
+    <meta property="og:site_name" content="Card Quest" />
+    
+    
+    
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pokemon Advanced Search | Card Quest" />
+    <meta name="twitter:description" content="" />
+    
+    
+    <!-- Additional SEO tags -->
+    <meta name="robots" content="index, follow" />
+    
+    
+    <!-- Preload critical assets -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preload" href="https://unp
+---- product cards in adv search: 0
+== https://unpkg.com/htmx.org@2.0.4 -> 200 text/javascript; charset=utf-8 len=50917
+== https://unpkg.com/htmx-ext-preload@2.1.0/preload.js -> 200 text/javascript; charset=utf-8 len=14000
+== https://unpkg.com/@tailwindcss/browser@4 -> 200 text/javascript; charset=utf-8 len=287414
+== https://cardquestlgs.com/products.json -> ERR HTTP Error 404: Not Found
+== https://cardquestlgs.com/collections/pokemon-singles -> 200 text/html len=100220
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    
+    
+    
+    
+      
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title> | Card Quest</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content=", " />
+    <link rel="canonical" href="https://cardquestlgs.com/collections/pokemon-singles" />
+    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
+    
+    
+    
+    
+      
+    
+    
+      
+    
+
+    <!-- Open Graph / Facebook Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content=" | Card Quest" />
+    <meta property="og:description" content="" />
+    <meta property="og:url" content="https://cardquestlgs.com/collections/pokemon-singles" />
+    <meta property="og:site_name" content="Card Quest" />
+    
+    
+    
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content=" | Card Quest" />
+    <meta name="twitter:description" content="" />
+    
+    
+    <!-- Additional SEO tags -->
+    <meta name="robots" content="index, follow" />
+    
+    
+    <!-- Preload critical assets -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preload" href="https://unpkg.com/htmx.org@2.0.4" as="script" />
+    
+    <!-- Scripts -->
+    <script src="https:
+== https://cardquestlgs.com/sitemap.xml -> 200 application/xml; charset=utf-8 len=466
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://cardquestlgs.com/sitemap/static.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://cardquestlgs.com/sitemap/products.xml?cursor=0000c2eb-6a53-5add-9e4d-4caaa730f23d</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://cardquestlgs.com/sitemap/products.xml?cursor=796d5969-a663-54af-99d3-fbdfb5b77fb1</loc>
+  </sitemap>
+</sitemapindex>
+
+== https://cardquestlgs.com/robots.txt -> 200 text/plain; charset=utf-8 len=4412
+# As a condition of accessing this website, you agree to abide by the following
+# content signals:
+
+# (a)  If a Content-Signal = yes, you may collect content for the corresponding
+#      use.
+# (b)  If a Content-Signal = no, you may not collect content for the
+#      corresponding use.
+# (c)  If the website operator does not include a Content-Signal for a
+#      corresponding use, the website operator neither grants nor restricts
+#      permission via Content-Signal with respect to the corresponding use.
+
+# The content signals and their meanings are:
+
+# search:   building a search index and providing search results (e.g., returning
+#           hyperlinks and short excerpts from your website's contents). Search does not
+#           include providing AI-generated search summaries.
+# ai-input: inputting content into one or more AI models (e.g., retrieval
+#           augmented generation, grounding, or other real-time taking of content for
+#           generative AI search answers).
+# ai-train: training or fine-tuning AI models.
+# use:      how AI systems may consume the content (immediate, reference, or full).
+
+# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF
+# RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT
+# AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
+
+# BEGIN Cloudflare Managed content
+
+
+User-agent: *
+Content-Signal: search=yes,ai-train=no,use=reference
+Allow: /
+
+# Training crawlers
+User-agent: Amazonbot
+Disallow: /
+== https://cardquestlgs.com/search?q=charizard -> 200 text/html; charset=UTF-8 len=493929
+
+
+
+<!DOCTYPE html>
+<html lang="en-US" hx-ext="preload">
+
+
+<head>
+    
+    
+    
+    
+      
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>charizard - Search Results | Card Quest</title>
+    <meta name="description" content="Search results for charizard at Card Quest" />
+    <meta name="keywords" content="trading cardstabletop gamesgaming" />
+    <link rel="canonical" href="https://cardquestlgs.com/search" />
+    <link rel="icon" href="https://images.shadowpos.com/card_quest_logo_black_text_transparent_bg.png" />
+    
+    
+    
+    
+      
+    
+    
+      
+    
+
+    <!-- Open Graph / Facebook Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="charizard - Search Results | Card Quest" />
+    <meta property="og:description" content="Search results for charizard at Card Quest" />
+    <meta property="og:url" content="https://cardquestlgs.com/search" />
+    <meta property="og:site_name" content="Card Quest" />
+    
+    
+    
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="charizard - Search Results | Card Quest" />
+    <meta name="twitter:description" content="Search results for charizard at Card Quest" />
+    
+    
+    <!-- Additional SEO tags -->
+    <meta name="robots" content="noindex, follow" />
+    
+    
+    <!-- Preload criti
