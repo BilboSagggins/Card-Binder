@@ -218,6 +218,10 @@
   .cq-cmp b { font: 800 .9rem/1.3 Inter, system-ui, sans-serif; color: #fff; }
   .cq-cmp div.shop b { color: #67e8f9; }
   .cq-cmp i { font: 600 .62rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; font-style: normal; margin-left: .2rem; }
+  .cq-copies { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .cq-copy { appearance: none; border: 1px solid #3f3f46; background: #0f0f12; color: #d4d4d8; border-radius: 999px; padding: .3rem .55rem; font: 600 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .cq-copy b { font-weight: 800; color: #fff; }
+  .cq-copy[aria-checked="true"] { border-color: #22d3ee; background: #083344; color: #a5f3fc; box-shadow: 0 0 0 1px #22d3ee inset; }
   .cq-foot { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
   .cq-diff { font: 800 .64rem/1 Inter, system-ui, sans-serif; padding: .3rem .45rem; border-radius: 999px; }
   .cq-diff.good { background: #064e3b; color: #6ee7b7; } .cq-diff.bad { background: #451a03; color: #fbbf24; } .cq-diff.even { background: #27272a; color: #d4d4d8; }
@@ -1505,7 +1509,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-14.110';
+const APP_VERSION = '2026-11-14.114';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -7103,6 +7107,8 @@ function npToggleAcquired(el) {
   saveActivePages(pages); render();
 }
 function npTap(e) {
+  const cp = e.target.closest('#np-grid .cq-copy');
+  if (cp) { e.preventDefault(); e.stopPropagation(); const row = cp.closest('.cq-row'); const x = needCards().find(y => y.key === row.dataset.key && (y.b || '') === (row.dataset.b || '')); if (x) setCqPick(x, cp.dataset.copy); return; }
   const cq = e.target.closest('#np-grid .cq-more');
   if (cq) { e.preventDefault(); e.stopPropagation(); const row = cq.closest('.cq-row'); const x = needCards().find(y => y.key === row.dataset.key && (y.b || '') === (row.dataset.b || '')); return x && openShopSheet(x.c); }
   if (e.target.closest('#np-grid .cq-row, #np-grid .cq-head, #np-grid .cq-miss')) return;
@@ -7310,18 +7316,17 @@ function shopViewHTML(list) {
   const rows = list.map(x => {
     const r = shopFor(x.c); if (!r) return null;
     const mk = Number.isFinite(+x.c.price) && x.c.price != null ? +x.c.price : null;
-    // the copy to show: the best Near Mint deal against the NM market when there is one, otherwise the cheapest copy
-    let pick = null;
-    r.items.forEach(it => it[6].forEach(v => {
-      const cand = { it, v, ...shCompare(v, it, mk) };
-      if (!pick || (cand.diff != null && pick.diff == null) || (cand.diff != null && pick.diff != null ? cand.diff < pick.diff : cand.diff == null && pick.diff == null && v[2] < pick.v[2])) pick = cand;
-    }));
-    const qty = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + v[3], 0), 0);
-    return { x, r, mk, pick, qty };
+    // every copy they have; the one you picked (remembered on this phone), or the cheapest, is the one compared and totalled
+    const copies = r.items.flatMap(it => it[6].map(v => ({ it, v, id: cqCopyId(it, v), ...shCompare(v, it, mk) }))).sort((a, b) => a.v[2] - b.v[2]);
+    const want = cqPicks()[cqPickKey(x)], pick = copies.find(c => c.id === want) || copies[0];
+    const qty = copies.reduce((a, c) => a + c.v[3], 0);
+    return { x, r, mk, pick, copies, chosen: !!copies.find(c => c.id === want), qty };
   }).filter(Boolean);
   const gapOf = y => y.pick.diff != null ? -y.pick.diff : y.pick.nm != null ? (y.pick.nm - y.pick.v[2]) * 0.001 : -1e9;   // NM deals by $ first, then played copies
   const exact = rows.filter(y => y.r.exact).sort((a, b) => gapOf(b) - gapOf(a)), maybe = rows.filter(y => !y.r.exact);
-  const cmp = exact.filter(y => y.pick.diff != null), sumShop = cmp.reduce((a, y) => a + y.pick.v[2], 0), sumMk = cmp.reduce((a, y) => a + y.pick.nm, 0), save = sumMk - sumShop;
+  // totals: the copy picked for each card (any condition), against the NM market of the cards that have one
+  const sumShop = exact.reduce((a, y) => a + y.pick.v[2], 0), withMk = exact.filter(y => y.mk != null), sumMk = withMk.reduce((a, y) => a + y.mk, 0);
+  const save = sumMk - withMk.reduce((a, y) => a + y.pick.v[2], 0);
   const missing = list.length - rows.length;
   const row = y => {
     const { x, r, pick, qty } = y, v = pick.v, it = pick.it, diff = pick.diff;
@@ -7338,18 +7343,29 @@ function shopViewHTML(list) {
         ${r.exact ? '' : `<div class="cq-meta warn">They list it under ${esc(it[3])}. Check it\u2019s the printing you want.</div>`}
         <div class="cq-cmp">
           <div><span>TCGplayer · NM market</span><b>${y.mk != null ? fmt(y.mk) : '—'}</b></div>
-          <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}</span><b>${fmt(v[2])}</b><i>${v[3]} left</i></div>
+          <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}${y.chosen ? ' · your pick' : ''}</span><b>${fmt(v[2])}</b><i>${v[3]} left</i></div>
         </div>
+        ${y.copies.length > 1 ? `<div class="cq-copies" role="radiogroup" aria-label="Copy to buy">${y.copies.map(c => `<button type="button" class="cq-copy" role="radio" aria-checked="${c.id === pick.id}" data-copy="${esc(c.id)}"><b>${esc(c.cond)}${esc(shPrint(c.v))}</b> ${fmt(c.v[2])}${c.isNM && c.diff != null && c.diff / c.nm <= -0.2 ? ' 🔥' : c.big ? ' ⚠️' : ''}</button>`).join('')}</div>` : ''}
         <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > v[3] ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a><a class="tcg" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a></div>
       </div></div>`;
   };
   return `<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
-      ${exact.length ? `Near Mint copies are compared with TCGplayer\u2019s NM market; for a card they only have played, it shows how far under the NM market that copy is${cmp.length < exact.length ? `. Totals cover the ${cmp.length} with a Near Mint copy` : ''}.
-      <div class="cq-tot"><div><span>NM at ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>NM market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'You save' : 'Extra'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
+      ${exact.length ? `Near Mint copies are compared with TCGplayer\u2019s NM market; for a card they only have played, it shows how far under the NM market that copy is. Tap a copy on a card to choose the one you\u2019d buy; totals add up the chosen copies (the cheapest until you choose).
+      <div class="cq-tot"><div><span>At ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>NM market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'Under NM' : 'Over NM'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
       <small>Stock checked ${esc(nwAgo(d.updated))} (twice a day), so a card may have sold since. Pokémon and One Piece, English only.</small></div>
     ${exact.map(row).join('')}
     ${maybe.length ? `<p class="cq-h">Similar listings (${maybe.length})</p>${maybe.map(row).join('')}` : ''}
     ${missing ? `<p class="cq-miss">${missing} other Need card${missing === 1 ? ' isn\u2019t' : 's aren\u2019t'} in stock at ${esc(d.name)}.</p>` : ''}`;
+}
+// Which copy you'd buy for each Need card (Card Quest tab), kept on this phone
+const CQ_PICK_KEY = 'cardBinder.cqPicks';
+const cqCopyId = (it, v) => [it[5], v[0], v[1]].join('|');
+const cqPickKey = x => `${SHOP.key}|${x.b || currentUser}|${x.key}`;
+function cqPicks() { try { return JSON.parse(localStorage.getItem(CQ_PICK_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function setCqPick(x, id) {
+  const all = cqPicks(); all[cqPickKey(x)] = id;
+  try { localStorage.setItem(CQ_PICK_KEY, JSON.stringify(all)); } catch (e) { toast('This phone couldn\u2019t save your pick', 'error'); }
+  renderNeedPage();
 }
 function openShopSheet(c) {
   const r = shopFor(c); if (!r) return;
