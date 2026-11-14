@@ -1,131 +1,26 @@
-== https://tradingcardworld.store/robots.txt -> 200 len=3826
-User-agent: *
-Disallow: /a/downloads/-/*
-Disallow: /admin
-Disallow: /cart
-Disallow: /orders
-Disallow: /checkouts/
-Disallow: /checkout
-Disallow: /55291871370/checkouts
-Disallow: /55291871370/orders
-Disallow: /carts
-Disallow: /account
-Disallow: /collections/*sort_by*
-Disallow: /*/collections/*sort_by*
-Disallow: /collections/*+*
-Disallow: /collections/*%2B*
-Disallow: /collections/*%2b*
-Disallow: /*/collections/*+*
-Disallow: /*/collections/*%2B*
-Disallow: /*/collections/*%2b*
-Disallow: */collections/*filter*&*filter*
-Disallow: /blogs/*+*
-Disallow: /blogs/*%2B*
-Disallow: /blogs/*%2b*
-Disallow: /*/blogs/*+*
-Disallow: /*/blogs/*%2B*
-Disallow: /*/blogs/*%2b*
-Disallow: /*?*oseid=*
-Disallow: /*preview_theme_id*
-Disallow: /*preview_script_id*
-Disallow: /policies/
-Disallow: /*/policies/
-Disallow: /*/*?*ls=*&ls=*
-Disallow: /*/*?*ls%3D*%3Fls%3D*
-Disallow: /*/*?*ls%3d*%3fls%3d*
-Disallow: /search
-Disallow: /apple-app-site-association
-Disallow: /.well-known/shopify/monorail
-Disallow: /cdn/wpm/*.js
-Disallow: /recommendations/products
-Disallow: /*/recommendations/products
-Sitemap: https://tradingcardworld.store/sitemap.xml
-User-agent: adsbot-google
-Disallow: /checkouts/
-Disallow: /checkout
-Disallow: /carts
-Disallow: /orders
-Disallow: /55291871370/checkouts
-Disallow: /55291871370/orders
-Disallow: /*?*oseid=*
-Disallow: /*preview_theme_id*
-Disallow: /*preview_script_id*
-Disallow: /cdn/wpm/*.js
-User-agent: Nutch
-Disallow: /
-User-agent: AhrefsBot
-Disallow: /a/downloads/-/*
-Disallow: /admin
-Disallow:
-== https://tradingcardworld.store/collections/pokemon-singles/products.json?limit=250&page=1 -> 200 len=1072782
-pokemon-singles page1 products 250
-   Mewtwo GX (78/73) [Sun & Moon: Shining Legends] | type Pokemon Single | tags ['Holofoil', 'Mewtwo', 'Pokémon', 'Secret Rare', 'Sun & Moon', 'Sun & Moon: Shining Legends'] | handle mewtwo-gx-78-73-sun-moon-shining-legends
-       Near Mint Holofoil 824.75 avail False {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'SM35-78-EN-HF-1'}
-       Lightly Played Holofoil 701.05 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'SM35-78-EN-HF-2'}
-       Moderately Played Holofoil 577.35 avail False {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'SM35-78-EN-HF-3'}
-       Heavily Played Holofoil 453.60 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'SM35-78-EN-HF-4'}
-       Damaged Holofoil 400.00 avail True {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'SM35-78-EN-HF-5'}
-   Charizard GX (150/147) [Sun & Moon: Burning Shadows] | type Pokemon Single | tags ['Charizard', 'Holofoil', 'Pokémon', 'Secret Rare', 'Sun & Moon', 'Sun & Moon: Burning Shadows'] | handle charizard-gx-150-147-sun-moon-burning-shadows
-       Near Mint Holofoil 840.75 avail False {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'SM3-150-EN-HF-1'}
-       Lightly Played Holofoil 714.65 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'SM3-150-EN-HF-2'}
-       Moderately Played Holofoil 588.55 avail True {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'SM3-150-EN-HF-3'}
-       Heavily Played Holofoil 462.45 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'SM3-150-EN-HF-4'}
-       Damaged Holofoil 336.30 avail False {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'SM3-150-EN-HF-5'}
-   Pikachu EX (XY124) [XY: Black Star Promos] | type Pokemon Single | tags ['Holofoil', 'Pikachu', 'Pokémon', 'Promo', 'XY', 'XY: Black Star Promos'] | handle pikachu-ex-xy124-xy-black-star-promos
-       Near Mint Holofoil 604.55 avail False {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'XYP-XY124-EN-HF-1'}
-       Lightly Played Holofoil 513.85 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'XYP-XY124-EN-HF-2'}
-       Moderately Played Holofoil 423.20 avail False {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'XYP-XY124-EN-HF-3'}
-       Heavily Played Holofoil 332.50 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'XYP-XY124-EN-HF-4'}
-       Damaged Holofoil 241.85 avail True {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'XYP-XY124-EN-HF-5'}
-   Special Delivery Bidoof (SWSH177) [Sword & Shield: Black Star Promos] | type Pokemon Single | tags ['Bidoof', 'Holofoil', 'Pokémon', 'Promo', 'Sword & Shield', 'Sword & Shield: Black Star Promos'] | handle special-delivery-bidoof-swsh177-sword-shield-black-star-promos
-       Near Mint Holofoil 1100.00 avail True {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'SWSHP-SWSH177-EN-HF-1'}
-       Lightly Played Holofoil 509.35 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'SWSHP-SWSH177-EN-HF-2'}
-       Moderately Played Holofoil 419.45 avail False {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'SWSHP-SWSH177-EN-HF-3'}
-       Heavily Played Holofoil 329.60 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'SWSHP-SWSH177-EN-HF-4'}
-       Damaged Holofoil 239.70 avail False {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'SWSHP-SWSH177-EN-HF-5'}
-   M Gengar EX (121/119) [XY: Phantom Forces] | type Pokemon Single | tags ['Gengar', 'Holofoil', 'Pokémon', 'Secret Rare', 'XY', 'XY: Phantom Forces'] | handle m-gengar-ex-121-119-xy-phantom-forces
-       Near Mint Holofoil 502.00 avail False {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'XY4-121-EN-HF-1'}
-       Lightly Played Holofoil 426.70 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'XY4-121-EN-HF-2'}
-       Moderately Played Holofoil 300.00 avail True {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'XY4-121-EN-HF-3'}
-       Heavily Played Holofoil 276.10 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'XY4-121-EN-HF-4'}
-       Damaged Holofoil 200.80 avail False {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'XY4-121-EN-HF-5'}
-   Groudon EX (106/108) [Black & White: Dark Explorers] | type Pokemon Single | tags ['Black & White', 'Black & White: Dark Explorers', 'Groudon', 'Holofoil', 'Pokémon', 'Ultra Rare'] | handle groudon-ex-106-108-black-white-dark-explorers
-       Near Mint Holofoil 427.50 avail False {'option1': 'Near Mint Holofoil', 'option2': None, 'sku': 'BW5-106-EN-HF-1'}
-       Lightly Played Holofoil 363.35 avail False {'option1': 'Lightly Played Holofoil', 'option2': None, 'sku': 'BW5-106-EN-HF-2'}
-       Moderately Played Holofoil 299.25 avail False {'option1': 'Moderately Played Holofoil', 'option2': None, 'sku': 'BW5-106-EN-HF-3'}
-       Heavily Played Holofoil 235.10 avail False {'option1': 'Heavily Played Holofoil', 'option2': None, 'sku': 'BW5-106-EN-HF-4'}
-       Damaged Holofoil 200.00 avail True {'option1': 'Damaged Holofoil', 'option2': None, 'sku': 'BW5-106-EN-HF-5'}
-  in stock on page1: 250
-  key sample: ['id', 'title', 'handle', 'body_html', 'published_at', 'created_at', 'updated_at', 'vendor', 'product_type', 'tags', 'variants', 'images', 'options'] ['id', 'title', 'option1', 'option2', 'option3', 'sku', 'requires_shipping', 'taxable', 'featured_image', 'available', 'price', 'grams', 'compare_at_price', 'position', 'product_id', 'created_at', 'updated_at']
-== https://tradingcardworld.store/collections/one-piece-singles/products.json?limit=250&page=1 -> 200 len=195872
-one-piece-singles page1 products 42
-   Monkey.D.Luffy (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | type One Piece Single | tags ['Foil', 'Monkey.D.Luffy', 'One Piece', 'One Piece Promotion Cards', 'Promo', 'Rare'] | handle monkey-d-luffy-premium-card-collection-6-assort-vol-1-one-piece-promotion-cards
-       Near Mint Foil 121.20 avail True {'option1': 'Near Mint Foil', 'option2': None, 'sku': 'OP-PR-OP10-111-PCC6-EN-FO-1'}
-       Lightly Played Foil 103.05 avail False {'option1': 'Lightly Played Foil', 'option2': None, 'sku': 'OP-PR-OP10-111-PCC6-EN-FO-2'}
-       Moderately Played Foil 84.85 avail False {'option1': 'Moderately Played Foil', 'option2': None, 'sku': 'OP-PR-OP10-111-PCC6-EN-FO-3'}
-       Heavily Played Foil 66.65 avail False {'option1': 'Heavily Played Foil', 'option2': None, 'sku': 'OP-PR-OP10-111-PCC6-EN-FO-4'}
-       Damaged Foil 48.50 avail False {'option1': 'Damaged Foil', 'option2': None, 'sku': 'OP-PR-OP10-111-PCC6-EN-FO-5'}
-   Yamato (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | type One Piece Single | tags ['Foil', 'One Piece', 'One Piece Promotion Cards', 'Promo', 'Super Rare', 'Yamato'] | handle yamato-premium-card-collection-6-assort-vol-1-one-piece-promotion-cards
-       Near Mint Foil 40.25 avail True {'option1': 'Near Mint Foil', 'option2': None, 'sku': None}
-   Leo (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | type One Piece Single | tags ['Foil', 'Leo', 'One Piece', 'One Piece Promotion Cards', 'Promo', 'Rare'] | handle leo-premium-card-collection-6-assort-vol-1-one-piece-promotion-cards
-       Near Mint Foil 35.70 avail True {'option1': 'Near Mint Foil', 'option2': None, 'sku': None}
-   Lim (SP) [Legacy of the Master] | type One Piece Single | tags ['Booster', 'Foil', 'Legacy of the Master', 'Lim', 'One Piece', 'Super Rare'] | handle lim-sp-legacy-of-the-master
-       Near Mint Foil 32.15 avail False {'option1': 'Near Mint Foil', 'option2': None, 'sku': 'OP12-OP09-037-EN-FO-1'}
-       Lightly Played Foil 27.30 avail True {'option1': 'Lightly Played Foil', 'option2': None, 'sku': 'OP12-OP09-037-EN-FO-2'}
-       Moderately Played Foil 22.50 avail False {'option1': 'Moderately Played Foil', 'option2': None, 'sku': 'OP12-OP09-037-EN-FO-3'}
-       Heavily Played Foil 17.70 avail False {'option1': 'Heavily Played Foil', 'option2': None, 'sku': 'OP12-OP09-037-EN-FO-4'}
-       Damaged Foil 12.85 avail False {'option1': 'Damaged Foil', 'option2': None, 'sku': 'OP12-OP09-037-EN-FO-5'}
-   Iceburg (Alternate Art) [Pillars of Strength] | type One Piece Single | tags ['Booster', 'Foil', 'Iceburg', 'Leader', 'One Piece', 'Pillars of Strength'] | handle iceburg-alternate-art-pillars-of-strength
-       Near Mint Foil 30.70 avail True {'option1': 'Near Mint Foil', 'option2': None, 'sku': 'OP03-058-AA-EN-FO-1'}
-       Lightly Played Foil 26.10 avail False {'option1': 'Lightly Played Foil', 'option2': None, 'sku': 'OP03-058-AA-EN-FO-2'}
-       Moderately Played Foil 21.50 avail False {'option1': 'Moderately Played Foil', 'option2': None, 'sku': 'OP03-058-AA-EN-FO-3'}
-       Heavily Played Foil 16.90 avail False {'option1': 'Heavily Played Foil', 'option2': None, 'sku': 'OP03-058-AA-EN-FO-4'}
-       Damaged Foil 12.30 avail False {'option1': 'Damaged Foil', 'option2': None, 'sku': 'OP03-058-AA-EN-FO-5'}
-   Boa Hancock (Illustration Box Vol.1) [One Piece Promotion Cards] | type One Piece Single | tags ['Boa Hancock', 'Foil', 'One Piece', 'One Piece Promotion Cards', 'Promo', 'Super Rare'] | handle boa-hancock-illustration-box-vol-2-one-piece-promotion-cards
-       Near Mint Foil 28.25 avail True {'option1': 'Near Mint Foil', 'option2': None, 'sku': 'OP-PR-ST17-004-EN-FO-1'}
-       Lightly Played Foil 24.00 avail False {'option1': 'Lightly Played Foil', 'option2': None, 'sku': 'OP-PR-ST17-004-EN-FO-2'}
-       Moderately Played Foil 19.75 avail False {'option1': 'Moderately Played Foil', 'option2': None, 'sku': 'OP-PR-ST17-004-EN-FO-3'}
-       Heavily Played Foil 15.55 avail False {'option1': 'Heavily Played Foil', 'option2': None, 'sku': 'OP-PR-ST17-004-EN-FO-4'}
-       Damaged Foil 11.30 avail False {'option1': 'Damaged Foil', 'option2': None, 'sku': 'OP-PR-ST17-004-EN-FO-5'}
-  in stock on page1: 42
-  key sample: ['id', 'title', 'handle', 'body_html', 'published_at', 'created_at', 'updated_at', 'vendor', 'product_type', 'tags', 'variants', 'images', 'options'] ['id', 'title', 'option1', 'option2', 'option3', 'sku', 'requires_shipping', 'taxable', 'featured_image', 'available', 'price', 'grams', 'compare_at_price', 'position', 'product_id', 'created_at', 'updated_at']
+one-piece-singles products 42 in stock 42 pages 1
+  variant titles: [('Near Mint Foil', 39), ('Lightly Played Foil', 3)]
+   Monkey.D.Luffy (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | sku OP-PR-OP10-111-PCC6-EN-FO-1 | body                        Set Name:             One Piece Promotion Cards                             Card Number:             OP10-111                             Release Date:             2025-10-01   
+   Yamato (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | sku None | body                        Set Name:             One Piece Promotion Cards                             Card Number:             EB02-006                             Release Date:             2025-10-01   
+   Leo (Premium Card Collection -6 assort vol.1-) [One Piece Promotion Cards] | sku None | body                        Set Name:             One Piece Promotion Cards                             Card Number:             OP10-057                             Release Date:             2025-10-01   
+   Lim (SP) [Legacy of the Master] | sku OP12-OP09-037-EN-FO-1 | body                        Set Name:             Legacy of the Master                             Card Number:             OP09-037                             Release Date:             2025-08-22        
+   Iceburg (Alternate Art) [Pillars of Strength] | sku OP03-058-AA-EN-FO-1 | body                        Set Name:             Pillars of Strength                             Card Number:             OP03-058                             Release Date:             2023-06-30         
+   Boa Hancock (Illustration Box Vol.1) [One Piece Promotion Cards] | sku OP-PR-ST17-004-EN-FO-1 | body                        Set Name:             One Piece Promotion Cards                             Card Number:             ST17-004                             Release Date:             TBA          
+   Uta (Alternate Art) [Paramount War] | sku OP02-120-AA-EN-FO-1 | body                        Set Name:             Paramount War                             Card Number:             OP02-120                             Release Date:             2023-03-10               
+   DON!! Card (Alternate Art) (Rocks) [The World's Strongest Warriors] | sku OP17-NULL-AA-ROCKS-EN-FO-1 | body                        Set Name:             The World's Strongest Warriors                             Release Date:             2026-08-14                             Rarity:             DON!!      
+   Donquixote Rosinante (OP12-108) (Reprint) [The Azure Sea's Seven] | sku OP14-OP12-108-EN-FO-1 | body                        Set Name:             The Azure Sea's Seven                             Card Number:             OP12-108                             Release Date:             2026-01-16       
+   Marshall.D.Teach [The Time of Battle] | sku OP16-119-EN-FO-1 | body                        Set Name:             The Time of Battle                             Card Number:             OP16-119                             Release Date:             2026-06-12          
+  titles without number-ish paren: 31 ['Lim (SP) [Legacy of the Master]', 'Iceburg (Alternate Art) [Pillars of Strength]', 'Uta (Alternate Art) [Paramount War]', "DON!! Card (Alternate Art) (Rocks) [The World's Strongest Warriors]", "Donquixote Rosinante (OP12-108) (Reprint) [The Azure Sea's Seven]", 'Marshall.D.Teach [The Time of Battle]', "DON!! Card (Alternate Art) (Gold) [The World's Strongest Warriors]", "Charlotte Linlin (Alternate Art) [The World's Strongest Warriors]"]
+pokemon-singles products 3537 in stock 3537 pages 15
+  variant titles: [('Near Mint Holofoil', 1059), ('Damaged Holofoil', 563), ('Lightly Played Holofoil', 490), ('Lightly Played', 410), ('Moderately Played Holofoil', 249), ('Lightly Played Reverse Holofoil', 199), ('Near Mint Reverse Holofoil', 195), ('Near Mint', 194), ('Damaged Reverse Holofoil', 169), ('Damaged', 141), ('Moderately Played', 132), ('Moderately Played Reverse Holofoil', 95), ('Heavily Played Holofoil', 71), ('Heavily Played', 48), ('Heavily Played Reverse Holofoil', 33)]
+   Mewtwo GX (78/73) [Sun & Moon: Shining Legends] | sku SM35-78-EN-HF-1 | body                        Set:             Sun &amp; Moon: Shining Legends                             Type:             Psychic                             Rarity:             Secret Rare               
+   Charizard GX (150/147) [Sun & Moon: Burning Shadows] | sku SM3-150-EN-HF-1 | body                        Set:             Sun &amp; Moon: Burning Shadows                             Type:             Fire                             Rarity:             Secret Rare                  
+   Pikachu EX (XY124) [XY: Black Star Promos] | sku XYP-XY124-EN-HF-1 | body                        Set:             XY: Black Star Promos                             Type:             Lightning                             Rarity:             Promo                             
+   Special Delivery Bidoof (SWSH177) [Sword & Shield: Black Star Promos] | sku SWSHP-SWSH177-EN-HF-1 | body                        Set:             Sword &amp; Shield: Black Star Promos                             Type:             Colorless                             Rarity:             Promo             
+   M Gengar EX (121/119) [XY: Phantom Forces] | sku XY4-121-EN-HF-1 | body                        Set:             XY: Phantom Forces                             Type:             Psychic                             Rarity:             Secret Rare                            
+   Groudon EX (106/108) [Black & White: Dark Explorers] | sku BW5-106-EN-HF-1 | body                        Set:             Black &amp; White: Dark Explorers                             Type:             Fighting                             Rarity:             Ultra Rare             
+   Dragonite V (192/203) [Sword & Shield: Evolving Skies] | sku SWSH7-192-EN-HF-1 | body                        Set:             Sword &amp; Shield: Evolving Skies                             Type:             Dragon                             Rarity:             Ultra Rare              
+   Mega Dragonite ex (290/217) [Mega Evolution: Ascended Heroes] | sku ASC-290-EN-HF-1 | body                        Set:             Mega Evolution: Ascended Heroes                             Type:             Dragon                             Rarity:             Special Illustration Rare  
+   Team Rocket's Mewtwo ex (231/182) [Scarlet & Violet: Destined Rivals] | sku SV10-231-EN-HF-1 | body                        Set:             Scarlet &amp; Violet: Destined Rivals                             Type:             Pokémon                             Rarity:             Special Illustration
+   Gengar & Mimikyu GX (53/181) [Sun & Moon: Team Up] | sku SM9-53-EN-HF-1 | body                        Set:             Sun &amp; Moon: Team Up                             Type:             Psychic                             Rarity:             Ultra Rare                        
+  titles without number-ish paren: 495 ['Salamence (14/113) (Delta Species) (Stamped) [EX: Delta Species]', 'Pokemon Communication (98/123) (League Promo) [HeartGold & SoulSilver: Base Set]', 'Rayquaza EX (XY69) (Shiny) [XY: Black Star Promos]', 'Sylveon EX (RC32/RC32) (Full Art) [Generations: Radiant Collection]', "Team Rocket's Wobbuffet (203) (Pokemon Center Exclusive) [Scarlet & Violet: Black Star Promos]", 'Jolteon (8/115) (Stamped) [EX: Unseen Forces]', 'Latios (9/113) (Delta Species) [EX: Delta Species]', 'Pikachu (58/102) (Celebrations Metal Card) [Celebrations: 25th Anniversary]']
