@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 
 SHOPS = {
     'cardquest': {'name': 'Card Quest', 'url': 'https://cardquestlgs.com', 'games': ['pokemon', 'onepiece']},
+    # a Shopify store: its collections' products.json lists every product with each condition's price and whether it's in stock
+    'tradingcardworld': {'name': 'Trading Card World', 'url': 'https://tradingcardworld.store', 'type': 'shopify',
+                         'collections': {'pokemon': 'pokemon-singles', 'onepiece': 'one-piece-singles'}},
 }
 UA = {'User-Agent': 'Mozilla/5.0 (compatible; CardBinderNeedList/1.0; +https://bilbosagggins.github.io/Card-Binder/)',
       'Accept': 'text/html,*/*', 'HX-Request': 'true'}
@@ -64,7 +67,81 @@ def parse(b):
     return out
 
 
+CONDS = ['Near Mint', 'Lightly Played', 'Moderately Played', 'Heavily Played', 'Damaged']
+NUM = re.compile(r'^[A-Za-z]{0,6}-?\d+[a-z]?(?:/[A-Za-z]{0,6}\d+)?$')
+
+
+def parse_shopify(p, game):
+    """'Mewtwo GX (78/73) [Sun & Moon: Shining Legends]', 'Iceburg (Alternate Art) [Pillars of Strength]' (One Piece numbers are in the
+    description) -> the same row as a ShadowPOS listing; quantity isn't shown, so it's -1 (in stock)."""
+    m = re.match(r'^(.*?)\s*((?:\([^()]*\)\s*)*)\[([^\]]*)\]\s*$', p['title'])
+    if not m:
+        return None
+    name, parens, set_name = m.group(1).strip(), re.findall(r'\(([^()]*)\)', m.group(2)), m.group(3).strip()
+    body = html.unescape(re.sub(r'<[^>]+>', ' ', p.get('body_html') or ''))
+    num = ''
+    if game == 'onepiece':
+        b = re.search(r'Card Number:\s*([A-Z0-9]+-[A-Z0-9]+)', body)
+        num = b.group(1) if b else ''
+        labels = [x for x in parens if not re.fullmatch(r'\s*\d+\s*', x)]
+    else:
+        labels = []
+        for x in parens:
+            if not num and NUM.match(x.strip()):
+                num = x.strip()
+            else:
+                labels.append(x)
+    stock = []
+    for v in p.get('variants') or []:
+        if not v.get('available'):
+            continue
+        t = (v.get('title') or '').strip()
+        cond = next((c for c in CONDS if t.lower().startswith(c.lower())), None)
+        if not cond:
+            continue
+        printing = t[len(cond):].strip() or 'Normal'
+        try:
+            price = round(float(v.get('price')), 2)
+        except Exception:
+            continue
+        stock.append([cond, printing, price, -1])
+    if not stock or not num:
+        return None
+    ja = 1 if re.search(r'japanese', set_name + ' ' + ' '.join(labels), re.I) else 0
+    return [name, num, ' '.join(labels), set_name, ja, p['handle'], stock]
+
+
+def build_shopify(key, shop, old):
+    games = {}
+    for g, col in shop['collections'].items():
+        items, ok = [], True
+        for page in range(1, 200):
+            b = get(f"{shop['url']}/collections/{col}/products.json?limit=250&page={page}")
+            if b is None:
+                ok = False
+                break
+            try:
+                prods = json.loads(b).get('products') or []
+            except Exception:
+                ok = False
+                break
+            items += [x for x in (parse_shopify(p, g) for p in prods) if x]
+            print(f'{key} {g} page {page}: {len(prods)} products, {len(items)} in stock so far')
+            if len(prods) < 250:
+                break
+            time.sleep(2)
+        if ok and items:
+            games[g] = items
+        elif old and old.get('games', {}).get(g):
+            print(f'{key} {g}: keeping the last list (this run failed)')
+            games[g] = old['games'][g]
+        time.sleep(2)
+    return games
+
+
 def build(key, shop, old):
+    if shop.get('type') == 'shopify':
+        return build_shopify(key, shop, old)
     games = {}
     for g in shop['games']:
         items, ok = [], True
@@ -101,11 +178,8 @@ def main():
             print(f'{key}: nothing fetched, leaving the file alone')
             continue
         data = {'updated': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'name': shop['name'], 'url': shop['url'],
-                'fields': ['name', 'number', 'label', 'set', 'japanese', 'product', 'stock: [condition, printing, price, qty]'],
+                'fields': ['name', 'number', 'label', 'set', 'japanese', 'product', 'stock: [condition, printing, price, qty (-1 = in stock, count not shown)]'],
                 'games': games}
-        if old and old.get('games') == games:
-            print(f'{key}: no stock changes')
-            continue
         with open(path, 'w') as f:
             json.dump(data, f, separators=(',', ':'), ensure_ascii=False)
         print(f'{key}: wrote {path} ({os.path.getsize(path)} bytes): ' + ', '.join(f'{g} {len(v)}' for g, v in games.items()))
