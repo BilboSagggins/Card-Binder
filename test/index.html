@@ -25,6 +25,7 @@
     document.head.appendChild(s);
   }
 </script>
+<link rel="stylesheet" href="tw.css?h=c21b9d3679" onerror="twFallback()">
 <link rel="stylesheet" href="tw.css?h=104c9db317" onerror="twFallback()">
 <link rel="stylesheet" href="tw.css?h=1006d2ddaf" onerror="twFallback()">
 <!-- Google Fonts for Typography -->
@@ -483,6 +484,13 @@
   .cs-v .mk { font: 500 .62rem/1.2 Inter, system-ui, sans-serif; color: #a1a1aa; }
   .cs-v .d { text-align: right; font: 800 .62rem/1.2 Inter, system-ui, sans-serif; }
   .cs-v .d.good { color: #34d399; } .cs-v .d.bad { color: #fbbf24; } .cs-v .d.even { color: #a1a1aa; }
+  .cs-v.hot { border-color: #059669; background: #052e23; }
+  .cs-v .d.hot { color: #6ee7b7; }
+  .cs-gap { margin-top: .35rem; border: 1px solid #a16207; background: #2a1a05; color: #fde68a; border-radius: 8px; padding: .35rem .5rem; font: 600 .66rem/1.35 Inter, system-ui, sans-serif; }
+  .cs-t .cs-gap b { display: inline; font: inherit; font-weight: 800; color: #fcd34d; }
+  .cs-flags { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .25rem; }
+  .cs-flag { font: 800 .58rem/1 Inter, system-ui, sans-serif; padding: .25rem .4rem; border-radius: 999px; background: #064e3b; color: #6ee7b7; }
+  .cs-flag.gap { background: #422006; color: #fcd34d; }
   .cs-row a.cs-open { display: inline-block; margin-top: .4rem; background: #0e7490; color: #fff; border-radius: 8px; padding: .4rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
   .sc-ctrl { flex: 0 0 100%; display: flex; flex-direction: column; gap: .4rem; }
   .sc-ctrl[hidden] { display: none; }
@@ -1491,7 +1499,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-13.125';
+const APP_VERSION = '2026-11-14.102';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -6497,7 +6505,7 @@ function pcMode(m, first) {
   else { pcSearch(); if (first) setTimeout(() => $('pc-q').focus(), 60); }
 }
 /* ===== Card Quest search: everything they have in stock for a name, each copy against market for its condition ===== */
-const CS = { game: 'pokemon', sort: 'deal', timer: null };
+const CS = { game: 'pokemon', sort: 'deal', timer: null, check: 'deals', min: 5 };
 const CS_SORTS = [['deal', 'Best deal'], ['high', 'Price ↓'], ['low', 'Price ↑']];
 function csSoon() { clearTimeout(CS.timer); CS.timer = setTimeout(csRender, 160); }
 // The TCGplayer card a shop listing is (for its picture and market price): same number and name, best set agreement
@@ -6519,13 +6527,19 @@ async function csRender() {
   const cf = Object.fromEntries(CONDITIONS);
   const rows = items.map(it => {
     const m = csTcgFor(it, g), mk = m && m.c.price != null ? +m.c.price : null;
-    const vs = it[6].map(v => { const est = mk != null && !shPrint(v) ? mk * (cf[shCond(v[0])] ?? 1) : null; return { v, est, diff: est != null ? v[2] - est : null }; }).sort((a, b) => a.v[2] - b.v[2]);
+    const vs = it[6].map(v => { const est = mk != null && !shPrint(v) && !shVintage(it) ? mk * (cf[shCond(v[0])] ?? 1) : null; return { v, est, diff: est != null ? v[2] - est : null }; }).sort((a, b) => a.v[2] - b.v[2]);
     const best = vs.filter(x => x.diff != null).sort((a, b) => a.diff / a.est - b.diff / b.est)[0];
-    return { it, m, vs, deal: best ? best.diff / best.est : null, low: vs[0].v[2], high: Math.max(...vs.map(x => x.v[2])) };
+    return { it, m, vs, deal: best ? best.diff / best.est : null, low: vs[0].v[2], high: Math.max(...vs.map(x => x.v[2])), gap: csGap(it) };
   });
-  if (!raw) {   // nothing typed: the best deals right now (worth $5+ at market)
-    const top = rows.filter(r => r.deal != null && r.deal < -0.05 && r.vs.some(x => x.est >= 5)).sort((a, b) => a.deal - b.deal).slice(0, 40);
-    box.innerHTML = `<div class="sc-sum"><b>${esc(d.name)}</b> has ${(d.games[g] || []).length} ${g === 'onepiece' ? 'One Piece' : 'Pokémon'} singles in stock (checked ${esc(nwAgo(d.updated))}). Type a name to see all of theirs. Below: their best deals against market right now.</div>` + top.map(csRowHTML).join('');
+  if (!raw) {   // nothing typed: the price check, copies 20%+ under market, or cards whose condition prices are out of line
+    const hot = rows.filter(r => r.vs.some(x => csHot(x) && x.est >= CS.min)).sort((a, b) => a.deal - b.deal);
+    const gaps = rows.filter(r => r.gap).sort((a, b) => b.gap.score - a.gap.score);
+    $('cs-opts').innerHTML = `<span>Check</span><button type="button" aria-selected="${CS.check === 'deals'}" onclick="CS.check='deals';csRender()">🔥 20%+ under · ${hot.length}</button><button type="button" aria-selected="${CS.check === 'gaps'}" onclick="CS.check='gaps';csRender()">⚖️ Condition gaps · ${gaps.length}</button>`
+      + (CS.check === 'deals' ? `<span>Market</span>${[1, 5, 20, 100].map(m => `<button type="button" aria-selected="${CS.min === m}" onclick="CS.min=${m};csRender()">$${m}+</button>`).join('')}` : '');
+    const intro = `<b>Price check</b> of ${(d.games[g] || []).length} ${g === 'onepiece' ? 'One Piece' : 'Pokémon'} singles in stock at ${esc(d.name)} (checked ${esc(nwAgo(d.updated))}). Type a name above to see everything they have for it.<br>`;
+    box.innerHTML = CS.check === 'gaps'
+      ? `<div class="sc-sum">${intro}<b>${gaps.length}</b> card${gaps.length === 1 ? '' : 's'} where their own NM / LP / MP prices are out of line: a played copy priced the same or higher than a better one (buy the better one), or a played copy far cheaper than their NM.</div>` + gaps.map(csRowHTML).join('')
+      : `<div class="sc-sum">${intro}<b>${hot.length}</b> listing${hot.length === 1 ? '' : 's'} with a copy 20% or more under market (worth $${CS.min}+). Played conditions are compared with TCGplayer's NM price × the usual LP 85% / MP 65% / HP 45%, so check the card's photos and condition before buying. Vintage Unlimited / 1st Edition cards aren't compared.</div>` + hot.map(csRowHTML).join('');
     return;
   }
   const sorter = { deal: (a, b) => (a.deal ?? 9) - (b.deal ?? 9) || b.high - a.high, high: (a, b) => b.high - a.high, low: (a, b) => a.low - b.low }[CS.sort];
@@ -6534,17 +6548,33 @@ async function csRender() {
   box.innerHTML = `<div class="sc-sum">${rows.length ? `<b>${rows.length}</b> listing${rows.length === 1 ? '' : 's'} (${copies} cop${copies === 1 ? 'y' : 'ies'}) at ${esc(d.name)} for “${esc(raw)}”. Market is TCGplayer’s for the same condition. Stock checked ${esc(nwAgo(d.updated))}.` : `${esc(d.name)} has nothing in stock for “${esc(raw)}” right now.`}</div>`
     + rows.slice(0, 150).map(csRowHTML).join('') + (rows.length > 150 ? '<p class="pc-note">Showing 150. Add a word to narrow it down.</p>' : '');
 }
+// A copy at least 20% under market for its condition
+const csHot = x => x.diff != null && x.est > 0 && x.diff / x.est <= -0.2;
+// Their own NM / LP / MP prices out of line (regular printing only): a played copy that costs the same or more than a better one,
+// or a played copy far cheaper than their NM (LP at 60% or less, MP at 45% or less)
+function csGap(it) {
+  const by = {}; it[6].forEach(v => { if (!shPrint(v)) { const k = shCond(v[0]); by[k] = Math.min(by[k] ?? Infinity, v[2]); } });
+  const nm = by.NM, lp = by.LP, mp = by.MP;
+  if (nm && lp && lp >= nm) return { score: 3 + lp / nm, html: `<b>LP ${fmt(lp)} costs ${lp > nm ? 'more than' : 'the same as'} NM ${fmt(nm)}</b>: the NM copy is the better buy.` };
+  if (lp && mp && mp >= lp) return { score: 3 + mp / lp, html: `<b>MP ${fmt(mp)} costs ${mp > lp ? 'more than' : 'the same as'} LP ${fmt(lp)}</b>: the LP copy is the better buy.` };
+  if (nm && mp && !lp && mp >= nm) return { score: 3 + mp / nm, html: `<b>MP ${fmt(mp)} costs ${mp > nm ? 'more than' : 'the same as'} NM ${fmt(nm)}</b>: the NM copy is the better buy.` };
+  if (nm && lp && lp <= nm * 0.6) return { score: 1 + (1 - lp / nm), html: `<b>LP is ${Math.round((1 - lp / nm) * 100)}% under their NM</b> (${fmt(lp)} vs ${fmt(nm)}; usually about 15% less). Worth a look if you don\u2019t need mint.` };
+  if (nm && mp && mp <= nm * 0.45) return { score: 1 + (1 - mp / nm), html: `<b>MP is ${Math.round((1 - mp / nm) * 100)}% under their NM</b> (${fmt(mp)} vs ${fmt(nm)}; usually about 35% less). Worth a look if you don\u2019t need mint.` };
+  return null;
+}
 function csRowHTML(r) {
   const { it, m, vs } = r, d = SHOP.data;
   const img = m ? (g => imgTag(g.src || m.c.thumb, g.alts, m.c.name, ''))(gridImg(m.c, 100 * (window.devicePixelRatio || 1))) : '<div class="cs-ph">🃏</div>';
-  const badge = x => { if (x.diff == null) return `<span class="d even">${shPrint(x.v) ? esc(shPrint(x.v).trim()) + ' · not compared' : 'no market'}</span>`; const pct = Math.round(Math.abs(x.diff) / x.est * 100);
+  const badge = x => { if (csHot(x)) return `<span class="d hot">🔥 ${fmt(-x.diff)} under (${Math.round(-x.diff / x.est * 100)}%)</span>`; if (x.diff == null) return `<span class="d even">${shPrint(x.v) ? esc(shPrint(x.v).trim()) + ' · not compared' : shVintage(it) ? 'vintage · not compared' : 'no market'}</span>`; const pct = Math.round(Math.abs(x.diff) / x.est * 100);
     return pct < 3 ? '<span class="d even">≈ market</span>' : `<span class="d ${x.diff < 0 ? 'good' : 'bad'}">${x.diff < 0 ? '▼' : '▲'} ${fmt(Math.abs(x.diff))} (${pct}%)</span>`; };
   return `<div class="cs-row">${img}<div class="cs-t">
       <b>${esc(it[0])} (${esc(it[1])}${it[2] ? ` — ${esc(it[2])}` : ''})</b>
       <span>${esc(it[3])}${m && m.c.rarity && !/^(—|None)$/.test(m.c.rarity) ? ` · ${esc(m.c.rarity)}` : ''}</span>
       ${!m ? '<span class="warn">No TCGplayer match to compare with</span>' : m.exact ? '' : `<span class="warn">Compared with ${esc(m.c.set)}; check the printing</span>`}
-      <div class="cs-vs">${vs.map(x => `<div class="cs-v"><span>${esc(x.v[0])}${x.v[1] && !/^normal$/i.test(x.v[1]) ? ` · ${esc(x.v[1])}` : ''} <span class="q">· ${x.v[3]} left</span></span><span class="pr">${fmt(x.v[2])}</span>
+      ${vs.some(csHot) || r.gap ? `<div class="cs-flags">${vs.some(csHot) ? '<span class="cs-flag">🔥 20%+ under market</span>' : ''}${vs.some(x => x.diff != null && x.est > 0 && x.diff / x.est <= -0.7) ? '<span class="cs-flag gap">⚠️ Unusually low: check the printing and photos</span>' : ''}${r.gap ? '<span class="cs-flag gap">⚖️ Condition gap</span>' : ''}</div>` : ''}
+      <div class="cs-vs">${vs.map(x => `<div class="cs-v${csHot(x) ? ' hot' : ''}"><span>${esc(x.v[0])}${x.v[1] && !/^normal$/i.test(x.v[1]) ? ` · ${esc(x.v[1])}` : ''} <span class="q">· ${x.v[3]} left</span></span><span class="pr">${fmt(x.v[2])}</span>
         <span class="mk">${x.est != null ? `Market ${fmt(x.est)}` : ''}</span>${badge(x)}</div>`).join('')}</div>
+      ${r.gap ? `<div class="cs-gap">⚖️ ${r.gap.html}</div>` : ''}
       <a class="cs-open" href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open on ${esc(d.name)} ↗</a>
     </div></div>`;
 }
@@ -7227,6 +7257,8 @@ function shopFor(c) {
 }
 const SH_COND = { 'near mint': 'NM', 'lightly played': 'LP', 'moderately played': 'MP', 'heavily played': 'HP', damaged: 'DMG' };
 const shCond = s => SH_COND[String(s).toLowerCase()] || s;
+// Vintage sets come in 1st Edition and Unlimited, and the daily price list may hold the 1st Edition price, so these aren't compared
+const shVintage = it => /\b(unlimited|1st edition)\b/i.test(it[3] || '');
 // a special printing (reverse holo, cosmos foil, 1st edition…) has its own price, so it isn't compared with the regular card's market
 const shPrint = v => /reverse/i.test(v[1] || '') ? ' rev holo' : /^(normal|foil|holofoil|unlimited)?$/i.test(String(v[1] || '').trim()) ? '' : ' ' + String(v[1]).toLowerCase();
 function shopChip(c, onclick) {
@@ -7256,7 +7288,7 @@ function shopViewHTML(list) {
     let pick = null;
     r.items.forEach(it => it[6].forEach(v => {
       // the market price is for the regular card, so a reverse holo isn't compared with it
-      const est = mk != null && !shPrint(v) ? mk * (cf[shCond(v[0])] ?? 1) : null, diff = est != null ? v[2] - est : null;
+      const est = mk != null && !shPrint(v) && !shVintage(it) ? mk * (cf[shCond(v[0])] ?? 1) : null, diff = est != null ? v[2] - est : null;
       const cand = { it, v, est, diff };
       if (!pick || (diff != null && pick.diff == null) || (diff != null && pick.diff != null ? diff < pick.diff : diff == null && pick.diff == null && v[2] < pick.v[2])) pick = cand;
     }));
@@ -7269,7 +7301,7 @@ function shopViewHTML(list) {
   const row = y => {
     const { x, r, pick, qty } = y, v = pick.v, it = pick.it, diff = pick.diff;
     const pct = pick.est ? Math.round(Math.abs(diff) / pick.est * 100) : 0;
-    const badge = diff == null ? `<span class="cq-diff even">${shPrint(v) ? esc(shPrint(v).trim()) + ' · no market to compare' : 'No market price'}</span>` : Math.abs(diff) < 0.5 || pct < 3 ? '<span class="cq-diff even">About market</span>'
+    const badge = diff == null ? `<span class="cq-diff even">${shPrint(v) ? esc(shPrint(v).trim()) + ' · no market to compare' : shVintage(it) ? 'Vintage: 1st Ed / Unlimited not compared' : 'No market price'}</span>` : Math.abs(diff) < 0.5 || pct < 3 ? '<span class="cq-diff even">About market</span>'
       : diff < 0 ? `<span class="cq-diff good">${fmt(-diff)} under (${pct}%)</span>` : `<span class="cq-diff bad">${fmt(diff)} over (${pct}%)</span>`;
     const g = gridImg(x.c, 120 * (window.devicePixelRatio || 1));
     return `<div class="cq-row${r.exact ? '' : ' maybe'}" data-key="${esc(x.key)}" data-b="${esc(x.b || '')}">
