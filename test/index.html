@@ -508,6 +508,8 @@
   .cs-row a.cs-open { display: inline-block; margin-top: .4rem; background: #0e7490; color: #fff; border-radius: 8px; padding: .4rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
   .sc-ctrl { flex: 0 0 100%; display: flex; flex-direction: column; gap: .4rem; }
   .sc-ctrl[hidden] { display: none; }
+  .pc-gen { flex: 0 0 100%; padding: .45rem .6rem; font-size: 16px; }
+  .pc-gen[hidden] { display: none; }
   .sc-set { width: 100%; box-sizing: border-box; background: #09090b; border: 1px solid #3f3f46; border-radius: 10px; padding: .55rem .6rem; color: #f4f4f5; font: 600 16px Inter, system-ui, sans-serif; }
   .sc-views button[aria-selected="true"] { background: #059669; border-color: #34d399; }
   .sc-opts { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; font: 600 .64rem/1 Inter, system-ui, sans-serif; color: #a1a1aa; }
@@ -1170,6 +1172,11 @@
         <span class="text-xs text-zinc-400 whitespace-nowrap">Price:</span>
         <button type="button" id="price-btn" onclick="openPriceRangePicker()" class="field !py-1.5 !text-xs w-full text-left flex items-center justify-between gap-2"><span id="price-btn-text" class="truncate text-zinc-400">Any price</span><span class="text-zinc-500">▾</span></button>
       </div>
+      <!-- Narrow results to Pokémon of one generation -->
+      <div id="gen-row" class="flex items-center gap-2 panel px-3 py-2">
+        <span class="text-xs text-zinc-400 whitespace-nowrap">Generation:</span>
+        <select id="gen-sel" class="field !py-1.5 !text-xs w-full" onchange="paintFilterBtn(); if ($('q').value.trim() || $('set').value || rarPick().length || artQuery()) search()"></select>
+      </div>
       <!-- What's in the card's picture (English Pokémon): tags made by the art scan job, prices/art-tags.json -->
       <div id="art-row" class="flex items-center gap-2 panel px-3 py-2">
         <span class="text-xs text-zinc-400 whitespace-nowrap">🎨 In the art:</span>
@@ -1313,6 +1320,7 @@
     </div>
     <input type="search" id="pc-q" class="tk-find" placeholder="Card or product name, number, or set" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="pcSearchSoon()">
     <div class="tk-tabs" id="pc-tabs" role="tablist"></div>
+    <select id="pc-gen" class="sc-set pc-gen" aria-label="Pokémon generation" onchange="PC.gen=this.value;pcGenChanged()"></select>
   </div>
   <div id="pc-list" class="pc-list"></div>
 </div>
@@ -1514,7 +1522,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-14.118';
+const APP_VERSION = '2026-11-14.120';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -2290,12 +2298,13 @@ async function listSearch(L, gid, lang, text, rar, make) {
   const parsed = mode === 'num' ? parseQ(text) : { name: mode === 'set' ? '' : text, number: '' };
   const fold = v => lc(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
   const q = fold(parsed.name || (mode === 'set' ? text : '')), num = parsed.number, order = gid ? String(gid).split(',') : null;
-  const art = lang === 'en' ? ART_ON : null;
+  const art = lang === 'en' ? ART_ON : null, gen = searchGen();
   const items = Object.entries(L.p).filter(([pid, e]) => {
     if (art && !art.has(pid)) return false;
     if (order && !order.includes(String(e[3]))) return false;
     if (rars.length && !rars.some(v => sameRarity(String(e[4] || '').trim(), v))) return false;
     if (!priceOk(e[0])) return false;
+    if (gen && !genOk(e[1], gen)) return false;
     if (q && !fold(e[1]).includes(q) && !(mode === 'set' && lc(e[2]).includes(q))) return false;
     if (num && !sameNum(String(e[2]).split('/')[0], num)) return false;
     return true;
@@ -3351,7 +3360,7 @@ async function altArtExtras(name, number) {
 }
 
 async function loadBatch(append) {
-  if (!PRICE_SEL.length) {
+  if (!PRICE_SEL.length && !searchGen()) {
     const batch = pending.items.slice(pending.shown, pending.shown + PAGE); pending.shown += batch.length;
     const cards = await pool(batch, 8, pending.make);
     renderResults(cards, append); fillMissing(cards); return;
@@ -3363,12 +3372,12 @@ async function loadBatch(append) {
     await pool(cards.filter(c => c.price == null && c.source !== 'ptcg' && c.game !== 'onepiece' && !c.sealed), 4, async c => {   // price first, so it can be filtered
       const r = await tcgByNameNumber(c).catch(() => null); if (r) { c.price = r.price; if (r.url && !c.url) c.url = r.url; }
     });
-    kept.push(...cards.filter(c => priceOk(c.price)));
+    kept.push(...cards.filter(c => priceOk(c.price) && genOk(c.name, searchGen())));
     if (pending !== run) return;        // a newer search started
   }
   const hasCards = !!$('results').querySelector('div.panel');
   if (!kept.length && (!append || !hasCards)) {
-    $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No cards in ${esc(priceLabel())}${run.shown < run.items.length ? ' among the first ' + run.shown + ' results. <button class="btn-p mt-3" onclick="showMore(this)">Keep looking</button>' : '.'}</div>`;
+    $('results').innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm">No cards in ${esc([PRICE_SEL.length ? priceLabel() : '', searchGen() ? 'Gen ' + searchGen() : ''].filter(Boolean).join(' · '))}${run.shown < run.items.length ? ' among the first ' + run.shown + ' results. <button class="btn-p mt-3" onclick="showMore(this)">Keep looking</button>' : '.'}</div>`;
     return;
   }
   renderResults(kept, append && hasCards);
@@ -3457,9 +3466,27 @@ function setStatus(st) {
   $('a-needed').className = `px-3 py-1 rounded-lg text-xs font-bold ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-zinc-800 text-zinc-400'}`;
   const sb2 = $('st-btn'); if (sb2) { sb2.textContent = st === 'needed' ? 'Add as ⏳ Need' : 'Add as ✓ Owned'; sb2.className = `px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap ${st === 'needed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`; }
 }
+/* ===== Pokémon generations: every species in National Dex order (from PokéAPI), so a card can be told apart by the
+   generation of the Pokémon on it (tag teams count for each). Regional forms count as their species (Alolan Ninetales is Gen 1). ===== */
+const DEX = 'bulbasaur,ivysaur,venusaur,charmander,charmeleon,charizard,squirtle,wartortle,blastoise,caterpie,metapod,butterfree,weedle,kakuna,beedrill,pidgey,pidgeotto,pidgeot,rattata,raticate,spearow,fearow,ekans,arbok,pikachu,raichu,sandshrew,sandslash,nidoran-f,nidorina,nidoqueen,nidoran-m,nidorino,nidoking,clefairy,clefable,vulpix,ninetales,jigglypuff,wigglytuff,zubat,golbat,oddish,gloom,vileplume,paras,parasect,venonat,venomoth,diglett,dugtrio,meowth,persian,psyduck,golduck,mankey,primeape,growlithe,arcanine,poliwag,poliwhirl,poliwrath,abra,kadabra,alakazam,machop,machoke,machamp,bellsprout,weepinbell,victreebel,tentacool,tentacruel,geodude,graveler,golem,ponyta,rapidash,slowpoke,slowbro,magnemite,magneton,farfetchd,doduo,dodrio,seel,dewgong,grimer,muk,shellder,cloyster,gastly,haunter,gengar,onix,drowzee,hypno,krabby,kingler,voltorb,electrode,exeggcute,exeggutor,cubone,marowak,hitmonlee,hitmonchan,lickitung,koffing,weezing,rhyhorn,rhydon,chansey,tangela,kangaskhan,horsea,seadra,goldeen,seaking,staryu,starmie,mr-mime,scyther,jynx,electabuzz,magmar,pinsir,tauros,magikarp,gyarados,lapras,ditto,eevee,vaporeon,jolteon,flareon,porygon,omanyte,omastar,kabuto,kabutops,aerodactyl,snorlax,articuno,zapdos,moltres,dratini,dragonair,dragonite,mewtwo,mew,chikorita,bayleef,meganium,cyndaquil,quilava,typhlosion,totodile,croconaw,feraligatr,sentret,furret,hoothoot,noctowl,ledyba,ledian,spinarak,ariados,crobat,chinchou,lanturn,pichu,cleffa,igglybuff,togepi,togetic,natu,xatu,mareep,flaaffy,ampharos,bellossom,marill,azumarill,sudowoodo,politoed,hoppip,skiploom,jumpluff,aipom,sunkern,sunflora,yanma,wooper,quagsire,espeon,umbreon,murkrow,slowking,misdreavus,unown,wobbuffet,girafarig,pineco,forretress,dunsparce,gligar,steelix,snubbull,granbull,qwilfish,scizor,shuckle,heracross,sneasel,teddiursa,ursaring,slugma,magcargo,swinub,piloswine,corsola,remoraid,octillery,delibird,mantine,skarmory,houndour,houndoom,kingdra,phanpy,donphan,porygon2,stantler,smeargle,tyrogue,hitmontop,smoochum,elekid,magby,miltank,blissey,raikou,entei,suicune,larvitar,pupitar,tyranitar,lugia,ho-oh,celebi,treecko,grovyle,sceptile,torchic,combusken,blaziken,mudkip,marshtomp,swampert,poochyena,mightyena,zigzagoon,linoone,wurmple,silcoon,beautifly,cascoon,dustox,lotad,lombre,ludicolo,seedot,nuzleaf,shiftry,taillow,swellow,wingull,pelipper,ralts,kirlia,gardevoir,surskit,masquerain,shroomish,breloom,slakoth,vigoroth,slaking,nincada,ninjask,shedinja,whismur,loudred,exploud,makuhita,hariyama,azurill,nosepass,skitty,delcatty,sableye,mawile,aron,lairon,aggron,meditite,medicham,electrike,manectric,plusle,minun,volbeat,illumise,roselia,gulpin,swalot,carvanha,sharpedo,wailmer,wailord,numel,camerupt,torkoal,spoink,grumpig,spinda,trapinch,vibrava,flygon,cacnea,cacturne,swablu,altaria,zangoose,seviper,lunatone,solrock,barboach,whiscash,corphish,crawdaunt,baltoy,claydol,lileep,cradily,anorith,armaldo,feebas,milotic,castform,kecleon,shuppet,banette,duskull,dusclops,tropius,chimecho,absol,wynaut,snorunt,glalie,spheal,sealeo,walrein,clamperl,huntail,gorebyss,relicanth,luvdisc,bagon,shelgon,salamence,beldum,metang,metagross,regirock,regice,registeel,latias,latios,kyogre,groudon,rayquaza,jirachi,deoxys,turtwig,grotle,torterra,chimchar,monferno,infernape,piplup,prinplup,empoleon,starly,staravia,staraptor,bidoof,bibarel,kricketot,kricketune,shinx,luxio,luxray,budew,roserade,cranidos,rampardos,shieldon,bastiodon,burmy,wormadam,mothim,combee,vespiquen,pachirisu,buizel,floatzel,cherubi,cherrim,shellos,gastrodon,ambipom,drifloon,drifblim,buneary,lopunny,mismagius,honchkrow,glameow,purugly,chingling,stunky,skuntank,bronzor,bronzong,bonsly,mime-jr,happiny,chatot,spiritomb,gible,gabite,garchomp,munchlax,riolu,lucario,hippopotas,hippowdon,skorupi,drapion,croagunk,toxicroak,carnivine,finneon,lumineon,mantyke,snover,abomasnow,weavile,magnezone,lickilicky,rhyperior,tangrowth,electivire,magmortar,togekiss,yanmega,leafeon,glaceon,gliscor,mamoswine,porygon-z,gallade,probopass,dusknoir,froslass,rotom,uxie,mesprit,azelf,dialga,palkia,heatran,regigigas,giratina,cresselia,phione,manaphy,darkrai,shaymin,arceus,victini,snivy,servine,serperior,tepig,pignite,emboar,oshawott,dewott,samurott,patrat,watchog,lillipup,herdier,stoutland,purrloin,liepard,pansage,simisage,pansear,simisear,panpour,simipour,munna,musharna,pidove,tranquill,unfezant,blitzle,zebstrika,roggenrola,boldore,gigalith,woobat,swoobat,drilbur,excadrill,audino,timburr,gurdurr,conkeldurr,tympole,palpitoad,seismitoad,throh,sawk,sewaddle,swadloon,leavanny,venipede,whirlipede,scolipede,cottonee,whimsicott,petilil,lilligant,basculin,sandile,krokorok,krookodile,darumaka,darmanitan,maractus,dwebble,crustle,scraggy,scrafty,sigilyph,yamask,cofagrigus,tirtouga,carracosta,archen,archeops,trubbish,garbodor,zorua,zoroark,minccino,cinccino,gothita,gothorita,gothitelle,solosis,duosion,reuniclus,ducklett,swanna,vanillite,vanillish,vanilluxe,deerling,sawsbuck,emolga,karrablast,escavalier,foongus,amoonguss,frillish,jellicent,alomomola,joltik,galvantula,ferroseed,ferrothorn,klink,klang,klinklang,tynamo,eelektrik,eelektross,elgyem,beheeyem,litwick,lampent,chandelure,axew,fraxure,haxorus,cubchoo,beartic,cryogonal,shelmet,accelgor,stunfisk,mienfoo,mienshao,druddigon,golett,golurk,pawniard,bisharp,bouffalant,rufflet,braviary,vullaby,mandibuzz,heatmor,durant,deino,zweilous,hydreigon,larvesta,volcarona,cobalion,terrakion,virizion,tornadus,thundurus,reshiram,zekrom,landorus,kyurem,keldeo,meloetta,genesect,chespin,quilladin,chesnaught,fennekin,braixen,delphox,froakie,frogadier,greninja,bunnelby,diggersby,fletchling,fletchinder,talonflame,scatterbug,spewpa,vivillon,litleo,pyroar,flabebe,floette,florges,skiddo,gogoat,pancham,pangoro,furfrou,espurr,meowstic,honedge,doublade,aegislash,spritzee,aromatisse,swirlix,slurpuff,inkay,malamar,binacle,barbaracle,skrelp,dragalge,clauncher,clawitzer,helioptile,heliolisk,tyrunt,tyrantrum,amaura,aurorus,sylveon,hawlucha,dedenne,carbink,goomy,sliggoo,goodra,klefki,phantump,trevenant,pumpkaboo,gourgeist,bergmite,avalugg,noibat,noivern,xerneas,yveltal,zygarde,diancie,hoopa,volcanion,rowlet,dartrix,decidueye,litten,torracat,incineroar,popplio,brionne,primarina,pikipek,trumbeak,toucannon,yungoos,gumshoos,grubbin,charjabug,vikavolt,crabrawler,crabominable,oricorio,cutiefly,ribombee,rockruff,lycanroc,wishiwashi,mareanie,toxapex,mudbray,mudsdale,dewpider,araquanid,fomantis,lurantis,morelull,shiinotic,salandit,salazzle,stufful,bewear,bounsweet,steenee,tsareena,comfey,oranguru,passimian,wimpod,golisopod,sandygast,palossand,pyukumuku,type-null,silvally,minior,komala,turtonator,togedemaru,mimikyu,bruxish,drampa,dhelmise,jangmo-o,hakamo-o,kommo-o,tapu-koko,tapu-lele,tapu-bulu,tapu-fini,cosmog,cosmoem,solgaleo,lunala,nihilego,buzzwole,pheromosa,xurkitree,celesteela,kartana,guzzlord,necrozma,magearna,marshadow,poipole,naganadel,stakataka,blacephalon,zeraora,meltan,melmetal,grookey,thwackey,rillaboom,scorbunny,raboot,cinderace,sobble,drizzile,inteleon,skwovet,greedent,rookidee,corvisquire,corviknight,blipbug,dottler,orbeetle,nickit,thievul,gossifleur,eldegoss,wooloo,dubwool,chewtle,drednaw,yamper,boltund,rolycoly,carkol,coalossal,applin,flapple,appletun,silicobra,sandaconda,cramorant,arrokuda,barraskewda,toxel,toxtricity,sizzlipede,centiskorch,clobbopus,grapploct,sinistea,polteageist,hatenna,hattrem,hatterene,impidimp,morgrem,grimmsnarl,obstagoon,perrserker,cursola,sirfetchd,mr-rime,runerigus,milcery,alcremie,falinks,pincurchin,snom,frosmoth,stonjourner,eiscue,indeedee,morpeko,cufant,copperajah,dracozolt,arctozolt,dracovish,arctovish,duraludon,dreepy,drakloak,dragapult,zacian,zamazenta,eternatus,kubfu,urshifu,zarude,regieleki,regidrago,glastrier,spectrier,calyrex,wyrdeer,kleavor,ursaluna,basculegion,sneasler,overqwil,enamorus,sprigatito,floragato,meowscarada,fuecoco,crocalor,skeledirge,quaxly,quaxwell,quaquaval,lechonk,oinkologne,tarountula,spidops,nymble,lokix,pawmi,pawmo,pawmot,tandemaus,maushold,fidough,dachsbun,smoliv,dolliv,arboliva,squawkabilly,nacli,naclstack,garganacl,charcadet,armarouge,ceruledge,tadbulb,bellibolt,wattrel,kilowattrel,maschiff,mabosstiff,shroodle,grafaiai,bramblin,brambleghast,toedscool,toedscruel,klawf,capsakid,scovillain,rellor,rabsca,flittle,espathra,tinkatink,tinkatuff,tinkaton,wiglett,wugtrio,bombirdier,finizen,palafin,varoom,revavroom,cyclizar,orthworm,glimmet,glimmora,greavard,houndstone,flamigo,cetoddle,cetitan,veluza,dondozo,tatsugiri,annihilape,clodsire,farigiraf,dudunsparce,kingambit,great-tusk,scream-tail,brute-bonnet,flutter-mane,slither-wing,sandy-shocks,iron-treads,iron-bundle,iron-hands,iron-jugulis,iron-moth,iron-thorns,frigibax,arctibax,baxcalibur,gimmighoul,gholdengo,wo-chien,chien-pao,ting-lu,chi-yu,roaring-moon,iron-valiant,koraidon,miraidon,walking-wake,iron-leaves,dipplin,poltchageist,sinistcha,okidogi,munkidori,fezandipiti,ogerpon,archaludon,hydrapple,gouging-fire,raging-bolt,iron-boulder,iron-crown,terapagos,pecharunt'.split(',');
+const GENS = [[1, 'Kanto', 151], [2, 'Johto', 251], [3, 'Hoenn', 386], [4, 'Sinnoh', 493], [5, 'Unova', 649], [6, 'Kalos', 721], [7, 'Alola', 809], [8, 'Galar', 905], [9, 'Paldea', 1025]];
+let DEX_MAP = null;
+const genNorm = s => ' ' + String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/♀/g, ' f ').replace(/♂/g, ' m ').replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+// The generations of the Pokémon named on a card, e.g. "Pikachu & Zekrom GX" -> {1, 5}; a trainer or energy -> empty
+function gensOf(name) {
+  if (!DEX_MAP) { DEX_MAP = new Map(); DEX.forEach((n, i) => { const g = GENS.find(x => i + 1 <= x[2])[0]; DEX_MAP.set(n.replace(/-/g, ' '), g); }); DEX_MAP.set('nidoran', 1); }
+  const w = genNorm(name).trim().split(' '), out = new Set();
+  for (let i = 0; i < w.length; i++) for (const len of [3, 2, 1]) { const g = DEX_MAP.get(w.slice(i, i + len).join(' ')); if (g) { out.add(g); i += len - 1; break; } }
+  return out;
+}
+const genOk = (name, g) => !g || gensOf(name).has(+g);
+const genOptions = (sel, any = 'Any generation') => `<option value="">${any}</option>` + GENS.map(([g, r]) => `<option value="${g}"${+sel === g ? ' selected' : ''}>Gen ${g} · ${r}</option>`).join('');
 /* Filters (set, rarity, price, in the art) fold behind one button; the button says how many are on */
 let filtersOpen = false;
+// The generation picked in the search filters (Pokémon only)
+function searchGen() { const g = $('gen-sel'); if (g && !g.options.length) g.innerHTML = genOptions(''); return g && S.game !== 'onepiece' ? g.value : ''; }
 function toggleFilters(open) {
+  searchGen(); const gr = $('gen-row'); if (gr) gr.classList.toggle('hidden', S.game === 'onepiece');
   filtersOpen = open === undefined ? !filtersOpen : !!open;
   $('s-more').classList.toggle('hidden', !filtersOpen);
   $('filter-btn').setAttribute('aria-expanded', filtersOpen); $('filter-caret').textContent = filtersOpen ? '▴' : '▾';
@@ -3469,6 +3496,7 @@ function activeFilters() {
   const set = pick('set'); if (set) out.push(set);
   if (rarPick().length) out.push(rarLabel());
   if (PRICE_SEL.length) out.push(priceLabel());
+  if (searchGen()) out.push('Gen ' + searchGen());
   if (typeof artQuery === 'function' && artQuery()) out.push('🎨 ' + artQuery());
   return out;
 }
@@ -6511,10 +6539,20 @@ function loadMoves(g) {
   })();
   return movesP[g];
 }
+// The generation picked on the Prices page (Search, Set charts and Shops all use it; Pokémon only)
+function pcGenPaint() {
+  const el = $('pc-gen'); if (!el) return;
+  if (!el.options.length) el.innerHTML = genOptions(PC.gen || '', 'Any Pokémon generation');
+  const op = (PC.mode === 'search' && ['op', 'sealed'].includes(PC.tab)) || (PC.mode === 'chart' && SC.game === 'onepiece') || (PC.mode === 'shop' && CS.game === 'onepiece');
+  el.hidden = op; el.value = PC.gen || '';
+}
+const pcGen = () => { const el = $('pc-gen'); return el && !el.hidden ? PC.gen || '' : ''; };
+function pcGenChanged() { if (PC.mode === 'chart') { SC.all = false; scRender(); } else if (PC.mode === 'shop') { if (PC.gen) CS.check = 'all'; csRender(); } else pcSearch(); }
 function pcMode(m, first) {
   PC.mode = ['chart', 'shop'].includes(m) ? m : 'search';
   ['search', 'chart', 'shop'].forEach(k => $('pcm-' + k).setAttribute('aria-selected', PC.mode === k));
   $('pc-q').hidden = $('pc-tabs').hidden = PC.mode !== 'search'; $('sc-ctrl').hidden = PC.mode !== 'chart'; $('cs-ctrl').hidden = PC.mode !== 'shop';
+  pcGenPaint();
   if (PC.mode === 'chart') scRender();
   else if (PC.mode === 'shop') { csRender(); if (!first) setTimeout(() => $('cs-q').focus(), 60); }
   else { pcSearch(); if (first) setTimeout(() => $('pc-q').focus(), 60); }
@@ -6533,13 +6571,14 @@ function csTcgFor(it, g) {
 }
 async function csRender() {
   const box = $('pc-list'), g = CS.game;
-  $('cs-shops').innerHTML = shopPicker();
+  $('cs-shops').innerHTML = shopPicker(); pcGenPaint();
   $('cs-games').innerHTML = [['pokemon', 'Pokémon'], ['onepiece', 'One Piece']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === g}" onclick="CS.game='${k}';csRender()">${l}</button>`).join('');
   $('cs-opts').innerHTML = `<span>Sort</span>${CS_SORTS.map(([k, l]) => `<button type="button" aria-selected="${CS.sort === k}" onclick="CS.sort='${k}';csRender()">${l}</button>`).join('')}`;
   if (!SHOP.data || !TCG_LISTS[g]) { box.innerHTML = `<p class="pc-note">⏳ Loading ${esc(shopName())}\u2019s stock…</p>`; await Promise.all([loadShop(), loadTcgList(g)]); if (PC.mode !== 'shop') return; }
   const d = SHOP.data; if (!d) { box.innerHTML = `<p class="pc-note">Couldn\u2019t load ${esc(shopName())}\u2019s stock. Check your connection.</p>`; return; }
   const raw = $('cs-q').value.trim(), words = lc(raw).replace(/é/g, 'e').split(/\s+/).filter(Boolean);
-  const items = (d.games[g] || []).filter(it => { const hay = lc([it[0], it[1], it[2], it[3]].join(' ')).replace(/é/g, 'e'); return words.every(w => hay.includes(w)); });
+  const gen = g === 'onepiece' ? '' : pcGen();
+  const items = (d.games[g] || []).filter(it => { const hay = lc([it[0], it[1], it[2], it[3]].join(' ')).replace(/é/g, 'e'); return words.every(w => hay.includes(w)) && (!gen || genOk(it[0], gen)); });
   const rows = items.map(it => {
     const m = csTcgFor(it, g), mk = m && m.c.price != null ? +m.c.price : null;
     const vs = it[6].map(v => ({ v, ...shCompare(v, it, mk) })).sort((a, b) => a.v[2] - b.v[2]);
@@ -6553,11 +6592,15 @@ async function csRender() {
     const big = rows.filter(r => r.mk >= CS.min && r.vs.some(x => x.big)).sort((a, b) => (b.gapSave ?? 0) - (a.gapSave ?? 0));
     const gaps = rows.filter(r => r.gap).sort((a, b) => b.gap.score - a.gap.score);
     const chip = (k, l) => `<button type="button" aria-selected="${CS.check === k}" onclick="CS.check='${k}';csRender()">${l}</button>`;
-    $('cs-opts').innerHTML = `<span>Check</span>${chip('deals', `🔥 NM 20%+ under · ${hot.length}`)}${chip('big', `📉 Big gaps vs NM · ${big.length}`)}${chip('gaps', `⚖️ Their own prices · ${gaps.length}`)}`
-      + (CS.check !== 'gaps' ? `<span>NM market</span>${[1, 5, 20, 100].map(m => `<button type="button" aria-selected="${CS.min === m}" onclick="CS.min=${m};csRender()">$${m}+</button>`).join('')}` : '');
-    const intro = `<b>Price check</b> of ${(d.games[g] || []).length} ${g === 'onepiece' ? 'One Piece' : 'Pokémon'} singles in stock at ${esc(d.name)} (checked ${esc(nwAgo(d.updated))}). Type a name above to see everything they have for it.<br>`;
+    if (!gen && CS.check === 'all') CS.check = 'deals';
+    const allRows = gen ? rows.slice().sort((a, b) => (b.save ?? -1e9) - (a.save ?? -1e9) || (b.gapSave ?? -1e9) - (a.gapSave ?? -1e9) || b.high - a.high) : [];
+    $('cs-opts').innerHTML = `<span>Show</span>${gen ? chip('all', `📋 All Gen ${gen} · ${rows.length}`) : ''}${chip('deals', `🔥 NM 20%+ under · ${hot.length}`)}${chip('big', `📉 Big gaps vs NM · ${big.length}`)}${chip('gaps', `⚖️ Their own prices · ${gaps.length}`)}`
+      + (CS.check === 'deals' || CS.check === 'big' ? `<span>NM market</span>${[1, 5, 20, 100].map(m => `<button type="button" aria-selected="${CS.min === m}" onclick="CS.min=${m};csRender()">$${m}+</button>`).join('')}` : '');
+    const intro = `<b>Price check</b> of ${gen ? `${items.length} Gen ${gen}` : (d.games[g] || []).length} ${g === 'onepiece' ? 'One Piece' : 'Pokémon'} singles in stock at ${esc(d.name)} (checked ${esc(nwAgo(d.updated))}). Type a name above to see everything they have for it.<br>`;
     const note = 'TCGplayer\u2019s market price is the Near Mint price. Vintage Unlimited / 1st Edition cards and special printings aren\u2019t compared.';
-    box.innerHTML = CS.check === 'gaps'
+    box.innerHTML = CS.check === 'all'
+      ? `<div class="sc-sum">${intro}Everything they have from Gen ${gen}, best deals against the NM market first.</div>` + allRows.slice(0, 200).map(csRowHTML).join('') + (allRows.length > 200 ? '<p class="pc-note">Showing 200. Type a name to narrow it down.</p>' : '')
+      : CS.check === 'gaps'
       ? `<div class="sc-sum">${intro}<b>${gaps.length}</b> card${gaps.length === 1 ? '' : 's'} where their own NM / LP / MP prices are out of line: a played copy priced the same or higher than a better one (buy the better one), or a played copy far cheaper than their NM.</div>` + gaps.map(csRowHTML).join('')
       : CS.check === 'big'
       ? `<div class="sc-sum">${intro}<b>${big.length}</b> card${big.length === 1 ? '' : 's'} (NM market $${CS.min}+) with a played or damaged copy much further under the NM market than usual (LP 35%+, MP 50%+, HP 65%+, DMG 80%+), biggest $ gap first. Could be a bargain, or a rough copy: check the photos. ${note}</div>` + big.map(csRowHTML).join('')
@@ -6633,13 +6676,15 @@ async function scRender() {
   const box = $('pc-list'), g = SC.game;
   if (!TCG_LISTS[g]) { box.innerHTML = '<p class="pc-note">⏳ Loading prices…</p>'; await loadTcgList(g); }
   const L = TCG_LISTS[g]; if (!L) { box.innerHTML = '<p class="pc-note">Couldn\u2019t load the prices. Check your connection.</p>'; return; }
+  pcGenPaint();
   const sets = scSets(g); if (SC.set == null) SC.set = sets[0] ? sets[0][0] : '';   // first time: the newest set
   scPaintCtrl(sets);
   const M = await loadMoves(g); if (PC.mode !== 'chart' || SC.game !== g) return;
   scPaintCtrl(sets);
   const ids = SC.set ? new Set(SC.set.split(',')) : null, wi = { 1: 0, 7: 1, 30: 2 }[SC.win] ?? 1;
   const src = PC_SOURCES.find(x => x.key === g);
-  let rows = Object.entries(L.p).filter(([, e]) => !ids || ids.has(String(e[3]))).map(([pid, e]) => {
+  const gen = g === 'onepiece' ? '' : pcGen();
+  let rows = Object.entries(L.p).filter(([, e]) => (!ids || ids.has(String(e[3]))) && (!gen || genOk(e[1], gen))).map(([pid, e]) => {
     const now = e[0], m = M && M.p[pid], old = m ? m[wi] : null;
     return { pid, now, old: old ?? (M && now != null ? now : null), src };
   }).filter(r => r.now != null);
@@ -6649,7 +6694,7 @@ async function scRender() {
     rows = rows.filter(r => r.old != null && Math.max(r.now, r.old) >= SC.min && Math.abs(r.now - r.old) >= 0.01 && (SC.view === 'up' ? r.now > r.old : r.now < r.old));
     rows.sort((a, b) => SC.view === 'up' ? ch(b) - ch(a) || (b.now - b.old) - (a.now - a.old) : ch(a) - ch(b) || (a.now - a.old) - (b.now - b.old));
   }
-  const setName = SC.set ? (sets.find(x => x[0] === SC.set) || [, ''])[1] : `all ${SC_GAMES.find(x => x[0] === g)[1]} sets`;
+  const setName = (SC.set ? (sets.find(x => x[0] === SC.set) || [, ''])[1] : `all ${SC_GAMES.find(x => x[0] === g)[1]} sets`) + (gen ? ` · Gen ${gen} Pokémon` : '');
   const total = rows.reduce((a, r) => a + r.now, 0), cap = SC.all ? 500 : 100, shown = rows.slice(0, cap);
   const day = M && M.days && M.days[String(SC.win)];
   const since = day ? nwShort(nwDay(day)) : '';
@@ -6670,7 +6715,7 @@ async function scRender() {
   box.scrollTop = 0; $('price-page').scrollTop = 0;
 }
 function closePricePage() { $('price-page').hidden = true; document.body.style.overflow = ''; }
-function pcTabs() { $('pc-tabs').innerHTML = PC_TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === PC.tab}" onclick="PC.tab='${k}';pcTabs();pcSearch()">${l}</button>`).join(''); }
+function pcTabs() { $('pc-tabs').innerHTML = PC_TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === PC.tab}" onclick="PC.tab='${k}';pcTabs();pcGenPaint();pcSearch()">${l}</button>`).join(''); }
 function pcSearchSoon() { clearTimeout(pcTimer); pcTimer = setTimeout(pcSearch, 140); }
 // One entry from any list, as a card object the rest of the app understands
 function pcCard(src, pid) {
@@ -6682,7 +6727,8 @@ function pcCard(src, pid) {
 function pcSearch() {
   const box = $('pc-list'), raw = $('pc-q').value.trim();
   if (!PC.ready) { box.innerHTML = '<p class="pc-note">⏳ Loading prices…</p>'; return; }
-  if (raw.length < 2) { box.innerHTML = '<p class="pc-note">Type a name, a number like 125/197 or OP01-025, or a set — e.g. “charizard 151”, “surging sparks etb”.</p>'; return; }
+  const gen = pcGen();
+  if (raw.length < 2 && !gen) { box.innerHTML = '<p class="pc-note">Type a name, a number like 125/197 or OP01-025, or a set — e.g. “charizard 151”, “surging sparks etb”. Or pick a generation to see its most valuable cards.</p>'; return; }
   // shorthand people use at shows
   const ALIAS = { etb: 'elite trainer box', pcetb: 'pokemon center elite trainer box', bb: 'booster bundle', upc: 'ultra premium collection', bbox: 'booster box', 'b&b': 'build & battle', sir: 'special illustration rare', ir: 'illustration rare', alt: 'alternate art' };
   const words = lc(raw).split(/\s+/).filter(Boolean).map(w => ALIAS[w] || w), qn = norm(raw);
@@ -6696,17 +6742,19 @@ function pcSearch() {
       const name = String(e[1] || ''), set = (L.groups && L.groups[sealed ? e[2] : e[3]]) || '', num = sealed ? '' : String(e[2] || '');
       return [pid, e, lc(name + ' ' + set + ' ' + num + ' ' + (sealed ? e[3] : e[4] || '')), strip(num.toLowerCase().split('/')[0]), norm(name), lc(name)];
     });
+    if (gen && (sealed || src.key === 'onepiece')) continue;
     for (const [pid, e, hay, n0, nn, ln] of L._pc) {
       if (!words.every(w => hay.includes(w) || (/\d/.test(w) && n0 === strip(w)))) continue;
+      if (gen && !genOk(e[1], gen)) continue;
       const name = ln, score = (nn === qn ? 4 : nn.startsWith(qn) ? 3 : name.includes(lc(raw)) ? 2 : 1) + (/^(pokemon|onepiece|pokemon-sealed|onepiece-sealed)$/.test(src.key) ? 0.6 : 0) - (sealed && e[3] === 'Case' && !words.includes('case') ? 1 : 0) + (e[0] != null ? Math.min(1, Math.log10(1 + e[0]) / 3) : 0);
-      hits.push({ src, pid, score, price: e[0] });
-      if (hits.length > 4000) break;
+      hits.push({ src, pid, score: raw.length < 2 ? 0 : score, price: e[0] });
+      if (hits.length > 4000 && raw.length >= 2) break;
     }
   }
   hits.sort((a, b) => b.score - a.score || (b.price || 0) - (a.price || 0));
   const top = hits.slice(0, 60);
   box.innerHTML = top.length ? top.map((h, i) => pcRowHTML(pcCard(h.src, h.pid), i)).join('') + (hits.length > 60 ? `<p class="pc-note">Showing the top 60 of ${hits.length >= 4000 ? '4,000+' : hits.length}. Add a word to narrow it down.</p>` : '')
-    : '<p class="pc-note">Nothing matches that. Try fewer words, or another tab.</p>';
+    : `<p class="pc-note">Nothing matches that${gen ? ` in Gen ${gen}` : ''}. Try fewer words, or another tab.</p>`;
   PC.top = top;
 }
 // One result row; opts.rank puts a number in front, opts.change adds a price move under the price
