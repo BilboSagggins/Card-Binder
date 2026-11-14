@@ -245,6 +245,10 @@
   .np-drops button { appearance: none; display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: .2rem 0; cursor: pointer; }
   .np-export .np-drops { display: none; }
   .np-card.flash { animation: nwflash 1.4s ease; }
+  .shop-pick { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; margin-bottom: .1rem; }
+  .shop-pick button { appearance: none; border: 1px solid #3f3f46; background: #18181b; color: #d4d4d8; border-radius: 999px; padding: .45rem .4rem; font: 700 .68rem/1 Inter, system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .shop-pick button[aria-selected="true"] { background: #0e7490; border-color: #22d3ee; color: #fff; }
+  .np-shopsum .shop-pick { margin-bottom: .45rem; }
   .np-shopsum { grid-column: 1 / -1; border: 1px solid #0e7490; background: #082f3a; border-radius: 12px; padding: .55rem .7rem; font: 600 .74rem/1.4 Inter, system-ui, sans-serif; color: #cffafe; }
   .np-shopsum b { color: #67e8f9; }
   .np-shopsum small { display: block; color: #94a3b8; font-weight: 500; margin-top: .15rem; }
@@ -1294,9 +1298,10 @@
   <div class="np-head">
     <button type="button" class="np-x" onclick="closePricePage()" aria-label="Close">✕</button>
     <div class="np-titles"><h2 id="pc-title">Price check</h2><p id="pc-sub">Loading prices…</p></div>
-    <div class="pc-mode" role="tablist" aria-label="Mode"><button type="button" role="tab" id="pcm-search" onclick="pcMode('search')">🔍 Search</button><button type="button" role="tab" id="pcm-chart" onclick="pcMode('chart')">📊 Set charts</button><button type="button" role="tab" id="pcm-shop" onclick="pcMode('shop')">🏪 Card Quest</button></div>
+    <div class="pc-mode" role="tablist" aria-label="Mode"><button type="button" role="tab" id="pcm-search" onclick="pcMode('search')">🔍 Search</button><button type="button" role="tab" id="pcm-chart" onclick="pcMode('chart')">📊 Set charts</button><button type="button" role="tab" id="pcm-shop" onclick="pcMode('shop')">🏪 Shops</button></div>
     <div id="cs-ctrl" class="sc-ctrl" hidden>
       <input type="search" id="cs-q" class="tk-find" placeholder="Pokémon or card name, e.g. Charizard, Umbreon ex" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="csSoon()">
+      <div id="cs-shops"></div>
       <div class="tk-tabs" id="cs-games" role="tablist" aria-label="Game"></div>
       <div class="sc-opts" id="cs-opts"></div>
     </div>
@@ -1439,7 +1444,7 @@
     <div class="np-titles"><h2 id="np-title">Need List</h2><p id="np-sub"></p></div>
     <div class="np-acts"><span id="np-hint"></span><button type="button" id="np-scope" class="np-lock" onclick="openNeedScope()" title="Which binders this Need List shows">📚 This binder</button><button type="button" class="np-lock" onclick="shareNeedFromPage()" title="A link to this Need List that anyone can open">🔗 Share</button><button type="button" class="np-lock" onclick="exportNeededList()" title="Save this Need List as a page you can share">⬇️ Export</button>
     <button type="button" id="np-lock" class="np-lock" onclick="toggleNeedLock()"></button></div>
-    <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button><button type="button" role="tab" id="npv-shop" onclick="setNeedView('shop')">🏪 Card Quest</button></div>
+    <div class="np-views" role="tablist" aria-label="View"><button type="button" role="tab" id="npv-priority" onclick="setNeedView('priority')">⭐ Priority</button><button type="button" role="tab" id="npv-price" onclick="setNeedView('price')">💲 By price</button><button type="button" role="tab" id="npv-shop" onclick="setNeedView('shop')">🏪 Shops</button></div>
     <input type="search" id="np-find" class="tk-find np-find" placeholder="Find a Pokémon, e.g. Mew" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="npFind=this.value;renderNeedPage()" hidden>
     <div id="np-bar" class="np-bar" hidden><span id="np-bar-text"></span><button type="button" onclick="clearAcquired()">Clear acquired</button></div>
   </div>
@@ -1509,7 +1514,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-14.114';
+const APP_VERSION = '2026-11-14.116';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4266,7 +4271,7 @@ function renderGiftList() {
     const hits = [];
     people.forEach(([u, gifts]) => Object.entries(gifts).forEach(([k, g]) => { if (g && g.card && !g.bought) { const r = shopFor(g.card); if (r && r.exact) hits.push({ u, k, c: g.card, r }); } }));
     const sum = hits.reduce((a, h) => a + h.r.best[2], 0);
-    shopTop = `<div class="np-shopsum">🏪 <b>${hits.length ? `${esc(SHOP.data.name)} has ${hits.length} of your gifts in stock` : `${esc(SHOP.data.name)} has none of your gifts in stock right now`}</b>${hits.length ? ` · from ${fmt(sum)}` : ''}
+    shopTop = `<div class="np-shopsum" style="padding-top:.45rem">${shopPicker()}🏪 <b>${hits.length ? `${esc(SHOP.data.name)} has ${hits.length} of your gifts in stock` : `${esc(SHOP.data.name)} has none of your gifts in stock right now`}</b>${hits.length ? ` · from ${fmt(sum)}` : ''}
       ${hits.map(h => `<button type="button" onclick="giftShop('${esc(h.u)}','${esc(h.k)}')">${esc(h.c.name)}${people.length > 1 ? ` (for ${esc(titleOf(h.u) || h.u)})` : ''}: <b>${fmt(h.r.best[2])}</b> ${esc(shCond(h.r.best[0]))}${shPrint(h.r.best)}${h.c.price != null ? ` (NM market ${fmt(h.c.price)})` : ''}</button>`).join('')}
       <small>Stock checked ${esc(nwAgo(SHOP.data.updated))}. Tap one for every condition and a link to their site.</small></div>`;
   }
@@ -6528,10 +6533,11 @@ function csTcgFor(it, g) {
 }
 async function csRender() {
   const box = $('pc-list'), g = CS.game;
+  $('cs-shops').innerHTML = shopPicker();
   $('cs-games').innerHTML = [['pokemon', 'Pokémon'], ['onepiece', 'One Piece']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === g}" onclick="CS.game='${k}';csRender()">${l}</button>`).join('');
   $('cs-opts').innerHTML = `<span>Sort</span>${CS_SORTS.map(([k, l]) => `<button type="button" aria-selected="${CS.sort === k}" onclick="CS.sort='${k}';csRender()">${l}</button>`).join('')}`;
-  if (!SHOP.data || !TCG_LISTS[g]) { box.innerHTML = '<p class="pc-note">⏳ Loading Card Quest\u2019s stock…</p>'; await Promise.all([loadShop(), loadTcgList(g)]); if (PC.mode !== 'shop') return; }
-  const d = SHOP.data; if (!d) { box.innerHTML = '<p class="pc-note">Couldn\u2019t load Card Quest\u2019s stock. Check your connection.</p>'; return; }
+  if (!SHOP.data || !TCG_LISTS[g]) { box.innerHTML = `<p class="pc-note">⏳ Loading ${esc(shopName())}\u2019s stock…</p>`; await Promise.all([loadShop(), loadTcgList(g)]); if (PC.mode !== 'shop') return; }
+  const d = SHOP.data; if (!d) { box.innerHTML = `<p class="pc-note">Couldn\u2019t load ${esc(shopName())}\u2019s stock. Check your connection.</p>`; return; }
   const raw = $('cs-q').value.trim(), words = lc(raw).replace(/é/g, 'e').split(/\s+/).filter(Boolean);
   const items = (d.games[g] || []).filter(it => { const hay = lc([it[0], it[1], it[2], it[3]].join(' ')).replace(/é/g, 'e'); return words.every(w => hay.includes(w)); });
   const rows = items.map(it => {
@@ -6560,8 +6566,8 @@ async function csRender() {
   }
   const sorter = { deal: (a, b) => (b.save ?? -1e9) - (a.save ?? -1e9) || (b.gapSave ?? -1e9) - (a.gapSave ?? -1e9) || b.high - a.high, high: (a, b) => b.high - a.high, low: (a, b) => a.low - b.low }[CS.sort];
   rows.sort(sorter);
-  const copies = rows.reduce((a, r) => a + r.it[6].reduce((b, v) => b + v[3], 0), 0);
-  box.innerHTML = `<div class="sc-sum">${rows.length ? `<b>${rows.length}</b> listing${rows.length === 1 ? '' : 's'} (${copies} cop${copies === 1 ? 'y' : 'ies'}) at ${esc(d.name)} for “${esc(raw)}”. Near Mint copies are compared with TCGplayer’s NM market; played copies show how far under it they are. Stock checked ${esc(nwAgo(d.updated))}.` : `${esc(d.name)} has nothing in stock for “${esc(raw)}” right now.`}</div>`
+  const copies = rows.reduce((a, r) => a + r.it[6].reduce((b, v) => b + shQty(v), 0), 0), counted = rows.some(r => r.it[6].some(v => v[3] > 0));
+  box.innerHTML = `<div class="sc-sum">${rows.length ? `<b>${rows.length}</b> listing${rows.length === 1 ? '' : 's'}${counted ? ` (${copies} cop${copies === 1 ? 'y' : 'ies'})` : ''} at ${esc(d.name)} for “${esc(raw)}”. Near Mint copies are compared with TCGplayer’s NM market; played copies show how far under it they are. Stock checked ${esc(nwAgo(d.updated))}.` : `${esc(d.name)} has nothing in stock for “${esc(raw)}” right now.`}</div>`
     + rows.slice(0, 150).map(csRowHTML).join('') + (rows.length > 150 ? '<p class="pc-note">Showing 150. Add a word to narrow it down.</p>' : '');
 }
 // A Near Mint copy at least 20% under the NM market
@@ -6582,7 +6588,7 @@ function csRowHTML(r) {
   const { it, m, vs } = r, d = SHOP.data;
   const img = m ? (g => imgTag(g.src || m.c.thumb, g.alts, m.c.name, ''))(gridImg(m.c, 100 * (window.devicePixelRatio || 1))) : '<div class="cs-ph">🃏</div>';
   const badge = x => {
-    if (x.nm == null) return `<span class="d even">${shPrint(x.v) ? esc(shPrint(x.v).trim()) + ' · not compared' : shVintage(it) ? 'vintage · not compared' : 'no market'}</span>`;
+    if (x.nm == null) return `<span class="d even">${shPrint(x.v) ? esc(shPrint(x.v).trim()) + ' · not compared' : x.vintage ? 'vintage · not compared' : 'no market'}</span>`;
     if (!x.isNM) { const pct = Math.round(x.under * 100); return pct < 0 ? `<span class="d bad">▲ ${-pct}% above NM market</span>` : `<span class="d ${x.big ? 'bad' : 'even'}">${x.big ? '⚠️ ' : ''}${pct}% under NM market</span>`; }
     const pct = Math.round(Math.abs(x.diff) / x.nm * 100);
     if (csHot(x)) return `<span class="d hot">🔥 ${fmt(-x.diff)} under NM market (${pct}%)</span>`;
@@ -6593,7 +6599,7 @@ function csRowHTML(r) {
       ${r.mk != null ? `<span class="cs-nm">TCGplayer NM market <b>${fmt(r.mk)}</b>${shVintage(it) ? ' (may be the 1st Edition price)' : ''}</span>` : ''}
       ${!m ? '<span class="warn">No TCGplayer match to compare with</span>' : m.exact ? '' : `<span class="warn">Compared with ${esc(m.c.set)}; check the printing</span>`}
       ${vs.some(csHot) || vs.some(x => x.big) || r.gap ? `<div class="cs-flags">${vs.some(csHot) ? '<span class="cs-flag">🔥 NM 20%+ under market</span>' : ''}${vs.some(x => x.isNM && x.diff != null && x.diff / x.nm <= -0.7) ? '<span class="cs-flag gap">⚠️ Unusually low: check the printing and photos</span>' : ''}${vs.some(x => x.big) ? '<span class="cs-flag gap">📉 Big gap vs NM</span>' : ''}${r.gap ? '<span class="cs-flag gap">⚖️ Their own prices</span>' : ''}</div>` : ''}
-      <div class="cs-vs">${vs.map(x => `<div class="cs-v${csHot(x) ? ' hot' : ''}"><span>${esc(x.v[0])}${x.v[1] && !/^normal$/i.test(x.v[1]) ? ` · ${esc(x.v[1])}` : ''} <span class="q">· ${x.v[3]} left</span></span><span class="pr">${fmt(x.v[2])}</span>
+      <div class="cs-vs">${vs.map(x => `<div class="cs-v${csHot(x) ? ' hot' : ''}"><span>${esc(x.v[0])}${x.v[1] && !/^normal$/i.test(x.v[1]) ? ` · ${esc(x.v[1])}` : ''} <span class="q">· ${shLeft(x.v)}</span></span><span class="pr">${fmt(x.v[2])}</span>
         ${badge(x)}</div>`).join('')}</div>
       ${r.gap ? `<div class="cs-gap">⚖️ ${r.gap.html}</div>` : ''}
       <div class="cs-links"><a class="cs-open" href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a>${m && m.c.url ? `<a class="cs-open tcg" href="${esc(m.c.url)}" target="_blank" rel="noopener noreferrer">TCGplayer ↗</a>` : ''}</div>
@@ -7222,7 +7228,22 @@ function needByPriceHTML(all) {
 function closeNeedPage() { $('need-page').hidden = true; document.body.style.overflow = ''; npSel.clear(); $('np-selbar').hidden = true; unwatchNeedBinders(); }
 /* ===== A local shop's stock (shops/cardquest.json, rebuilt twice a day by .github/workflows/shops.yml):
    your Need cards they have in stock, with condition, price and how many are left ===== */
-const SHOP = { key: 'cardquest', data: null, idx: null, loading: null, all: false };
+const SHOP_LIST = [['cardquest', 'Card Quest'], ['tradingcardworld', 'Trading Card World']];
+const SHOP = { key: (() => { try { const k = localStorage.getItem('cardBinder.shop'); return SHOP_LIST.some(x => x[0] === k) ? k : 'cardquest'; } catch (e) { return 'cardquest'; } })(),
+  data: null, idx: null, loading: null, all: false, cache: {} };
+const shopName = () => (SHOP_LIST.find(x => x[0] === SHOP.key) || [, 'the shop'])[1];
+// How many of a copy: Card Quest shows the count; a Shopify store only says it's in stock (-1)
+const shLeft = v => v[3] > 0 ? `${v[3]} left` : 'in stock';
+const shQty = v => v[3] > 0 ? v[3] : 1;
+// Switch shop everywhere (Prices, Need list, Gifts); remembered on this phone
+function setShop(k) {
+  if (!SHOP_LIST.some(x => x[0] === k) || k === SHOP.key) return;
+  SHOP.key = k; try { localStorage.setItem('cardBinder.shop', k); } catch (e) {}
+  const c = SHOP.cache[k]; SHOP.data = c ? c.data : null; SHOP.idx = c ? c.idx : null; SHOP.loading = null; SHOP.all = false;
+  const again = () => { if (PC.mode === 'shop' && !$('price-page').hidden) csRender(); renderNeedPage(); renderGiftList(); renderGiftPicker(); };
+  again(); loadShop().then(again);
+}
+const shopPicker = () => `<div class="shop-pick" role="tablist" aria-label="Shop">${SHOP_LIST.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === SHOP.key}" onclick="event.stopPropagation();setShop('${k}')">🏪 ${esc(l)}</button>`).join('')}</div>`;
 const SHOP_STOP = new Set('pokemon the and of sword shield scarlet violet sun moon xy sv swsh sm unlimited 1st edition set series cards card trainer kit me'.split(' '));
 const SHOP_SPECIAL = /stamp|pattern|ball|prerelease|staff|winner|championship|regional|judge|serial|signed|error|jumbo|expo|together|league|gym|finalist|participant/i;
 const SHOP_PRINTING = /jumbo|classic collection|shadowless|exclusive|league|championship|prize pack|trick or trade|mcdonald|celebrations/i;
@@ -7238,15 +7259,20 @@ function shToks(s) {
 function loadShop() {
   if (SHOP.data) return Promise.resolve(SHOP.data);
   if (SHOP.loading) return SHOP.loading;
+  const key = SHOP.key;
   SHOP.loading = (async () => {
-    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/shops/${SHOP.key}.json?t=${Math.floor(Date.now() / 1800000)}`, `../shops/${SHOP.key}.json`]) {
-      try { const d = await fetchJSON(u, 20000); if (d && d.games) { SHOP.data = d; break; } } catch (e) {}
+    let data = null;
+    for (const u of [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/shops/${key}.json?t=${Math.floor(Date.now() / 1800000)}`, `../shops/${key}.json`]) {
+      try { const d = await fetchJSON(u, 20000); if (d && d.games) { data = d; break; } } catch (e) {}
     }
-    if (SHOP.data) {
-      SHOP.idx = {};
-      Object.entries(SHOP.data.games).forEach(([g, items]) => { const m = SHOP.idx[g] = new Map(); items.forEach(it => { const k = shNum(it[1]); if (!k) return; if (!m.has(k)) m.set(k, []); m.get(k).push(it); }); });
+    let idx = null;
+    if (data) {
+      idx = {};
+      Object.entries(data.games).forEach(([g, items]) => { const m = idx[g] = new Map(); items.forEach(it => { const k = shNum(it[1]); if (!k) return; if (!m.has(k)) m.set(k, []); m.get(k).push(it); }); });
+      SHOP.cache[key] = { data, idx };
     }
-    SHOP.loading = null; return SHOP.data;
+    if (SHOP.key === key) { SHOP.data = data; SHOP.idx = idx; SHOP.loading = null; }
+    return SHOP.key === key ? data : SHOP.data;
   })();
   return SHOP.loading;
 }
@@ -7287,31 +7313,32 @@ const shVintage = it => /\b(unlimited|1st edition)\b/i.test(it[3] || '');
    a much bigger gap than usual for the condition (LP 35%+, MP 50%+, HP 65%+, DMG 80%+). */
 const SH_TYPICAL = { LP: 0.35, MP: 0.5, HP: 0.65, DMG: 0.8 };
 function shCompare(v, it, mk) {
-  const cond = shCond(v[0]), nm = mk != null && mk > 0 && !shPrint(v) && !shVintage(it) ? mk : null, isNM = cond === 'NM';
+  const vintage = shVintage(it) || /\b(unlimited|1st edition)\b/i.test(v[1] || '');
+  const cond = shCond(v[0]), nm = mk != null && mk > 0 && !shPrint(v) && !vintage ? mk : null, isNM = cond === 'NM';
   const under = nm != null ? 1 - v[2] / nm : null;
-  return { cond, nm, isNM, diff: nm != null && isNM ? v[2] - nm : null, under, big: nm != null && !isNM && SH_TYPICAL[cond] != null && under >= SH_TYPICAL[cond] };
+  return { cond, vintage, nm, isNM, diff: nm != null && isNM ? v[2] - nm : null, under, big: nm != null && !isNM && SH_TYPICAL[cond] != null && under >= SH_TYPICAL[cond] };
 }
 // a special printing (reverse holo, cosmos foil, 1st edition…) has its own price, so it isn't compared with the regular card's market
 const shPrint = v => /reverse/i.test(v[1] || '') ? ' rev holo' : /^(normal|foil|holofoil|unlimited)?$/i.test(String(v[1] || '').trim()) ? '' : ' ' + String(v[1]).toLowerCase();
 function shopChip(c, onclick) {
   const r = shopFor(c); if (!r) return '';
-  const n = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + v[3], 0), 0);
-  return `<button type="button" class="np-shop${r.exact ? '' : ' maybe'}"${onclick ? ` onclick="${onclick}"` : ''} title="${esc(SHOP.data.name)}: ${n} in stock">🏪 ${r.exact ? '' : 'Similar · '}${fmt(r.best[2])} ${esc(shCond(r.best[0]))}${shPrint(r.best)}${n > 1 ? ` · ${n} left` : ''}</button>`;
+  const n = r.items.reduce((a, it) => a + it[6].reduce((b, v) => b + shQty(v), 0), 0), counted = r.items.some(it => it[6].some(v => v[3] > 0));
+  return `<button type="button" class="np-shop${r.exact ? '' : ' maybe'}"${onclick ? ` onclick="${onclick}"` : ''} title="${esc(SHOP.data.name)}: ${n} in stock">🏪 ${r.exact ? '' : 'Similar · '}${fmt(r.best[2])} ${esc(shCond(r.best[0]))}${shPrint(r.best)}${counted && n > 1 ? ` · ${n} left` : ''}</button>`;
 }
 function shopSummaryHTML(list) {
   if (!SHOP.data) return '';
   const found = list.map(x => ({ x, r: shopFor(x.c) })).filter(y => y.r), exact = found.filter(y => y.r.exact), maybe = found.length - exact.length;
   const when = SHOP.data.updated ? nwAgo(SHOP.data.updated) : '';
-  if (!found.length) return `<div class="np-shopsum">🏪 <b>${esc(SHOP.data.name)}</b> has none of these Need cards in stock right now.<small>Their stock was checked ${esc(when)}.</small></div>`;
+  if (!found.length) return `<div class="np-shopsum">${shopPicker()}🏪 <b>${esc(SHOP.data.name)}</b> has none of these Need cards in stock right now.<small>Their stock was checked ${esc(when)}.</small></div>`;
   const shown = SHOP.all ? exact : exact.slice(0, 6);
-  return `<div class="np-shopsum">🏪 <b>${esc(SHOP.data.name)} has ${exact.length} of your Need card${exact.length === 1 ? '' : 's'}</b>${maybe ? ` · ${maybe} similar` : ''}
+  return `<div class="np-shopsum">${shopPicker()}🏪 <b>${esc(SHOP.data.name)} has ${exact.length} of your Need card${exact.length === 1 ? '' : 's'}</b>${maybe ? ` · ${maybe} similar` : ''}
     ${shown.map(({ x, r }) => `<button type="button" data-key="${esc(x.key)}">${esc(x.c.name)}: <b>${fmt(r.best[2])}</b> ${esc(shCond(r.best[0]))}${shPrint(r.best)}${x.c.price != null ? ` (NM market ${fmt(x.c.price)})` : ''}</button>`).join('')}
     ${exact.length > 6 ? `<button type="button" class="more">${SHOP.all ? 'Show fewer' : `Show all ${exact.length}`}</button>` : ''}
     <small>Stock checked ${esc(when)}. Tap 🏪 on a card for every condition, then reserve or buy on their site.</small></div>`;
 }
 // The Card Quest tab: every Need card they have, their price against market for the same condition, best deals first
 function shopViewHTML(list) {
-  if (!SHOP.data) { loadShop().then(d => { if (d && npView === 'shop') renderNeedPage(); }); return '<p class="np-empty">⏳ Loading Card Quest\u2019s stock…</p>'; }
+  if (!SHOP.data) { loadShop().then(d => { if (d && npView === 'shop') renderNeedPage(); }); return `${shopPicker()}<p class="np-empty">⏳ Loading ${esc(shopName())}\u2019s stock…</p>`; }
   const d = SHOP.data;
   const rows = list.map(x => {
     const r = shopFor(x.c); if (!r) return null;
@@ -7319,7 +7346,7 @@ function shopViewHTML(list) {
     // every copy they have; the one you picked (remembered on this phone), or the cheapest, is the one compared and totalled
     const copies = r.items.flatMap(it => it[6].map(v => ({ it, v, id: cqCopyId(it, v), ...shCompare(v, it, mk) }))).sort((a, b) => a.v[2] - b.v[2]);
     const want = cqPicks()[cqPickKey(x)], pick = copies.find(c => c.id === want) || copies[0];
-    const qty = copies.reduce((a, c) => a + c.v[3], 0);
+    const qty = copies.reduce((a, c) => a + shQty(c.v), 0);
     return { x, r, mk, pick, copies, chosen: !!copies.find(c => c.id === want), qty };
   }).filter(Boolean);
   const gapOf = y => y.pick.diff != null ? -y.pick.diff : y.pick.nm != null ? (y.pick.nm - y.pick.v[2]) * 0.001 : -1e9;   // NM deals by $ first, then played copies
@@ -7331,7 +7358,7 @@ function shopViewHTML(list) {
   const row = y => {
     const { x, r, pick, qty } = y, v = pick.v, it = pick.it, diff = pick.diff;
     let badge;
-    if (pick.nm == null) badge = `<span class="cq-diff even">${shPrint(v) ? esc(shPrint(v).trim()) + ' · not compared' : shVintage(it) ? 'Vintage: 1st Ed / Unlimited not compared' : 'No market price'}</span>`;
+    if (pick.nm == null) badge = `<span class="cq-diff even">${shPrint(v) ? esc(shPrint(v).trim()) + ' · not compared' : pick.vintage ? 'Vintage: 1st Ed / Unlimited not compared' : 'No market price'}</span>`;
     else if (!pick.isNM) { const pct = Math.round(pick.under * 100); badge = pct < 0 ? `<span class="cq-diff bad">${-pct}% above NM market</span>` : `<span class="cq-diff ${pick.big ? 'bad' : 'even'}">${pick.big ? '⚠️ ' : ''}${pick.cond} · ${pct}% under NM market${pick.big ? ' (big gap)' : ''}</span>`; }
     else { const pct = Math.round(Math.abs(diff) / pick.nm * 100); badge = Math.abs(diff) < 0.5 || pct < 3 ? '<span class="cq-diff even">About NM market</span>' : diff < 0 ? `<span class="cq-diff good">${fmt(-diff)} under NM market (${pct}%)</span>` : `<span class="cq-diff bad">${fmt(diff)} over NM market (${pct}%)</span>`; }
     const g = gridImg(x.c, 120 * (window.devicePixelRatio || 1));
@@ -7343,13 +7370,13 @@ function shopViewHTML(list) {
         ${r.exact ? '' : `<div class="cq-meta warn">They list it under ${esc(it[3])}. Check it\u2019s the printing you want.</div>`}
         <div class="cq-cmp">
           <div><span>TCGplayer · NM market</span><b>${y.mk != null ? fmt(y.mk) : '—'}</b></div>
-          <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}${y.chosen ? ' · your pick' : ''}</span><b>${fmt(v[2])}</b><i>${v[3]} left</i></div>
+          <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}${y.chosen ? ' · your pick' : ''}</span><b>${fmt(v[2])}</b><i>${shLeft(v)}</i></div>
         </div>
         ${y.copies.length > 1 ? `<div class="cq-copies" role="radiogroup" aria-label="Copy to buy">${y.copies.map(c => `<button type="button" class="cq-copy" role="radio" aria-checked="${c.id === pick.id}" data-copy="${esc(c.id)}"><b>${esc(c.cond)}${esc(shPrint(c.v))}</b> ${fmt(c.v[2])}${c.isNM && c.diff != null && c.diff / c.nm <= -0.2 ? ' 🔥' : c.big ? ' ⚠️' : ''}</button>`).join('')}</div>` : ''}
-        <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > v[3] ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a><a class="tcg" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a></div>
+        <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > shQty(v) ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a><a class="tcg" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a></div>
       </div></div>`;
   };
-  return `<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
+  return `${shopPicker()}<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
       ${exact.length ? `Near Mint copies are compared with TCGplayer\u2019s NM market; for a card they only have played, it shows how far under the NM market that copy is. Tap a copy on a card to choose the one you\u2019d buy; totals add up the chosen copies (the cheapest until you choose).
       <div class="cq-tot"><div><span>At ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>NM market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'Under NM' : 'Over NM'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
       <small>Stock checked ${esc(nwAgo(d.updated))} (twice a day), so a card may have sold since. Pokémon and One Piece, English only.</small></div>
@@ -7375,7 +7402,7 @@ function openShopSheet(c) {
     <div class="sh-list">${r.items.map(it => `<div class="sh-item">
       <h3>${esc(it[0])} (${esc(it[1])}${it[2] ? ` — ${esc(it[2])}` : ''})</h3>
       <p${r.exact ? '' : ' class="warn"'}>${esc(it[3])}${it[4] ? ' · Japanese' : ''}${r.exact ? '' : ' · listed under a different set name, so check it\u2019s the printing you want'}</p>
-      ${it[6].slice().sort((a, b) => a[2] - b[2]).map(v => `<div class="sh-row"><span>${esc(v[0])}${v[1] && !/^normal$/i.test(v[1]) ? ` · ${esc(v[1])}` : ''}</span><span><b>${fmt(v[2])}</b> · ${v[3]} left</span></div>`).join('')}
+      ${it[6].slice().sort((a, b) => a[2] - b[2]).map(v => `<div class="sh-row"><span>${esc(v[0])}${v[1] && !/^normal$/i.test(v[1]) ? ` · ${esc(v[1])}` : ''}</span><span><b>${fmt(v[2])}</b> · ${shLeft(v)}</span></div>`).join('')}
       <a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open on ${esc(d.name)} ↗</a></div>`).join('')}</div>
     ${c.url || c.ctId ? `<a class="np-shop" style="display:block;text-align:center;text-decoration:none;background:#312e81;border-color:#6366f1;color:#e0e7ff;padding:.55rem" href="${esc(cardLink(c))}" target="_blank" rel="noopener noreferrer">Compare on ${c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>` : ''}
     <p class="sub" style="text-align:left">Stock and prices as of ${esc(nwAgo(d.updated))}; it's checked twice a day, so it may have sold since.</p>
@@ -7394,7 +7421,7 @@ function renderNeedPage() {
   $('np-sub').innerHTML = list.length ? `<b>${list.length}</b> needed · ${fmt(total)} at market (NM)` : (got ? 'Everything here is acquired!' : 'Nothing marked Need yet');
   NP_VIEWS.forEach(v => $('npv-' + v).setAttribute('aria-selected', npView === v));
   $('np-find').hidden = npView !== 'price' || !all.length;
-  $('np-hint').textContent = !all.length ? '' : npView === 'shop' ? `${SHOP.data ? SHOP.data.name : 'Card Quest'}'s stock against market price · best deals first` : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
+  $('np-hint').textContent = !all.length ? '' : npView === 'shop' ? `${shopName()}'s stock against market price · best deals first` : npLocked ? 'Tap a card you got to stamp it · hold to select and total' : npView === 'price' ? 'Switch to Priority to drag and reorder' : 'Hold and drag to set priority';
   // every drop, also in binders this list isn't showing right now (those say where they are)
   const shown = new Map(all.filter(x => x.c.status === 'needed').map(x => [naKey(x.b || currentUser, x.c), x])), drops = [...NA.hits];
   const dropsHTML = drops.length ? `<div class="np-drops"><b>🔔 ${drops.length} price drop${drops.length === 1 ? '' : 's'}</b>${drops.map(([k, h]) => { const x = shown.get(k);
