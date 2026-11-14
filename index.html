@@ -6677,7 +6677,10 @@ function shopViewHTML(list) {
   }).filter(Boolean);
   const gapOf = y => y.pick.diff != null ? -y.pick.diff : y.pick.nm != null ? (y.pick.nm - y.pick.v[2]) * 0.001 : -1e9;   // NM deals by $ first, then played copies
   const exact = rows.filter(y => y.r.exact).sort((a, b) => gapOf(b) - gapOf(a)), maybe = rows.filter(y => !y.r.exact);
-  const cmp = exact.filter(y => y.pick.diff != null), sumShop = cmp.reduce((a, y) => a + y.pick.v[2], 0), sumMk = cmp.reduce((a, y) => a + y.pick.nm, 0), save = sumMk - sumShop;
+  // totals: the cheapest copy of each card in any condition, against the NM market of the cards that have one
+  const cheapest = y => Math.min(...y.r.items.flatMap(it => it[6].map(v => v[2])));
+  const sumShop = exact.reduce((a, y) => a + cheapest(y), 0), withMk = exact.filter(y => y.mk != null), sumMk = withMk.reduce((a, y) => a + y.mk, 0);
+  const save = sumMk - withMk.reduce((a, y) => a + cheapest(y), 0);
   const missing = list.length - rows.length;
   const row = y => {
     const { x, r, pick, qty } = y, v = pick.v, it = pick.it, diff = pick.diff;
@@ -6700,8 +6703,8 @@ function shopViewHTML(list) {
       </div></div>`;
   };
   return `<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
-      ${exact.length ? `Near Mint copies are compared with TCGplayer\u2019s NM market; for a card they only have played, it shows how far under the NM market that copy is${cmp.length < exact.length ? `. Totals cover the ${cmp.length} with a Near Mint copy` : ''}.
-      <div class="cq-tot"><div><span>NM at ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>NM market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'You save' : 'Extra'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
+      ${exact.length ? `Near Mint copies are compared with TCGplayer\u2019s NM market; for a card they only have played, it shows how far under the NM market that copy is. Totals: the cheapest copy of each card in any condition.
+      <div class="cq-tot"><div><span>At ${esc(d.name)}</span><b>${fmt(sumShop)}</b></div><div><span>NM market</span><b>${fmt(sumMk)}</b></div><div><span>${save >= 0 ? 'Under NM' : 'Over NM'}</span><b class="${save >= 0 ? 'good' : 'bad'}">${fmt(Math.abs(save))}</b></div></div>` : 'None of your Need cards are in stock there right now.'}
       <small>Stock checked ${esc(nwAgo(d.updated))} (twice a day), so a card may have sold since. Pokémon and One Piece, English only.</small></div>
     ${exact.map(row).join('')}
     ${maybe.length ? `<p class="cq-h">Similar listings (${maybe.length})</p>${maybe.map(row).join('')}` : ''}
