@@ -192,6 +192,7 @@
   .cq-diff.good { background: #064e3b; color: #6ee7b7; } .cq-diff.bad { background: #451a03; color: #fbbf24; } .cq-diff.even { background: #27272a; color: #d4d4d8; }
   .cq-foot button, .cq-foot a { appearance: none; margin-left: auto; border: 1px solid #0e7490; background: #083344; color: #a5f3fc; border-radius: 8px; padding: .35rem .5rem; font: 700 .64rem/1 Inter, system-ui, sans-serif; cursor: pointer; text-decoration: none; }
   .cq-foot a { margin-left: 0; background: #0e7490; color: #fff; }
+  .cq-foot a.tcg { background: #312e81; border-color: #6366f1; color: #e0e7ff; }
   .cq-miss { grid-column: 1 / -1; font: 500 .7rem/1.5 Inter, system-ui, sans-serif; color: #a1a1aa; padding: 0 .2rem; }
   .np-find { flex: 0 0 100%; font-size: 16px; }
   .np-find[hidden] { display: none; }
@@ -428,6 +429,8 @@
   .cs-flags { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .25rem; }
   .cs-flag { font: 800 .58rem/1 Inter, system-ui, sans-serif; padding: .25rem .4rem; border-radius: 999px; background: #064e3b; color: #6ee7b7; }
   .cs-flag.gap { background: #422006; color: #fcd34d; }
+  .cs-links { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .cs-row a.cs-open.tcg { background: #312e81; border: 1px solid #6366f1; color: #e0e7ff; }
   .cs-row a.cs-open { display: inline-block; margin-top: .4rem; background: #0e7490; color: #fff; border-radius: 8px; padding: .4rem .6rem; font: 700 .66rem/1 Inter, system-ui, sans-serif; text-decoration: none; }
   .sc-ctrl { flex: 0 0 100%; display: flex; flex-direction: column; gap: .4rem; }
   .sc-ctrl[hidden] { display: none; }
@@ -1381,7 +1384,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-14.103';
+const APP_VERSION = '2026-11-14.105';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -5892,20 +5895,21 @@ async function csRender() {
     const m = csTcgFor(it, g), mk = m && m.c.price != null ? +m.c.price : null;
     const vs = it[6].map(v => { const est = mk != null && !shPrint(v) && !shVintage(it) ? mk * (cf[shCond(v[0])] ?? 1) : null; return { v, est, diff: est != null ? v[2] - est : null }; }).sort((a, b) => a.v[2] - b.v[2]);
     const best = vs.filter(x => x.diff != null).sort((a, b) => a.diff / a.est - b.diff / b.est)[0];
-    return { it, m, vs, deal: best ? best.diff / best.est : null, low: vs[0].v[2], high: Math.max(...vs.map(x => x.v[2])), gap: csGap(it) };
+    const cmp = vs.filter(x => x.diff != null), save = cmp.length ? Math.max(...cmp.map(x => -x.diff)) : null;   // the most under market (in $) of any copy
+    return { it, m, vs, deal: best ? best.diff / best.est : null, save, low: vs[0].v[2], high: Math.max(...vs.map(x => x.v[2])), gap: csGap(it) };
   });
   if (!raw) {   // nothing typed: the price check, copies 20%+ under market, or cards whose condition prices are out of line
-    const hot = rows.filter(r => r.vs.some(x => csHot(x) && x.est >= CS.min)).sort((a, b) => a.deal - b.deal);
+    const hot = rows.filter(r => r.vs.some(x => csHot(x) && x.est >= CS.min)).sort((a, b) => (b.save ?? 0) - (a.save ?? 0));   // biggest $ under market first
     const gaps = rows.filter(r => r.gap).sort((a, b) => b.gap.score - a.gap.score);
     $('cs-opts').innerHTML = `<span>Check</span><button type="button" aria-selected="${CS.check === 'deals'}" onclick="CS.check='deals';csRender()">🔥 20%+ under · ${hot.length}</button><button type="button" aria-selected="${CS.check === 'gaps'}" onclick="CS.check='gaps';csRender()">⚖️ Condition gaps · ${gaps.length}</button>`
       + (CS.check === 'deals' ? `<span>Market</span>${[1, 5, 20, 100].map(m => `<button type="button" aria-selected="${CS.min === m}" onclick="CS.min=${m};csRender()">$${m}+</button>`).join('')}` : '');
     const intro = `<b>Price check</b> of ${(d.games[g] || []).length} ${g === 'onepiece' ? 'One Piece' : 'Pokémon'} singles in stock at ${esc(d.name)} (checked ${esc(nwAgo(d.updated))}). Type a name above to see everything they have for it.<br>`;
     box.innerHTML = CS.check === 'gaps'
       ? `<div class="sc-sum">${intro}<b>${gaps.length}</b> card${gaps.length === 1 ? '' : 's'} where their own NM / LP / MP prices are out of line: a played copy priced the same or higher than a better one (buy the better one), or a played copy far cheaper than their NM.</div>` + gaps.map(csRowHTML).join('')
-      : `<div class="sc-sum">${intro}<b>${hot.length}</b> listing${hot.length === 1 ? '' : 's'} with a copy 20% or more under market (worth $${CS.min}+). Played conditions are compared with TCGplayer's NM price × the usual LP 85% / MP 65% / HP 45%, so check the card's photos and condition before buying. Vintage Unlimited / 1st Edition cards aren't compared.</div>` + hot.map(csRowHTML).join('');
+      : `<div class="sc-sum">${intro}<b>${hot.length}</b> listing${hot.length === 1 ? '' : 's'} with a copy 20% or more under market (worth $${CS.min}+), biggest savings first. Played conditions are compared with TCGplayer's NM price × the usual LP 85% / MP 65% / HP 45%, so check the card's photos and condition before buying. Vintage Unlimited / 1st Edition cards aren't compared.</div>` + hot.map(csRowHTML).join('');
     return;
   }
-  const sorter = { deal: (a, b) => (a.deal ?? 9) - (b.deal ?? 9) || b.high - a.high, high: (a, b) => b.high - a.high, low: (a, b) => a.low - b.low }[CS.sort];
+  const sorter = { deal: (a, b) => (b.save ?? -1e9) - (a.save ?? -1e9) || b.high - a.high, high: (a, b) => b.high - a.high, low: (a, b) => a.low - b.low }[CS.sort];
   rows.sort(sorter);
   const copies = rows.reduce((a, r) => a + r.it[6].reduce((b, v) => b + v[3], 0), 0);
   box.innerHTML = `<div class="sc-sum">${rows.length ? `<b>${rows.length}</b> listing${rows.length === 1 ? '' : 's'} (${copies} cop${copies === 1 ? 'y' : 'ies'}) at ${esc(d.name)} for “${esc(raw)}”. Market is TCGplayer’s for the same condition. Stock checked ${esc(nwAgo(d.updated))}.` : `${esc(d.name)} has nothing in stock for “${esc(raw)}” right now.`}</div>`
@@ -5938,7 +5942,7 @@ function csRowHTML(r) {
       <div class="cs-vs">${vs.map(x => `<div class="cs-v${csHot(x) ? ' hot' : ''}"><span>${esc(x.v[0])}${x.v[1] && !/^normal$/i.test(x.v[1]) ? ` · ${esc(x.v[1])}` : ''} <span class="q">· ${x.v[3]} left</span></span><span class="pr">${fmt(x.v[2])}</span>
         <span class="mk">${x.est != null ? `Market ${fmt(x.est)}` : ''}</span>${badge(x)}</div>`).join('')}</div>
       ${r.gap ? `<div class="cs-gap">⚖️ ${r.gap.html}</div>` : ''}
-      <a class="cs-open" href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open on ${esc(d.name)} ↗</a>
+      <div class="cs-links"><a class="cs-open" href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a>${m && m.c.url ? `<a class="cs-open tcg" href="${esc(m.c.url)}" target="_blank" rel="noopener noreferrer">TCGplayer ↗</a>` : ''}</div>
     </div></div>`;
 }
 // The sets of a game, newest first: [value, label, group ids]; English Pokémon follows the set guide's series
@@ -6670,7 +6674,7 @@ function shopViewHTML(list) {
           <div><span>Market · ${esc(shCond(v[0]))}</span><b>${pick.est != null ? fmt(pick.est) : '—'}</b></div>
           <div class="shop"><span>${esc(d.name)} · ${esc(shCond(v[0]))}${esc(shPrint(v))}</span><b>${fmt(v[2])}</b><i>${v[3]} left</i></div>
         </div>
-        <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > v[3] ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+        <div class="cq-foot">${badge}<button type="button" class="cq-more">${qty > v[3] ? `All ${qty} copies` : 'Details'}</button><a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">${esc(d.name)} ↗</a><a class="tcg" href="${esc(cardLink(x.c))}" target="_blank" rel="noopener noreferrer">${x.c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a></div>
       </div></div>`;
   };
   return `<div class="cq-head"><h3>🏪 ${esc(d.name)} has ${exact.length} of your ${list.length} Need card${list.length === 1 ? '' : 's'}</h3>
@@ -6691,6 +6695,7 @@ function openShopSheet(c) {
       <p${r.exact ? '' : ' class="warn"'}>${esc(it[3])}${it[4] ? ' · Japanese' : ''}${r.exact ? '' : ' · listed under a different set name, so check it\u2019s the printing you want'}</p>
       ${it[6].slice().sort((a, b) => a[2] - b[2]).map(v => `<div class="sh-row"><span>${esc(v[0])}${v[1] && !/^normal$/i.test(v[1]) ? ` · ${esc(v[1])}` : ''}</span><span><b>${fmt(v[2])}</b> · ${v[3]} left</span></div>`).join('')}
       <a href="${esc(d.url)}/products/${esc(it[5])}" target="_blank" rel="noopener noreferrer">Open on ${esc(d.name)} ↗</a></div>`).join('')}</div>
+    ${c.url || c.ctId ? `<a class="np-shop" style="display:block;text-align:center;text-decoration:none;background:#312e81;border-color:#6366f1;color:#e0e7ff;padding:.55rem" href="${esc(cardLink(c))}" target="_blank" rel="noopener noreferrer">Compare on ${c.ctId ? 'CardTrader' : 'TCGplayer'} ↗</a>` : ''}
     <p class="sub" style="text-align:left">Stock and prices as of ${esc(nwAgo(d.updated))}; it's checked twice a day, so it may have sold since.</p>
     <div class="lb-row"><button type="button" class="lb-btn quiet" onclick="closeSheet()">Close</button></div>`).onclick = e => { if (e.target === $('lb-sheet')) closeSheet(); };
 }
