@@ -13,7 +13,7 @@ SHOPS = {
 }
 UA = {'User-Agent': 'Mozilla/5.0 (compatible; CardBinderNeedList/1.0; +https://bilbosagggins.github.io/Card-Binder/)',
       'Accept': 'text/html,*/*', 'HX-Request': 'true'}
-PAGE = 500
+PAGE = 500   # asked for; Card Quest now sends 20 at a time whatever is asked, so the job steps through by what comes back
 
 
 def get(url, tries=3):
@@ -144,18 +144,25 @@ def build(key, shop, old):
         return build_shopify(key, shop, old)
     games = {}
     for g in shop['games']:
-        items, ok = [], True
-        for off in range(0, 40000, PAGE):
+        items, ok, seen, off, size = [], True, set(), 0, None
+        while off < 40000:
             b = get(f"{shop['url']}/api/advanced-search?initialLoad=true&game={g}&inStockOnly=true&limit={PAGE}&offset={off}&orderBy=price-desc")
             if b is None:
                 ok = False
                 break
             n = len(re.findall(r"data-variants='", b))
-            items += parse(b)
-            print(f'{key} {g} offset {off}: {n} products, {len(items)} in stock so far')
-            if n < PAGE:
+            if n == 0:
                 break
-            time.sleep(3)
+            for it in parse(b):
+                if it[5] not in seen:      # stock can shift between pages; count each product once
+                    seen.add(it[5]); items.append(it)
+            size = size or n
+            off += n
+            if off % 200 == 0 or n < size:
+                print(f'{key} {g} offset {off}: {len(items)} in stock so far (pages of {size})')
+            if n < size:
+                break
+            time.sleep(1.5)
         if ok and items:
             games[g] = items
         elif old and old.get('games', {}).get(g):
@@ -174,6 +181,13 @@ def main():
         except Exception:
             old = None
         games = build(key, shop, old)
+        # a run that comes back with far fewer cards than last time is more likely the site changing than the shop
+        # selling half its stock: keep the last list and say so in the log
+        for g, items in list(games.items()):
+            before = len(((old or {}).get('games') or {}).get(g) or [])
+            if before >= 100 and len(items) < before * 0.5:
+                print(f'{key} {g}: only {len(items)} cards this run (last time {before}); keeping the last list, check the shop site')
+                games[g] = old['games'][g]
         if not any(games.values()):
             print(f'{key}: nothing fetched, leaving the file alone')
             continue
