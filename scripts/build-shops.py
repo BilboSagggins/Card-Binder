@@ -23,7 +23,8 @@ def get(url, tries=3):
                 return r.read().decode('utf-8', 'replace')
         except Exception as e:
             print(f'  {url} failed ({e}), try {i + 1}', file=sys.stderr)
-            time.sleep(10 * (i + 1))
+            # "429 Too Many Requests": the store wants a longer break before the next try
+            time.sleep((60 if getattr(e, 'code', None) == 429 else 10) * (i + 1))
     return None
 
 
