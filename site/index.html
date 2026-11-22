@@ -1521,7 +1521,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-22.104';
+const APP_VERSION = '2026-11-22.105';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4941,16 +4941,17 @@ function phAllLoad() {
   return PH_ALL.p;
 }
 // The cards closest to a pocket among all cards of this game, checked exactly: [{ card, score }]
-async function phAllCands(q, game, top = 40) {
+async function phAllCands(q, game, top = 40, style = {}) {
   const A = await phAllLoad(); if (!A) return [];
   const ok = new Set((game === 'onepiece' ? ['onepiece'] : ['pokemon', 'pokemon-jp', 'pokemon-zh']).map(l => A.lists.indexOf(l)));
+  const off = A.lists.map(l => style[l] || 0);
   const K = A.K, qp = new Float32Array(K);
   for (let j = 0; j < K; j++) { let t = 0; const row = j * 512; for (let d = 0; d < 512; d++) t += A.P[row + d] * q[d]; qp[j] = t * A.scale[j]; }
   const best = [];   // [score, i], kept short
   let floor = -Infinity;
   for (let i = 0; i < A.n; i++) {
     if (!ok.has(A.list[i])) continue;
-    let t = 0; const o = i * K; for (let j = 0; j < K; j++) t += qp[j] * A.codes[o + j];
+    let t = -off[A.list[i]]; const o = i * K; for (let j = 0; j < K; j++) t += qp[j] * A.codes[o + j];
     if (best.length < top) { best.push([t, i]); if (best.length === top) { best.sort((a, b) => a[0] - b[0]); floor = best[0][0]; } }
     else if (t > floor) { best[0] = [t, i]; best.sort((a, b) => a[0] - b[0]); floor = best[0][0]; }
   }
@@ -4959,9 +4960,16 @@ async function phAllCands(q, game, top = 40) {
     const L = await loadTcgList(list).catch(() => null); if (!L) return null;
     const card = list === 'pokemon-zh' ? cardFromCT(cid, L) : cardFromTcg(cid, game === 'onepiece' ? 'onepiece' : 'pokemon', L);
     if (!card) return null; if (list === 'pokemon-jp') card.lang = 'ja';
-    return { card, score: phDot(q, v) };
+    return { card, score: phDot(q, v) - (style[list] || 0) };
   }));
   return out.filter(Boolean);
+}
+// Each list's pictures have their own look (CardTrader's Chinese pictures are photos, TCGplayer's are scans), which would make a
+// whole list seem close to any photo: that part is taken out of every score (the list's style direction, from emb/index.json)
+async function phStyle(q) {
+  const idx = await phEmbIndex(), st = idx && idx.all && idx.all.style; const out = {};
+  if (st) for (const [l, v] of Object.entries(st)) { let t = 0; for (let d = 0; d < 512; d++) t += q[d] * v[d]; out[l] = t; }
+  return out;
 }
 const phCardKey = c => c.tcgPid ? 'tcg' + c.tcgPid : c.ctId ? 'ct' + c.ctId : c.id || c.name + '|' + c.number;
 // Text directions for "an empty clear plastic binder pocket" vs "a pokemon trading card" (made once with the same model)
@@ -5103,12 +5111,12 @@ async function phMatch() {
     phMsg('Looking among all cards too…', 98);
     const t3 = performance.now(), game = S.game;
     PH.pick = await Promise.all(pe.map(async (v, i) => {
-      const e = v.card;
-      const mine = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) : -1 })).filter(x => x.score > -1).sort((a, b) => b.score - a.score);
+      const e = v.card, style = await phStyle(e);
+      const mine = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) - (style[(phEmbList(x.card) || [])[0]] || 0) : -9 })).filter(x => x.score > -9).sort((a, b) => b.score - a.score);
       const empty = phDot(v.full, PH_EMPTY_TXT) > phDot(v.full, PH_CARD_TXT);     // judged on the whole pocket
       // every card of this game, not only yours (a card you own stays as your copy)
       const own = new Set(mine.map(x => phCardKey(x.card)));
-      const others = empty ? [] : (await phAllCands(e, game).catch(() => [])).filter(x => !own.has(phCardKey(x.card)));
+      const others = empty ? [] : (await phAllCands(e, game, 40, style).catch(() => [])).filter(x => !own.has(phCardKey(x.card)));
       const scored = [...mine, ...others].sort((a, b) => b.score - a.score);
       PH.cells[i].emb = e; PH.cells[i].alts = scored.slice(0, 8);
       if (empty || !scored.length) return { empty: true, sure: !!empty };
