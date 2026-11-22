@@ -42,7 +42,6 @@ async def main():
         print(f'Prices after reload: {time.time()-a:.1f}s, {len(data)} data requests, from offline helper: {sum(1 for r in data if r.get("sw"))}, internet bytes: {sum(r.get("bytes",0) for r in data if not r.get("sw"))/1048576:.2f} MB')
         after = await pg.evaluate(saved); print('re-downloaded after reload:', [k for k in after if before.get(k) != after.get(k)] or 'none')
         await pg.evaluate("closePricePage()")
-        return await b.close()
         # photo page with the sample
         a = time.time(); await pg.evaluate("openPhotoPage()"); await pg.wait_for_timeout(500)
         await pg.evaluate("phTrySample()"); await pg.wait_for_function("PH.img && !document.getElementById('ph-align').hidden", timeout=30000)
@@ -53,7 +52,8 @@ async def main():
         print(f'match took {time.time()-b0:.1f}s after tapping (page opened {time.time()-a:.1f}s ago)')
         print('timing:', await pg.evaluate("JSON.stringify(PH.timing)"))
         print('review:', await pg.evaluate("document.getElementById('ph-review-t').innerText"))
-        print('pockets:', await pg.evaluate("PH.pick.map((p, i) => (i + 1) + ': ' + (p.empty ? 'empty' : p.card.name + ' [' + p.card.set + ' ' + p.card.number + '] ' + Math.round(p.score * 100) + '% ' + (p.sure ? 'sure' : 'check'))).join('\\n')"))
+        print('index loaded:', await pg.evaluate("PH_ALL.p ? PH_ALL.p.then(a => a && a.n) : null"))
+        print('pockets:', await pg.evaluate("PH.pick.map((p, i) => (i + 1) + ': ' + (p.empty ? 'empty' : p.card.name + ' [' + p.card.set + ' ' + p.card.number + (p.card.lang && p.card.lang !== 'en' ? ' ' + p.card.lang : '') + '] ' + Math.round(p.score * 100) + '% ' + (p.sure ? 'sure' : 'check') + (p.collId ? ' (yours)' : ' (NEW)'))).join('\\n')"))
         await pg.screenshot(path='site-review.png', full_page=False)
         print('blocked writes:', [l for l in logs if 'BLOCKED' in l][:5]); print('errors:', [l for l in logs if 'rror' in l][:6])
         await b.close()
