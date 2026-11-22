@@ -32,6 +32,8 @@ for (let r = 0; r < 3; r++) for (let col = 0; col < 4; col++) {
   const ix = (x1 - x0) * .02, iy = (y1 - y0) * .02;
   pockets.push({ i, e: await two(await fit(await page.crop([Math.round(x0 + ix), Math.round(y0 + iy), Math.round(x1 - ix), Math.round(y1 - iy)]), 448)) });
 }
+fs.writeFileSync('pockets.json', JSON.stringify(Object.fromEntries(pockets.map(p => [p.i, Array.from(p.e)]))));
+process.exit(0);
 const nm = c => names[c.list].p[c.id][1] + ' [' + (names[c.list].groups[names[c.list].p[c.id][3]] || '') + (c.list !== 'pokemon' ? ' ' + c.list.slice(8) : '') + ']';
 const methods = {
   raw: (q, c) => dot(q, c.v),
