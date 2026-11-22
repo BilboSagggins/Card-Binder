@@ -1411,7 +1411,8 @@ const APP_VERSION = '2026-11-14.121';
    ======================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDOtaK7XgGBd6Yq5nBh7Ue9yJ41DlWQRrs",
-  authDomain: "card-binder-9879a.firebaseapp.com",
+  // no authDomain: the app only signs in anonymously (or by email), and leaving it out stops Firebase loading Google's
+  // sign-in helper page (about 135 KB and four extra connections at every start), which is only needed for pop-up sign-in
   databaseURL: "https://card-binder-9879a-default-rtdb.firebaseio.com/",
   projectId: "card-binder-9879a",
   storageBucket: "card-binder-9879a.firebasestorage.app",

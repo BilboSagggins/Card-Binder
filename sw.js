@@ -1,7 +1,9 @@
 /* Card Binder offline helper (service worker).
    Keeps the app, its scripts and fonts, the daily price lists, the news, and card pictures on the phone,
    so the binder opens and works with no signal (for example at a card show).
-   - The app page and the price lists: fresh from the internet when there is signal, the saved copy when not.
+   - The app page: fresh from the internet when there is signal, the saved copy when not.
+   - The data files (prices, shop stock, news, picture fingerprints): the saved copy while it's still current, so they aren't
+     downloaded again and again; the price lists only change once a day, so they come from the phone until the next update.
    - Scripts, fonts and card pictures: the saved copy first (they never change), fetched and saved when missing.
    - Firebase (your binder data and sign-in) is never touched here; the app keeps its own copy of your binders. */
 const SHELL = 'cb-shell-v1', DATA = 'cb-data-v1', IMG = 'cb-img-v1';
@@ -59,6 +61,40 @@ async function cacheFirst(req, cacheName, key) {
   if (res && (res.ok || res.type === 'opaque')) cache.put(key || req, res.clone()).catch(() => {});
   return res;
 }
+/* How long a saved data file stays current. The price lists, price moves and art tags are rebuilt once a day (the job is
+   scheduled for 20:40 UTC, sometimes starts up to an hour late, and takes about ten minutes), so a copy saved after the last
+   23:00 UTC is current until the next one. */
+const DAILY_UTC = 23;
+function lastDaily(now) { const d = new Date(now); const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) + DAILY_UTC * 3600000; return t <= now ? t : t - 86400000; }
+function freshFor(path) {
+  if (/\/prices\/[^/]+\.json$/.test(path)) return 'daily';
+  if (/\/shops\//.test(path)) return 2 * 3600000;
+  if (/\/news\//.test(path)) return 20 * 60000;
+  if (/\/emb\/index\.json$/.test(path)) return 6 * 3600000;    // which sets have fingerprints
+  if (/\/emb\//.test(path)) return 7 * 86400000;                // a set's fingerprints hardly ever change
+  return 0;
+}
+// The saved copy while it's current; otherwise the internet (saving the new copy with the time), or the saved copy with no signal
+async function dataFile(req, key, path) {
+  const cache = await caches.open(DATA), rule = freshFor(path), now = Date.now();
+  const hit = await cache.match(key, { ignoreSearch: true });
+  if (hit && rule) {
+    const at = +hit.headers.get('x-cb-saved') || 0;
+    if (rule === 'daily' ? at >= lastDaily(now) : now - at < rule) return hit;
+  }
+  try {
+    const res = await timeout(fetch(req), 8000);
+    if (res && res.ok) {
+      const body = await res.clone().blob(), h = new Headers(res.headers); h.set('x-cb-saved', String(now));
+      cache.put(key, new Response(body, { status: res.status, statusText: res.statusText, headers: h })).catch(() => {});
+    }
+    return res;
+  } catch (err) {
+    if (hit) return hit;
+    const any = await caches.match(key, { ignoreSearch: true }); if (any) return any;
+    throw err;
+  }
+}
 let trimming = false;
 async function trimImages() {
   if (trimming) return; trimming = true;
@@ -96,9 +132,9 @@ self.addEventListener('fetch', e => {
     return e.respondWith(networkFirst(req, SHELL, pageKey(req.url), 4000));
   }
   if (same && /\/version\.json$/.test(url.pathname)) return;          // the app's version number: always straight from the internet
-  if (same && /\/(prices|news)\/[^/]+\.json$/.test(url.pathname)) return e.respondWith(networkFirst(req, DATA, url.origin + url.pathname, 8000));
+  if (same && /\/(prices|news|shops)\/[^/]+\.json$|\/emb\//.test(url.pathname)) return e.respondWith(dataFile(req, url.origin + url.pathname, url.pathname));
   if (same) return e.respondWith(cacheFirst(req, SHELL).catch(() => fetch(req)));
-  if (DATA_HOSTS.test(url.hostname)) return e.respondWith(networkFirst(req, DATA, url.origin + url.pathname, 8000));
+  if (DATA_HOSTS.test(url.hostname)) return e.respondWith(dataFile(req, url.origin + url.pathname, url.pathname));
   if (LIB_HOSTS.test(url.hostname) && !IMG_HOSTS.test(url.hostname)) return e.respondWith(cacheFirst(req, SHELL, url.href).catch(() => fetch(req)));
   if (IMG_HOSTS.test(url.hostname) && (req.destination === 'image' || /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(url.pathname))) {
     return e.respondWith(picture(req).catch(() => caches.match(req.url).then(r => r || Response.error())));
