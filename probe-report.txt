@@ -1,17 +1,24 @@
+npm warn Unknown cli config "--onnxruntime-node-install-cuda". This will stop working in the next major version of npm.
 npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-npm error code 1
-npm error path /tmp/emb/node_modules/onnxruntime-node
-npm error command failed
-npm error command sh -c node ./script/install
-npm error Downloading "https://github.com/microsoft/onnxruntime/releases/download/v1.21.0/onnxruntime-linux-x64-gpu-1.21.0.tgz"...
-npm error `nvcc` not found. Assuming CUDA 12.
-npm error /tmp/emb/node_modules/onnxruntime-node/script/install.js:112
-npm error
-npm error Error: Failed to download the binaries: 404 Not Found.
-npm error
-npm error Use "--onnxruntime-node-install-cuda=skip" to skip the installation. You will still be able to use ONNX Runtime, but the CUDA EP will not be available.
-npm error
-npm error Node.js v24.22.3
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-22T05_09_48_898Z-debug-0.log
+
+added 54 packages in 6s
+npm warn install-scripts 3 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   onnxruntime-node@1.21.0 (postinstall: node ./script/install)
+npm warn install-scripts   sharp@0.34.5 (install: node install/check.js || npm run build)
+npm warn install-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 npm 0
  
+DTYPE fp32
+model ready 10.249 s
+200w per card: download 113 ms, AI 489 ms (2 views); total 12.0 s
+in_400x400 per card: download 106 ms, AI 479 ms (2 views); total 11.7 s
+
+
+DTYPE fp16
+model ready 4.472 s
+200w per card: download 35 ms, AI 599 ms (2 views); total 12.7 s
+in_400x400 per card: download 32 ms, AI 590 ms (2 views); total 12.4 s
+
+
