@@ -20,7 +20,7 @@ async def main():
         await pg.goto(URL); await pg.wait_for_function("!document.getElementById('landing').classList.contains('booting')", timeout=60000)
         await pg.wait_for_timeout(2000)
         print('signed in anonymously:', await pg.evaluate("!!(firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous)"))
-        print('helper page loaded:', any('auth/iframe' in r['url'] or 'apis.google.com' in r['url'] for r in reqs.values()))
+        print('helper URLs:', [r['url'][:90] for r in reqs.values() if 'auth/iframe' in r['url'] or 'apis.google.com' in r['url'] or 'firebaseapp.com' in r['url']])
         print('shelf binders:', await pg.evaluate("[...document.querySelectorAll('.lb-scene .bk')].map(b => b.dataset.user).slice(0, 8)"))
         # price lists: first visit, then again after a reload (should come from the phone)
         def net(since):
@@ -31,6 +31,8 @@ async def main():
         print('binder game:', await pg.evaluate("S.game"), '| collection items:', await pg.evaluate("Object.keys((COLLECTIONS[collKey()] || {}).items || {}).length"))
         n = len(reqs); a = time.time(); await pg.evaluate("openPricePage()"); await pg.wait_for_function("PC.ready", timeout=90000)
         await pg.wait_for_timeout(1500); bts, cnt = net(n); print(f'Prices 1st time: {time.time()-a:.1f}s, {cnt} data requests, {bts/1048576:.2f} MB')
+        saved = "(async () => { const c = await caches.open('cb-data-v1'); const out = {}; for (const k of await c.keys()) { const r = await c.match(k); out[k.url.split('/').slice(-2).join('/')] = r.headers.get('x-cb-saved'); } return out; })()"
+        before = await pg.evaluate(saved); print('saved copies before reload:', before)
         await pg.reload(); await pg.wait_for_function("!document.getElementById('landing').classList.contains('booting')", timeout=60000); await pg.wait_for_timeout(1500)
         print('page controlled by offline helper:', await pg.evaluate("!!navigator.serviceWorker.controller"))
         await pg.evaluate("document.querySelector('.lb-scene .bk[data-user=\"kyle\"]').click()"); await pg.wait_for_function("typeof S !== 'undefined' && S.loadedFor", timeout=60000)
@@ -38,7 +40,9 @@ async def main():
         await pg.wait_for_timeout(1500)
         rs = list(reqs.values())[n:]; data = [r for r in rs if 'raw.githubusercontent' in r['url']]
         print(f'Prices after reload: {time.time()-a:.1f}s, {len(data)} data requests, from offline helper: {sum(1 for r in data if r.get("sw"))}, internet bytes: {sum(r.get("bytes",0) for r in data if not r.get("sw"))/1048576:.2f} MB')
+        after = await pg.evaluate(saved); print('re-downloaded after reload:', [k for k in after if before.get(k) != after.get(k)] or 'none')
         await pg.evaluate("closePricePage()")
+        return await b.close()
         # photo page with the sample
         a = time.time(); await pg.evaluate("openPhotoPage()"); await pg.wait_for_timeout(500)
         await pg.evaluate("phTrySample()"); await pg.wait_for_function("PH.img && !document.getElementById('ph-align').hidden", timeout=30000)
