@@ -54,6 +54,7 @@ async def main():
         print('review:', await pg.evaluate("document.getElementById('ph-review-t').innerText"))
         print('index loaded:', await pg.evaluate("PH_ALL.p ? PH_ALL.p.then(a => a && a.n) : null"))
         print('pockets:', await pg.evaluate("PH.pick.map((p, i) => (i + 1) + ': ' + (p.empty ? 'empty' : p.card.name + ' [' + p.card.set + ' ' + p.card.number + (p.card.lang && p.card.lang !== 'en' ? ' ' + p.card.lang : '') + '] ' + Math.round(p.score * 100) + '% ' + (p.sure ? 'sure' : 'check') + (p.collId ? ' (yours)' : ' (NEW)'))).join('\\n')"))
+        print('alts:', await pg.evaluate("PH.cells.map((c, i) => c.alts ? (i + 1) + ': ' + c.alts.slice(0, 8).map(a => a.card.name.slice(0, 28) + (a.collId ? '*' : '') + ' ' + Math.round(a.score * 100)).join(', ') : '').filter(Boolean).join('\\n')"))
         await pg.screenshot(path='site-review.png', full_page=False)
         print('blocked writes:', [l for l in logs if 'BLOCKED' in l][:5]); print('errors:', [l for l in logs if 'rror' in l][:6])
         await b.close()

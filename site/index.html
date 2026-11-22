@@ -1521,7 +1521,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-22.103';
+const APP_VERSION = '2026-11-22.104';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -5116,7 +5116,8 @@ async function phMatch() {
       let top = scored[0];
       if (!top.collId && mine[0] && mine[0].score >= top.score - PH_OWN_EDGE) top = mine[0];
       const next = scored.find(x => x !== top), gap = next ? top.score - next.score : 1;
-      return { card: top.card, collId: top.collId, score: top.score, sure: gap >= PH_SURE_GAP && top.score >= PH_SURE_MIN };
+      // a card that isn't yours is always one to check: among every card, near-identical printings and lookalikes are close
+      return { card: top.card, collId: top.collId, score: top.score, sure: !!top.collId && gap >= PH_SURE_GAP && top.score >= PH_SURE_MIN };
     }));
     PH.timing.allCards = phSecs(performance.now() - t3);
     phStep('review'); phRenderReview();
@@ -5126,7 +5127,8 @@ async function phMatch() {
   } finally { PH.busy = false; }
 }
 // "Check" unless the best match clearly beats the next one (printings of the same card are close, so those get checked)
-const PH_SURE_GAP = 0.02, PH_SURE_MIN = 0.7, PH_OWN_EDGE = 0.015;
+// a card you don't own replaces your own closest card only when it's clearly closer (tested on the Sky Legends page)
+const PH_SURE_GAP = 0.02, PH_SURE_MIN = 0.7, PH_OWN_EDGE = 0.02;
 function phRenderReview() {
   const g = $('ph-grid'); g.style.gridTemplateColumns = `repeat(${PH.cols}, minmax(0, 1fr))`;
   g.innerHTML = PH.pick.map((p, i) => `<button type="button" class="ph-cell${p.empty ? ' empty' : p.sure ? '' : ' check'}" data-i="${i}">
