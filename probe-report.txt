@@ -1,9 +1,13 @@
-npm 1
-4
-
+npm error     at TLSSocket.emit (node:domain:489:12)
+npm error     at addChunk (node:internal/streams/readable:569:12)
+npm error
+npm error Node.js v24.22.3
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-22T05_09_17_575Z-debug-0.log
+npm 0
+ 
 DTYPE fp32
 
-inder/scripts/emb-test.mjs
+from /tmp/emb/emb-test.mjs
     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
     at packageResolve (node:internal/modules/esm/resolve:784:25)
     at moduleResolve (node:internal/modules/esm/resolve:873:18)
@@ -21,7 +25,7 @@ Node.js v24.22.3
 
 DTYPE fp16
 
-inder/scripts/emb-test.mjs
+from /tmp/emb/emb-test.mjs
     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
     at packageResolve (node:internal/modules/esm/resolve:784:25)
     at moduleResolve (node:internal/modules/esm/resolve:873:18)
