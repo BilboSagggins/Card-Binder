@@ -53,6 +53,13 @@ out['l'] = [r[0] for r in recs]; out['id'] = [r[1] for r in recs]; out['g'] = [r
 out.tofile(os.path.join(EMB, 'all.bin'))
 idx_path = os.path.join(EMB, 'index.json')
 idx = json.load(open(idx_path))
-idx['all'] = {'dims': K, 'cards': len(recs), 'lists': LISTS, 'record': 1 + 4 + 4 + K}
+# Each list's pictures have their own look (CardTrader's Chinese pictures are photos, TCGplayer's are scans), which makes a
+# whole list seem close to any photo. The phone takes that out: score - query . (list average - Pokemon average). On the Sky
+# Legends test page this took the right Pokemon from first in 4 of 9 pockets to 5 of 9, and among the 8 closest from 7 to 8.
+lst_of = np.array([r[0] for r in recs])
+pk = np.isin(lst_of, [LISTS.index(l) for l in ('pokemon', 'pokemon-zh', 'pokemon-jp')])
+gmean = X[pk].mean(0)
+style = {l: [round(float(x), 5) for x in (X[lst_of == i].mean(0) - (gmean if l != 'onepiece' else X[lst_of == i].mean(0)))] for i, l in enumerate(LISTS) if (lst_of == i).any()}
+idx['all'] = {'dims': K, 'cards': len(recs), 'lists': LISTS, 'record': 1 + 4 + 4 + K, 'style': style}
 json.dump(idx, open(idx_path, 'w'))
 print('wrote emb/all.bin', os.path.getsize(os.path.join(EMB, 'all.bin')) // 1024, 'KB')
