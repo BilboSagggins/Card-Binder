@@ -140,6 +140,15 @@
   .np-head { flex-wrap: wrap; }
   .ph-body { max-width: 40rem; margin: 0 auto; padding: .9rem .9rem 2rem; }
   .ph-sample { appearance: none; display: block; margin: .6rem auto 0; border: 1px dashed #52525b; background: none; color: #a1a1aa; border-radius: 10px; padding: .5rem .8rem; font: 600 .72rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
+  .ph-live-btn { appearance: none; display: flex; flex-direction: column; align-items: center; gap: .2rem; width: 100%; margin: 0 0 .7rem; border: 1px solid #0891b2; background: linear-gradient(180deg, #083344, #0c2b36); color: #fff; border-radius: 14px; padding: .9rem .8rem; font: 800 .95rem/1.2 Inter, system-ui, sans-serif; cursor: pointer; }
+  .ph-live-btn span { font-size: 1.6rem; }
+  .ph-live-btn small { font: 500 .7rem/1.35 Inter, system-ui, sans-serif; color: #a5f3fc; }
+  .ph-live { position: relative; width: 100%; max-width: 34rem; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #000; }
+  .ph-live video { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .ph-live canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .ph-live-t { position: absolute; left: 0; right: 0; bottom: 0; padding: .55rem .7rem .6rem; background: linear-gradient(0deg, rgba(0,0,0,.8), transparent); color: #fff; font: 700 .8rem/1.3 Inter, system-ui, sans-serif; text-align: center; }
+  .ph-live-bar { display: block; height: 4px; margin: .4rem auto 0; max-width: 12rem; border-radius: 99px; background: rgba(255,255,255,.25); overflow: hidden; }
+  .ph-live-bar b { display: block; height: 100%; width: 0; background: #22d3ee; transition: width .12s; }
   .ph-p { font: 500 .8rem/1.5 Inter, system-ui, sans-serif; color: #d4d4d8; margin: 0 0 .8rem; }
   .ph-p b { color: #fff; }
   .ph-stage { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -1426,12 +1435,18 @@
       <p class="ph-p">Lay the binder flat, take the photo from straight above in good light (sleeve glare makes it harder), and get the whole page in.
         The cards are matched with <b>your collection</b> and with <b>every card</b> (Pokémon in English, Japanese and Chinese, or One Piece) right on this phone; cards that aren't in your collection yet are marked <b>new</b> and added to it with the page.
         The result is added as a <b>new page at the end</b> of this binder, so nothing you already have moves.</p>
+      <button type="button" class="ph-live-btn" onclick="phLiveStart()"><span>📹</span>Scan the page<small>Hold the phone over it; it captures by itself when the picture is sharp</small></button>
       <div class="scan-btns">
         <label class="scan-btn"><input type="file" accept="image/*" capture="environment" class="hidden" onchange="phPickFile(this)"><span>📷</span>Take photo</label>
         <label class="scan-btn alt"><input type="file" accept="image/*" class="hidden" onchange="phPickFile(this)"><span>🖼️</span>Choose photo</label>
       </div>
       <button type="button" class="ph-sample" onclick="phTrySample()">🧪 Try the sample page</button>
       <p class="ph-p" style="font-size:.7rem;color:#71717a">The first time, the picture matcher (about 170 MB, best on Wi-Fi) is downloaded and kept on this phone. Your collection's cards are already looked at ahead of time, so after that a page takes seconds. Getting ready starts as soon as this page opens.</p>
+    </div>
+    <div id="ph-live" hidden>
+      <div id="ph-live-box" class="ph-live"><video id="ph-video" playsinline muted autoplay></video><canvas id="ph-guide"></canvas>
+        <div class="ph-live-t"><span id="ph-live-t">Starting the camera…</span><i class="ph-live-bar"><b id="ph-live-fill"></b></i></div></div>
+      <div class="lb-row" style="margin-top:.7rem"><button type="button" class="lb-btn quiet" onclick="phLiveStop();phStep('pick')">Cancel</button><button type="button" class="lb-btn quiet" id="ph-torch" hidden onclick="phTorch()">🔦 Light</button><button type="button" class="lb-btn" onclick="phLiveSnap()">Capture now</button></div>
     </div>
     <div id="ph-align" hidden>
       <div id="ph-stage" class="ph-stage" onpointerdown="phHandleDown(event)"><canvas id="ph-canvas"></canvas><i class="ph-h" data-i="0"></i><i class="ph-h" data-i="1"></i><i class="ph-h" data-i="2"></i><i class="ph-h" data-i="3"></i></div>
@@ -1521,7 +1536,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-22.105';
+const APP_VERSION = '2026-11-22.106';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4983,10 +4998,92 @@ function openPhotoPage() {
   phStep('pick');
   if (navigator.onLine !== false) phPrepare();      // get ready while the photo is taken
 }
-function closePhotoPage() { $('photo-page').hidden = true; document.body.style.overflow = ''; PH.img = null; PH.cells = []; PH.pick = []; PH.prep = null; }
+function closePhotoPage() { phLiveStop(); $('photo-page').hidden = true; document.body.style.overflow = ''; PH.img = null; PH.cells = []; PH.pick = []; PH.prep = null; }
 function phStep(s) {
-  ['pick', 'align', 'work', 'review'].forEach(k => $('ph-' + k).hidden = k !== s);
-  $('ph-sub').textContent = { pick: `Take a straight-on photo of one binder page (${PH.cols}×${PH.rows}, like this binder).`, align: 'Drag the 4 corners onto the corners of the page.', work: 'Matching the pockets with your collection…', review: 'Check each pocket, then add the page.' }[s];
+  ['pick', 'live', 'align', 'work', 'review'].forEach(k => $('ph-' + k).hidden = k !== s);
+  $('ph-sub').textContent = { pick: `Scan or photograph one binder page (${PH.cols}×${PH.rows}, like this binder).`, live: 'Fit the page inside the frame and hold the phone still.', align: 'Drag the 4 corners onto the corners of the page.', work: 'Matching the pockets with your collection…', review: 'Check each pocket, then add the page.' }[s];
+}
+/* 📹 Scan the page: a live camera view with a frame shaped like a page of this binder. When the picture inside the frame is
+   sharp and the phone has been still for about a second, it's captured at full size and matched (no corners to drag: the frame
+   is where the pockets are). "Capture now" does it straight away; "Back" on the results goes to the corners if the frame was off. */
+const LIVE = { stream: null, raf: 0, steady: 0, sharpMax: 0, prev: null, rect: null, last: 0, torch: false };
+const PH_LIVE_STEADY = 7;                       // checks in a row (about 8 a second) that are sharp and still
+function phPageAspect() { return (PH.cols * 63 + (PH.cols + 1) * 4) / (PH.rows * 88 + (PH.rows + 1) * 4); }   // cards are 63 × 88 mm
+// where the frame sits on the camera picture (in the video's own pixels): as big as fits in 90% of the picture
+function phLiveRect(vw, vh) {
+  const a = phPageAspect(); let w = vw * 0.9, h = w / a; if (h > vh * 0.9) { h = vh * 0.9; w = h * a; }
+  return { x: (vw - w) / 2, y: (vh - h) / 2, w, h };
+}
+async function phLiveStart() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('This browser can\'t use the camera here. Use Take photo instead.', 'error');
+  phStep('live'); $('ph-live-t').textContent = 'Starting the camera…'; $('ph-live-fill').style.width = '0';
+  try {
+    LIVE.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+  } catch (e) { phStep('pick'); return toast(e && e.name === 'NotAllowedError' ? 'The camera wasn\'t allowed. Allow it in the browser\'s site settings, or use Take photo.' : 'Couldn\'t start the camera. Use Take photo instead.', 'error'); }
+  const v = $('ph-video'); v.srcObject = LIVE.stream;
+  await new Promise(r => { if (v.readyState >= 1) r(); else v.onloadedmetadata = () => r(); });
+  try { await v.play(); } catch (e) {}
+  const track = LIVE.stream.getVideoTracks()[0], caps = track.getCapabilities ? track.getCapabilities() : {};
+  try { if (caps.focusMode && caps.focusMode.includes('continuous')) await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) {}
+  $('ph-torch').hidden = !caps.torch; LIVE.torch = false;
+  $('ph-live-box').style.aspectRatio = `${v.videoWidth} / ${v.videoHeight}`;
+  LIVE.rect = phLiveRect(v.videoWidth, v.videoHeight); LIVE.steady = 0; LIVE.sharpMax = 0; LIVE.prev = null;
+  phLiveDrawGuide();
+  const tick = t => { if (!LIVE.stream) return; LIVE.raf = requestAnimationFrame(tick); if (t - LIVE.last < 120) return; LIVE.last = t; phLiveCheck(); };
+  LIVE.raf = requestAnimationFrame(tick);
+}
+function phLiveStop() {
+  cancelAnimationFrame(LIVE.raf); LIVE.raf = 0;
+  if (LIVE.stream) { LIVE.stream.getTracks().forEach(t => t.stop()); LIVE.stream = null; }
+  const v = $('ph-video'); if (v) v.srcObject = null;
+}
+async function phTorch() {
+  const track = LIVE.stream && LIVE.stream.getVideoTracks()[0]; if (!track) return;
+  LIVE.torch = !LIVE.torch; try { await track.applyConstraints({ advanced: [{ torch: LIVE.torch }] }); } catch (e) {}
+  $('ph-torch').textContent = LIVE.torch ? '🔦 Light off' : '🔦 Light';
+}
+function phLiveDrawGuide(ok) {
+  const v = $('ph-video'), cv = $('ph-guide'), r = LIVE.rect; if (!r) return;
+  cv.width = v.videoWidth; cv.height = v.videoHeight;
+  const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, 0, cv.width, cv.height); g.clearRect(r.x, r.y, r.w, r.h);
+  const lw = Math.max(2, cv.width / 300);
+  g.strokeStyle = ok ? '#22d3ee' : '#facc15'; g.lineWidth = lw * 1.6; g.strokeRect(r.x, r.y, r.w, r.h);
+  g.lineWidth = lw * 0.6; g.strokeStyle = ok ? 'rgba(34,211,238,.7)' : 'rgba(250,204,21,.6)'; g.beginPath();
+  for (let c = 1; c < PH.cols; c++) { const x = r.x + r.w * c / PH.cols; g.moveTo(x, r.y); g.lineTo(x, r.y + r.h); }
+  for (let k = 1; k < PH.rows; k++) { const y = r.y + r.h * k / PH.rows; g.moveTo(r.x, y); g.lineTo(r.x + r.w, y); }
+  g.stroke();
+}
+// How sharp (edges) and how still (change since the last look) the picture inside the frame is, on a small copy
+function phLiveCheck() {
+  const v = $('ph-video'), r = LIVE.rect; if (!r || !v.videoWidth) return;
+  const W = 120, H = Math.round(W * r.h / r.w), c = phLiveCheck.c || (phLiveCheck.c = document.createElement('canvas'));
+  c.width = W; c.height = H; const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(v, r.x, r.y, r.w, r.h, 0, 0, W, H);
+  const px = g.getImageData(0, 0, W, H).data, gray = new Float32Array(W * H);
+  for (let i = 0, j = 0; i < gray.length; i++, j += 4) gray[i] = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2];
+  let sharp = 0, n = 0;
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; sharp += Math.abs(4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - W] - gray[i + W]); n++; }
+  sharp /= n;
+  let move = 99; if (LIVE.prev && LIVE.prev.length === gray.length) { move = 0; for (let i = 0; i < gray.length; i++) move += Math.abs(gray[i] - LIVE.prev[i]); move /= gray.length; }
+  LIVE.prev = gray;
+  LIVE.sharpMax = Math.max(LIVE.sharpMax * 0.995, sharp);
+  const still = move < 6, focused = sharp >= LIVE.sharpMax * 0.75 && sharp > 3;
+  LIVE.steady = still && focused ? LIVE.steady + 1 : 0;
+  $('ph-live-t').textContent = !still ? 'Hold the phone still…' : !focused ? 'Focusing… move a little closer or farther' : LIVE.steady >= PH_LIVE_STEADY ? 'Got it' : 'Hold still…';
+  $('ph-live-fill').style.width = Math.min(100, LIVE.steady / PH_LIVE_STEADY * 100) + '%';
+  if (LIVE.steady === 1 || LIVE.steady === 0) phLiveDrawGuide(LIVE.steady > 0);
+  if (LIVE.steady >= PH_LIVE_STEADY) phLiveSnap();
+}
+// Take the frame at full size and match it
+function phLiveSnap() {
+  const v = $('ph-video'), r = LIVE.rect; if (!v || !v.videoWidth || !r) return;
+  const k = Math.min(1, 2200 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  phLiveStop(); if (navigator.vibrate) navigator.vibrate(30);
+  PH.img = c;
+  PH.quad = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]].map(([x, y]) => [x * k, y * k]);
+  phDrawAlign(); phMatch();
 }
 // The sample page (Kyle's Sky Legends test photo), corners already lined up: a way to try the matching without taking a photo
 const PH_SAMPLE = { url: 'photo-sample.jpg', cols: 4, rows: 3, quad: [[0.0199, 0.1198], [0.930, 0.1198], [0.930, 0.798], [0.012, 0.8025]] };
