@@ -1,0 +1,56 @@
+name: Card picture fingerprints
+
+# emb/: every card's picture fingerprint for the 📷 Photo page (scripts/build-embeddings.mjs). The first full pass takes a few
+# runs (it stops within its time budget and carries on next time); after that each run only looks at new cards.
+on:
+  schedule:
+    - cron: "37 */6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-embeddings.mjs
+      - .github/workflows/embeddings.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: embeddings
+  cancel-in-progress: false
+
+jobs:
+  emb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Keep the AI model between runs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/emb-node
+          key: emb-node-transformers-3.5.1
+      - name: Install the picture matcher
+        run: |
+          mkdir -p ~/.cache/emb-node && cd ~/.cache/emb-node
+          [ -d node_modules/@huggingface/transformers ] || { echo '{"name":"emb","private":true}' > package.json; npm i --no-audit --no-fund --onnxruntime-node-install-cuda=skip @huggingface/transformers@3.5.1; }
+          ln -sfn ~/.cache/emb-node/node_modules "$GITHUB_WORKSPACE/node_modules"
+      - name: Look at the cards
+        env:
+          BUDGET_MIN: "290"
+        run: node scripts/build-embeddings.mjs
+      - name: Save them to the site
+        if: always()
+        run: |
+          rm -f node_modules
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add emb
+          if git diff --cached --quiet; then echo "No new fingerprints"; exit 0; fi
+          git commit -m "Update card picture fingerprints"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push
