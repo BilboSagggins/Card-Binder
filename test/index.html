@@ -139,6 +139,7 @@
   .np-lock.on { background: #e11d48; border-color: #fb7185; color: #fff; }
   .np-head { flex-wrap: wrap; }
   .ph-body { max-width: 40rem; margin: 0 auto; padding: .9rem .9rem 2rem; }
+  .ph-sample { appearance: none; display: block; margin: .6rem auto 0; border: 1px dashed #52525b; background: none; color: #a1a1aa; border-radius: 10px; padding: .5rem .8rem; font: 600 .72rem/1 Inter, system-ui, sans-serif; cursor: pointer; }
   .ph-p { font: 500 .8rem/1.5 Inter, system-ui, sans-serif; color: #d4d4d8; margin: 0 0 .8rem; }
   .ph-p b { color: #fff; }
   .ph-stage { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -1430,7 +1431,8 @@
         <label class="scan-btn"><input type="file" accept="image/*" capture="environment" class="hidden" onchange="phPickFile(this)"><span>📷</span>Take photo</label>
         <label class="scan-btn alt"><input type="file" accept="image/*" class="hidden" onchange="phPickFile(this)"><span>🖼️</span>Choose photo</label>
       </div>
-      <p class="ph-p" style="font-size:.7rem;color:#71717a">The first time takes a few minutes: the picture matcher (about 170 MB, best on Wi-Fi) is downloaded, and every card in your collection is looked at once. Both are kept on this phone, so later photos only take seconds.</p>
+      <button type="button" class="ph-sample" onclick="phTrySample()">🧪 Try the sample page</button>
+      <p class="ph-p" style="font-size:.7rem;color:#71717a">The first time, the picture matcher (about 170 MB, best on Wi-Fi) is downloaded and kept on this phone. Your collection's cards are already looked at ahead of time, so after that a page takes seconds. Getting ready starts as soon as this page opens.</p>
     </div>
     <div id="ph-align" hidden>
       <div id="ph-stage" class="ph-stage" onpointerdown="phHandleDown(event)"><canvas id="ph-canvas"></canvas><i class="ph-h" data-i="0"></i><i class="ph-h" data-i="1"></i><i class="ph-h" data-i="2"></i><i class="ph-h" data-i="3"></i></div>
@@ -1520,14 +1522,15 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-22.101';
+const APP_VERSION = '2026-11-22.102';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
    ======================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDOtaK7XgGBd6Yq5nBh7Ue9yJ41DlWQRrs",
-  authDomain: "card-binder-9879a.firebaseapp.com",
+  // no authDomain: the app only signs in anonymously (or by email), and leaving it out stops Firebase loading Google's
+  // sign-in helper page (about 135 KB and four extra connections at every start), which is only needed for pop-up sign-in
   databaseURL: "https://card-binder-9879a-default-rtdb.firebaseio.com/",
   projectId: "card-binder-9879a",
   storageBucket: "card-binder-9879a.firebasestorage.app",
@@ -4930,11 +4933,23 @@ function openPhotoPage() {
   const pg = $('photo-page'); pg.hidden = false; document.body.style.overflow = 'hidden';
   const n = cap(); PH.cols = S.layout === '2x2' ? 2 : S.layout === '3x3' ? 3 : 4; PH.rows = Math.round(n / PH.cols);
   phStep('pick');
+  if (navigator.onLine !== false) phPrepare();      // get ready while the photo is taken
 }
-function closePhotoPage() { $('photo-page').hidden = true; document.body.style.overflow = ''; PH.img = null; PH.cells = []; PH.pick = []; }
+function closePhotoPage() { $('photo-page').hidden = true; document.body.style.overflow = ''; PH.img = null; PH.cells = []; PH.pick = []; PH.prep = null; }
 function phStep(s) {
   ['pick', 'align', 'work', 'review'].forEach(k => $('ph-' + k).hidden = k !== s);
   $('ph-sub').textContent = { pick: `Take a straight-on photo of one binder page (${PH.cols}×${PH.rows}, like this binder).`, align: 'Drag the 4 corners onto the corners of the page.', work: 'Matching the pockets with your collection…', review: 'Check each pocket, then add the page.' }[s];
+}
+// The sample page (Kyle's Sky Legends test photo), corners already lined up: a way to try the matching without taking a photo
+const PH_SAMPLE = { url: '../photo-sample.jpg', cols: 4, rows: 3, quad: [[0.0199, 0.1198], [0.930, 0.1198], [0.930, 0.798], [0.012, 0.8025]] };
+async function phTrySample() {
+  try {
+    const r = await fetch(PH_SAMPLE.url); if (!r.ok) throw new Error(r.status);
+    await phPickFile({ files: [await r.blob()], value: '' });
+    PH.cols = PH_SAMPLE.cols; PH.rows = PH_SAMPLE.rows;
+    PH.quad = PH_SAMPLE.quad.map(([x, y]) => [x * PH.img.width, y * PH.img.height]); phDrawAlign();
+    toast('Sample page loaded (4×3). Tap Match cards.');
+  } catch (e) { toast('Couldn\'t load the sample page. Check your connection.', 'error'); }
 }
 async function phPickFile(input) {
   const f = input.files && input.files[0]; input.value = ''; if (!f) return;
@@ -4995,30 +5010,43 @@ async function phCollectionCards() {
   return out;
 }
 const phMsg = (t, pct) => { $('ph-work-t').textContent = t; if (pct != null) $('ph-work-fill').style.width = Math.max(2, Math.min(100, pct)) + '%'; };
+/* Getting ready starts as soon as the page opens (while the photo is taken and the corners are lined up): the picture matcher
+   loads, and your collection's cards and their ready-made fingerprints come in. Matching then only has the pockets left to read. */
+const phSecs = ms => Math.round(ms / 100) / 10;
+function phPrepare() {
+  if (PH.prep) return PH.prep;
+  const t0 = performance.now(); PH.dl = null;
+  PH.modelP = phLoadModel((got, all) => { PH.dl = [got, all]; }).then(() => { PH.tModel = phSecs(performance.now() - t0); });
+  PH.modelP.catch(() => {});
+  PH.prep = (async () => {
+    watchCollection(ownerOf(currentUser), S.game);
+    for (let i = 0; i < 30 && !COLLECTIONS[collKey()]; i++) await new Promise(r => setTimeout(r, 100));
+    const cands = await phCollectionCards(), missing = [];
+    const embs = await pool(cands, 6, async (x, j) => { const r = await phCardEmb(x.card, true).catch(() => null); if (!r) missing.push(j); return r ? r.v : null; });
+    PH.tPrep = phSecs(performance.now() - t0);
+    return { cands, embs, missing };
+  })();
+  PH.prep.catch(() => { PH.prep = null; });
+  return PH.prep;
+}
 async function phMatch() {
   if (PH.busy) return; PH.busy = true; phStep('work');
   try {
-    watchCollection(ownerOf(currentUser), S.game);
-    if (!COLLECTIONS[collKey()]) await new Promise(r => setTimeout(r, 1200));
     const t0 = performance.now();
-    phMsg('Getting the picture matcher ready…', 2);
-    let modelMsg = '';
-    const modelP = phLoadModel((got, all) => { modelMsg = `Getting the picture matcher ready (first time only): ${(got / 1048576).toFixed(0)} of ${(all / 1048576).toFixed(0)} MB`; phMsg(modelMsg, 2 + 48 * got / all); });
-    // meanwhile: your collection's cards and their ready-made fingerprints (small files, one per set)
-    PH.cands = await phCollectionCards();
-    let done = 0; const missing = [];
-    const ready = await pool(PH.cands, 6, async (x, j) => {
-      const r = await phCardEmb(x.card, true).catch(() => null); done++;
-      if (!modelMsg) phMsg(`Getting your collection\u2019s fingerprints: ${done} of ${PH.cands.length}`, 2 + 30 * done / Math.max(1, PH.cands.length));
-      if (!r) missing.push(j); return r ? r.v : null;
-    });
-    await modelP;
+    phMsg('Getting your collection\u2019s fingerprints…', 5);
+    const { cands, embs, missing } = await phPrepare();
+    PH.cands = cands; const ready = embs.slice();
+    // the picture matcher: usually ready by now; the first time it's a download
+    const tick = setInterval(() => { if (PH.dl) phMsg(`Getting the picture matcher ready (first time only): ${(PH.dl[0] / 1048576).toFixed(0)} of ${(PH.dl[1] / 1048576).toFixed(0)} MB`, 10 + 40 * PH.dl[0] / PH.dl[1]); }, 250);
+    try { if (!phModel) phMsg('Getting the picture matcher ready…', 10); await PH.modelP; } finally { clearInterval(tick); }
+    const tWait = phSecs(performance.now() - t0);
     // cards with no ready-made fingerprint yet (brand-new ones) are looked at here, as before
-    let k = 0;
+    let k = 0; const t1 = performance.now();
     for (const j of missing) {
       ready[j] = await phEmbedUrl(PH.cands[j].card.image).catch(() => null);
       k++; phMsg(`Looking at ${missing.length} card${missing.length === 1 ? '' : 's'} not seen before: ${k} of ${missing.length}`, 50 + 30 * k / missing.length);
     }
+    const tNew = phSecs(performance.now() - t1), t2 = performance.now();
     PH.embs = ready;
     const cells = phCutCells(); PH.cells = cells.map(cv => ({ cv, url: cv.toDataURL('image/jpeg', .8) }));
     phMsg('Reading the pockets…', 82);
@@ -5028,7 +5056,8 @@ async function phMatch() {
       group.forEach((_, j) => { const full = looks[2 * j], top = looks[2 * j + 1]; pe.push({ full, card: phNorm(full.map((x, d) => x + top[d])) }); });
       phMsg(`Reading the pockets: ${Math.min(cells.length, i + 4)} of ${cells.length}`, 82 + 18 * Math.min(cells.length, i + 4) / cells.length);
     }
-    PH.timing = { secs: Math.round((performance.now() - t0) / 100) / 10, ready: PH.cands.length - missing.length, onPhone: missing.length, gpu: !!(phModel && phModel.vision && phModel.vision.__dev === 'webgpu') };
+    PH.timing = { secs: phSecs(performance.now() - t0), wait: tWait, newCards: tNew, pockets: phSecs(performance.now() - t2), prep: PH.tPrep, model: PH.tModel,
+      ready: PH.cands.length - missing.length, onPhone: missing.length, gpu: !!(phModel && phModel.vision && phModel.vision.__dev === 'webgpu') };
     console.log('Photo page timing', PH.timing);
     PH.pick = pe.map((v, i) => {
       const e = v.card;
@@ -5055,7 +5084,7 @@ function phRenderReview() {
       <span class="ph-badge">${p.empty ? '—' : p.sure ? '✓' : 'Check'}${!p.empty && !p.collId ? ' · new' : ''}</span></button>`).join('');
   g.querySelectorAll('.ph-cell').forEach(b => b.onclick = () => phOpenCell(+b.dataset.i));
   const n = PH.pick.filter(p => !p.empty).length, check = PH.pick.filter(p => !p.empty && !p.sure).length, fresh = PH.pick.filter(p => !p.empty && !p.collId).length;
-  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}${PH.timing ? `<br><small style="color:#71717a">Matched in ${PH.timing.secs} s</small>` : ''}`;
+  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}${PH.timing ? `<br><small style="color:#71717a">Matched in ${PH.timing.secs} s after you tapped Match · ${PH.timing.ready} collection cards ready-made${PH.timing.onPhone ? `, ${PH.timing.onPhone} looked at here (${PH.timing.newCards} s)` : ''} · pockets ${PH.timing.pockets} s on the ${PH.timing.gpu ? 'graphics chip' : 'processor'}${PH.timing.model != null ? ` · matcher loaded in ${PH.timing.model} s` : ''}</small>` : ''}`;
   $('ph-add').textContent = n ? `Add as a new page (${n} card${n === 1 ? '' : 's'})` : 'Nothing to add';
   $('ph-add').disabled = !n;
 }
