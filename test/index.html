@@ -1425,7 +1425,7 @@
   <div class="ph-body">
     <div id="ph-pick">
       <p class="ph-p">Lay the binder flat, take the photo from straight above in good light (sleeve glare makes it harder), and get the whole page in.
-        The cards are matched with <b>your collection</b> right on this phone; cards you don't have in it yet can be found by name.
+        The cards are matched with <b>your collection</b> and with <b>every card</b> (Pokémon in English, Japanese and Chinese, or One Piece) right on this phone; cards that aren't in your collection yet are marked <b>new</b> and added to it with the page.
         The result is added as a <b>new page at the end</b> of this binder, so nothing you already have moves.</p>
       <div class="scan-btns">
         <label class="scan-btn"><input type="file" accept="image/*" capture="environment" class="hidden" onchange="phPickFile(this)"><span>📷</span>Take photo</label>
@@ -1522,7 +1522,7 @@ const SIGN_IN_MODE = 'pin';
 
 /* App version: bump this whenever a new version goes live. Phones that opened an older saved copy
    notice the change on launch and reload the new one. */
-const APP_VERSION = '2026-11-22.102';
+const APP_VERSION = '2026-11-22.105';
 
 /* ========================================================
    FIREBASE REALTIME DATABASE CONFIGURATION
@@ -4924,6 +4924,55 @@ async function phCardEmb(c, ready) {
   }
   return null;
 }
+/* Cards that aren't in your collection: emb/all.bin holds every card's fingerprint boiled down to 64 numbers (about 5 MB, kept on
+   the phone). Each pocket is compared with all of them in a few milliseconds, and the 40 closest are checked exactly with their
+   full fingerprints. */
+const PH_ALL = { p: null };
+function phAllLoad() {
+  if (!PH_ALL.p) PH_ALL.p = (async () => {
+    const idx = await phEmbIndex(); if (!idx || !idx.all) return null;
+    const get = async f => { for (const u of phEmbUrls(f)) { try { const r = await fetch(u); if (r.ok) return await r.arrayBuffer(); } catch (e) {} } return null; };
+    const [pca, all] = await Promise.all([get('pca.bin'), get('all.bin')]); if (!pca || !all) return null;
+    const K = idx.all.dims, f = new Float32Array(pca), scale = f.slice(0, K), P = f.slice(K, K + K * 512);
+    const rec = 9 + K, n = Math.floor(all.byteLength / rec), dv = new DataView(all), bytes = new Int8Array(all);
+    const list = new Uint8Array(n), id = new Uint32Array(n), gid = new Uint32Array(n), codes = new Int8Array(n * K);
+    for (let i = 0, o = 0; i < n; i++, o += rec) { list[i] = dv.getUint8(o); id[i] = dv.getUint32(o + 1, true); gid[i] = dv.getUint32(o + 5, true); codes.set(bytes.subarray(o + 9, o + 9 + K), i * K); }
+    return { K, scale, P, n, list, id, gid, codes, lists: idx.all.lists };
+  })().catch(() => (PH_ALL.p = null));
+  return PH_ALL.p;
+}
+// The cards closest to a pocket among all cards of this game, checked exactly: [{ card, score }]
+async function phAllCands(q, game, top = 40, style = {}) {
+  const A = await phAllLoad(); if (!A) return [];
+  const ok = new Set((game === 'onepiece' ? ['onepiece'] : ['pokemon', 'pokemon-jp', 'pokemon-zh']).map(l => A.lists.indexOf(l)));
+  const off = A.lists.map(l => style[l] || 0);
+  const K = A.K, qp = new Float32Array(K);
+  for (let j = 0; j < K; j++) { let t = 0; const row = j * 512; for (let d = 0; d < 512; d++) t += A.P[row + d] * q[d]; qp[j] = t * A.scale[j]; }
+  const best = [];   // [score, i], kept short
+  let floor = -Infinity;
+  for (let i = 0; i < A.n; i++) {
+    if (!ok.has(A.list[i])) continue;
+    let t = -off[A.list[i]]; const o = i * K; for (let j = 0; j < K; j++) t += qp[j] * A.codes[o + j];
+    if (best.length < top) { best.push([t, i]); if (best.length === top) { best.sort((a, b) => a[0] - b[0]); floor = best[0][0]; } }
+    else if (t > floor) { best[0] = [t, i]; best.sort((a, b) => a[0] - b[0]); floor = best[0][0]; }
+  }
+  const out = await Promise.all(best.map(async ([, i]) => {
+    const list = A.lists[A.list[i]], cid = String(A.id[i]), m = await phEmbSet(list, A.gid[i]), v = m && m.get(cid); if (!v) return null;
+    const L = await loadTcgList(list).catch(() => null); if (!L) return null;
+    const card = list === 'pokemon-zh' ? cardFromCT(cid, L) : cardFromTcg(cid, game === 'onepiece' ? 'onepiece' : 'pokemon', L);
+    if (!card) return null; if (list === 'pokemon-jp') card.lang = 'ja';
+    return { card, score: phDot(q, v) - (style[list] || 0) };
+  }));
+  return out.filter(Boolean);
+}
+// Each list's pictures have their own look (CardTrader's Chinese pictures are photos, TCGplayer's are scans), which would make a
+// whole list seem close to any photo: that part is taken out of every score (the list's style direction, from emb/index.json)
+async function phStyle(q) {
+  const idx = await phEmbIndex(), st = idx && idx.all && idx.all.style; const out = {};
+  if (st) for (const [l, v] of Object.entries(st)) { let t = 0; for (let d = 0; d < 512; d++) t += q[d] * v[d]; out[l] = t; }
+  return out;
+}
+const phCardKey = c => c.tcgPid ? 'tcg' + c.tcgPid : c.ctId ? 'ct' + c.ctId : c.id || c.name + '|' + c.number;
 // Text directions for "an empty clear plastic binder pocket" vs "a pokemon trading card" (made once with the same model)
 const PH_EMPTY_TXT = phNorm([0.0172,0.0515,0.0393,0.0056,0.0051,-0.0178,-0.0221,-0.0584,0.0089,-0.0104,-0.0539,-0.0347,0.0422,-0.0504,0.0389,-0.0055,0.0274,0.0339,-0.0411,-0.0056,0.0287,-0.0009,-0.0135,0.0146,0.0172,-0.0295,0.0143,-0.0017,0.0268,0.0108,0.0105,0.0115,-0.02,0.0025,-0.0123,-0.0267,-0.0019,0.0128,-0.0439,-0.001,0.0016,0.0634,-0.0161,0.0362,0.0179,-0.0676,-0.0598,-0.0049,-0.0393,0.0219,0.0426,-0.0078,0.0064,0.0045,0.0087,0.0014,-0.0323,-0.0205,0.0472,0.0153,0.0401,-0.0109,0.0112,0.0161,-0.0237,0.0025,-0.0392,-0.0117,0.0182,0.0114,-0.0118,0.017,-0.0177,0.0008,-0.0204,0.0443,-0.0465,-0.0116,-0.0022,-0.0406,-0.0519,0.0576,0.011,-0.0055,0.0357,-0.0301,0.0482,-0.0197,-0.0021,-0.0036,0.0322,-0.0581,0.0058,0.061,-0.007,0.0134,-0.1575,0.001,0.0302,-0.0054,0.0249,-0.0215,-0.0065,-0.0432,0.0156,-0.0116,0.0159,-0.0019,-0.003,0.0469,-0.03,-0.0376,-0.0038,0.0109,0.0422,0.0113,-0.0443,-0.0172,-0.0142,0.003,0.0634,0.0129,0.0249,0.0254,0.0221,0.0346,-0.0015,-0.0293,0.036,0.0369,-0.001,0.0378,0.0405,0.0193,0.0373,-0.0041,-0.071,0.0182,0.0009,0.0106,-0.0018,-0.0632,0.0221,-0.0333,0.0579,-0.0262,-0.019,0.0343,0.0337,0.051,-0.017,0.0145,0.0316,-0.0688,0.0002,0.0139,0.0536,-0.0182,-0.0137,0.0058,0.006,-0.0508,-0.0078,-0.0557,-0.0234,0.0105,-0.043,-0.0352,0.0069,-0.0285,0.0366,0.0014,-0.0517,0.0628,0,-0.0211,0.0156,0.0236,0.0338,0.0036,-0.0386,-0.04,-0.0125,0.0705,0.0188,0.0245,0.0336,0.0317,0.0137,0.0407,0.0053,0.0233,0.0041,-0.0351,0.0142,0.047,0.0055,0.0262,0.0079,0.0145,0.0554,-0.0033,0.0085,0.008,-0.0126,0.0024,0.0281,-0.0224,-0.0147,-0.0144,-0.0176,-0.0196,-0.0014,0.034,0.0343,0.0458,0.0135,-0.0368,-0.0304,-0.0478,0.0457,-0.0319,0.0247,-0.0188,0.0307,0.0307,0.0019,0.049,-0.0006,0.0659,0.0163,0.002,0.0046,0.0316,0.0004,0.0242,0.004,-0.023,0.0712,-0.0355,0.0642,-0.0475,-0.0248,-0.0219,0.0373,-0.0064,-0.0546,0.0125,-0.0471,-0.0021,0.0391,-0.0038,-0.0467,0.0484,0.0438,-0.0394,-0.0461,0.0461,0.0273,0.035,-0.0253,0.0233,-0.0041,-0.0326,0.0131,-0.0022,0.0114,0.0263,0.0163,0.0449,-0.0103,0.0157,0.0103,-0.0059,0.0153,0.0154,-0.0294,0.062,-0.0597,-0.0015,0.0022,0.0024,0.0208,0.0427,-0.0152,0.0028,-0.0056,0.0772,-0.0647,-0.0638,-0.01,-0.0125,0.0946,0.0154,0.0205,-0.0163,-0.0026,0.0174,-0.0295,-0.0212,-0.0204,-0.0176,0.0016,-0.0057,0.029,-0.0067,-0.0217,-0.009,0.0208,0.0161,-0.0282,0.024,-0.0259,-0.0465,-0.0188,0.03,0.0231,-0.0287,0.0216,-0.0032,-0.0024,0.0304,0.0582,0.0013,-0.0365,0.0111,-0.0221,0.0129,0.0551,0.0295,0.0163,0.0225,-0.0039,-0.0084,0.0016,-0.0403,-0.0346,-0.0119,-0.0011,-0.0045,0.0146,-0.0351,-0.0134,-0.0614,-0.0448,0.0286,0.0133,0.0447,0.0047,0.0027,0.0263,-0.0193,0.0322,0.0175,-0.0128,-0.0182,-0.0178,-0.0008,-0.0144,0.0219,0.0121,0.0397,0.6952,0.071,0.0101,-0.0171,-0.0374,-0.0089,-0.0434,0.0139,-0.0365,0.0179,0.0196,0.015,-0.0383,0.0016,-0.0011,-0.036,0.0139,-0.041,-0.0199,-0.0265,-0.0253,-0.0454,-0.0476,-0.0002,-0.0576,-0.0215,-0.0192,0.0425,-0.0343,0.0028,-0.0075,-0.0074,-0.0285,0.0227,0.0104,-0.0234,0.0509,0.0169,-0.0164,-0.01,0.0127,0.011,0.0038,-0.0246,-0.0333,0.0298,0.0118,0.0306,-0.0236,0.0364,0.0012,0.0274,0.0255,0.0314,0.0091,0.0166,0.0331,-0.0182,0.0013,-0.0244,0.0084,-0.0281,0.0527,0.0053,0.0026,-0.0077,0.0201,0.0509,0.0039,0.037,0.0037,-0.0155,-0.0181,0.0201,0.011,-0.0364,0.01,-0.0241,-0.017,0.0012,0.1586,-0.0329,0.0326,0.0077,0.0714,0.0162,0.0042,0.0004,0.009,0.0116,-0.0273,-0.0332,-0.018,0.0021,-0.032,-0.0035,-0.0192,0.0566,0.0348,-0.0114,-0.0488,-0.007,-0.0228,-0.0401,-0.0487,0.0365,-0.0519,0.0472,-0.0138,-0.0126,-0.0464,-0.0459,0.0199,-0.0428,0.0119,-0.0245,-0.0262,-0.0173,-0.0881,0.1056,0.0057,-0.0175,0.0104,-0.0082,-0.0282,0.0021,-0.0027,-0.0031,0.0162,-0.0585,0.0236,0.0078,0.0158,-0.0261,0.0256,0.0041,0.0008,-0.0132,-0.0379,0.0317,-0.0559,0.0402,0.0489,0.0445,-0.0249,0.0223,0.0082,-0.0414,-0.0048,-0.0074]),
   PH_CARD_TXT = phNorm([0.0693,0.0003,0.0271,0.0042,0.0293,0.0236,0.0306,-0.0091,0.0059,-0.0094,-0.0131,-0.0065,-0.0268,-0.0351,-0.0003,0.0006,0.0035,-0.0133,-0.0093,-0.0205,0.028,-0.0103,0.0176,0.0227,0.0224,0.0059,0.013,0.0554,-0.0221,-0.0259,-0.0109,0.0187,-0.018,-0.0187,-0.0317,-0.0364,0.0044,-0.003,-0.016,0.0087,-0.037,0.0173,-0.0088,0.0211,0.0162,-0.022,-0.0804,-0.0359,-0.0184,-0.0059,0.025,0.0107,-0.0332,-0.0516,0.0125,0.0036,0.0113,-0.0042,-0.03,0.0165,0.0169,0.0137,0.017,-0.0146,-0.007,0.0223,0.0386,0.0018,0.0125,-0.0202,-0.0401,0.0404,-0.0381,0.006,0.0043,-0.0186,0.0062,0.0006,-0.0032,0.0062,-0.0548,0.0515,-0.0196,-0.0657,0.0524,0.0131,0.0285,0.0047,0.0189,-0.0121,-0.0213,-0.0455,0.0113,0.0173,0.0008,-0.0054,-0.1112,-0.0179,-0.0031,-0.0134,-0.0411,-0.0352,0.0295,-0.0111,0.0139,-0.0248,0.006,-0.0324,-0.0048,0.0042,-0.0287,-0.0157,-0.0231,-0.001,-0.0017,0.0039,0.0437,-0.0141,-0,0.0334,0.0544,0.0109,0.0244,0.0067,-0.0355,-0.0088,0.0433,-0.0068,0.0222,0.0159,-0.0159,-0.023,0.0195,0.0274,0.0225,-0.0072,-0.0379,-0.0045,-0.0025,0.0264,0.0194,-0.0607,0.0103,-0.0028,-0.0137,0.0089,0.0018,0.0149,-0.0192,0.0219,-0.0147,0.0139,-0.0276,-0.0339,-0.0233,0.0042,-0.0114,-0.0117,0.0176,-0.0254,0.0024,0.0338,0.0188,0.0301,0.0403,0.0167,-0.0526,-0.0678,-0.0098,0.0091,0.0696,0.0133,0.0103,0.0546,0.0052,0.0344,-0.0026,0.0049,0.0411,0.0294,-0.0383,-0.0104,-0.0073,0.0512,0.0413,0.011,-0.0414,0.0365,-0.0286,0.0282,-0.0108,0.0298,0.0431,0.0055,-0.0049,-0.0027,0.001,0.0114,0.0249,-0.032,0.0314,0.0147,-0.0072,0.0214,-0.0243,-0.0271,-0.0285,0.037,-0.0331,-0.006,-0.0678,0.0109,0.0408,0.0329,0.0617,-0.0367,0.0001,0.0376,-0.0295,-0.038,0.0309,0.0134,0.012,-0.0154,0.01,-0.0148,0.0115,0.0348,0.0348,0.0192,-0.0141,0.0069,0.0308,-0.0126,-0.0481,-0.0058,0.0035,-0.0418,0.0404,-0.0087,0.0222,0.0038,-0.0036,0.0151,0.0207,-0.0178,-0.0232,0.0273,-0.0513,0.001,0.0689,-0.012,0.0145,0.0057,0.0544,0.0205,-0.0621,0.0212,0.0315,0.0453,-0.0209,0.0387,-0.0066,0.0032,0.0051,-0.0172,-0.0325,-0.0269,0.0351,-0.032,0.0401,-0.0345,0.0089,-0.0166,0.0043,0.0883,-0.038,0.0164,0.0048,0.0164,-0.0105,-0.0171,-0.0109,-0.0158,0.026,-0.0086,0.0127,-0.0057,-0.0431,0.004,0.013,-0.0343,0.044,-0.024,-0.0308,0.0164,-0.0267,0.0146,0.0183,-0.0157,0.0045,-0.0091,-0.0378,-0.0322,-0.0225,-0.0039,-0.0418,-0.0062,-0.0046,0.0212,-0.0385,-0.0339,-0.03,-0.0329,0.0139,0.0214,-0.0322,-0.0137,0.005,-0.0213,0.0071,0.038,-0.0006,0.015,-0.0174,-0.0042,0.0069,-0.0309,-0.0039,-0.0194,-0.0101,-0.0286,0.0289,-0.0015,0.0133,-0.0058,-0.0184,-0.0011,-0.063,-0.0072,0.0172,-0.013,0.0394,-0.0379,0.0278,-0.0186,-0.0078,-0.0302,0.0043,-0.0727,0.0358,0.0625,0.0266,0.0637,0.0098,-0.0125,0.004,0.0204,-0.0599,-0.0197,-0.0036,0.04,0.7517,0.0227,0.0699,0.0097,-0.0621,-0.0111,-0.0532,-0.0169,-0.0501,-0.0294,-0.0555,0.0532,-0.0322,-0.0004,0.0095,0.004,0.0379,-0.0243,0.034,-0.0171,-0.0193,-0.0059,-0.0297,0.0604,0.0253,0.0049,0.0323,0.0359,-0.0225,0.0067,-0.0328,-0.0046,-0.021,-0.0156,-0.0252,-0.0102,0.0791,-0.0018,-0.0288,-0.0334,-0.0394,0.0192,-0.0327,-0.0251,-0.0163,-0.0321,-0.0318,0.0232,-0.0209,0.0398,-0.0144,0.0105,0.0099,-0.0126,-0.0038,-0.0233,0.0038,-0.0062,0.0004,-0.0509,-0.0267,0.0157,0.017,0.0073,-0.0056,0.068,0.0239,0.0341,-0.045,0.0197,-0.0081,-0.034,-0.0159,0.0142,0.0181,0.0087,-0.0261,-0.0336,0.0228,-0.0001,0.1375,-0.0085,-0.0238,-0.0203,-0.0374,0.0292,-0.0231,0.0188,-0.0327,0.0071,-0.0066,-0.0387,-0.0098,0.0347,0.017,-0.0116,0.0009,-0.0025,0.0045,0.0084,0.0152,-0.0608,0.0196,0.0203,-0.0543,0.0735,-0.0333,0.0164,0.0218,-0.0136,0.0268,-0.0386,-0.0159,0.0034,0.0486,-0.0198,-0.0425,-0.0003,-0.0022,0.0847,0.0399,-0.0612,-0.0045,-0.0031,-0.0036,-0.0262,-0.0244,-0.0221,0.0428,0.0229,0.0631,0.0095,0.0416,-0.0047,-0.0009,-0.0022,-0.0113,-0.0114,-0.0031,-0.0277,0.0149,0.0406,0.0246,-0.0298,0.0008,-0.0298,-0.0002,-0.021,0.0165,0.0061]);
@@ -5018,6 +5067,7 @@ function phPrepare() {
   const t0 = performance.now(); PH.dl = null;
   PH.modelP = phLoadModel((got, all) => { PH.dl = [got, all]; }).then(() => { PH.tModel = phSecs(performance.now() - t0); });
   PH.modelP.catch(() => {});
+  if (!window.__phNoAll) phAllLoad();               // all cards, for the ones not in your collection (about 5 MB, once)
   PH.prep = (async () => {
     watchCollection(ownerOf(currentUser), S.game);
     for (let i = 0; i < 30 && !COLLECTIONS[collKey()]; i++) await new Promise(r => setTimeout(r, 100));
@@ -5059,15 +5109,26 @@ async function phMatch() {
     PH.timing = { secs: phSecs(performance.now() - t0), wait: tWait, newCards: tNew, pockets: phSecs(performance.now() - t2), prep: PH.tPrep, model: PH.tModel,
       ready: PH.cands.length - missing.length, onPhone: missing.length, gpu: !!(phModel && phModel.vision && phModel.vision.__dev === 'webgpu') };
     console.log('Photo page timing', PH.timing);
-    PH.pick = pe.map((v, i) => {
-      const e = v.card;
-      const scored = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) : -1 })).filter(x => x.score > -1).sort((a, b) => b.score - a.score);
+    phMsg('Looking among all cards too…', 98);
+    const t3 = performance.now(), game = S.game;
+    PH.pick = await Promise.all(pe.map(async (v, i) => {
+      const e = v.card, style = await phStyle(e);
+      const mine = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) - (style[(phEmbList(x.card) || [])[0]] || 0) : -9 })).filter(x => x.score > -9).sort((a, b) => b.score - a.score);
       const empty = phDot(v.full, PH_EMPTY_TXT) > phDot(v.full, PH_CARD_TXT);     // judged on the whole pocket
-      PH.cells[i].emb = e; PH.cells[i].alts = scored.slice(0, 6);
-      const top = scored[0], gap = scored[1] ? top.score - scored[1].score : 1;
-      if (empty || !top) return { empty: true, sure: !!empty };
-      return { card: top.card, collId: top.collId, score: top.score, sure: gap >= PH_SURE_GAP && top.score >= PH_SURE_MIN };
-    });
+      // every card of this game, not only yours (a card you own stays as your copy)
+      const own = new Set(mine.map(x => phCardKey(x.card)));
+      const others = empty ? [] : (await phAllCands(e, game, 40, style).catch(() => [])).filter(x => !own.has(phCardKey(x.card)));
+      const scored = [...mine, ...others].sort((a, b) => b.score - a.score);
+      PH.cells[i].emb = e; PH.cells[i].alts = scored.slice(0, 8);
+      if (empty || !scored.length) return { empty: true, sure: !!empty };
+      // your own card wins a near tie (a page of your binder is mostly your collection)
+      let top = scored[0];
+      if (!top.collId && mine[0] && mine[0].score >= top.score - PH_OWN_EDGE) top = mine[0];
+      const next = scored.find(x => x !== top), gap = next ? top.score - next.score : 1;
+      // a card that isn't yours is always one to check: among every card, near-identical printings and lookalikes are close
+      return { card: top.card, collId: top.collId, score: top.score, sure: !!top.collId && gap >= PH_SURE_GAP && top.score >= PH_SURE_MIN };
+    }));
+    PH.timing.allCards = phSecs(performance.now() - t3);
     phStep('review'); phRenderReview();
   } catch (e) {
     console.warn(e); phStep('align');
@@ -5075,7 +5136,8 @@ async function phMatch() {
   } finally { PH.busy = false; }
 }
 // "Check" unless the best match clearly beats the next one (printings of the same card are close, so those get checked)
-const PH_SURE_GAP = 0.02, PH_SURE_MIN = 0.7;
+// a card you don't own replaces your own closest card only when it's clearly closer (tested on the Sky Legends page)
+const PH_SURE_GAP = 0.02, PH_SURE_MIN = 0.7, PH_OWN_EDGE = 0.02;
 function phRenderReview() {
   const g = $('ph-grid'); g.style.gridTemplateColumns = `repeat(${PH.cols}, minmax(0, 1fr))`;
   g.innerHTML = PH.pick.map((p, i) => `<button type="button" class="ph-cell${p.empty ? ' empty' : p.sure ? '' : ' check'}" data-i="${i}">
@@ -5084,7 +5146,7 @@ function phRenderReview() {
       <span class="ph-badge">${p.empty ? '—' : p.sure ? '✓' : 'Check'}${!p.empty && !p.collId ? ' · new' : ''}</span></button>`).join('');
   g.querySelectorAll('.ph-cell').forEach(b => b.onclick = () => phOpenCell(+b.dataset.i));
   const n = PH.pick.filter(p => !p.empty).length, check = PH.pick.filter(p => !p.empty && !p.sure).length, fresh = PH.pick.filter(p => !p.empty && !p.collId).length;
-  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}${PH.timing ? `<br><small style="color:#71717a">Matched in ${PH.timing.secs} s after you tapped Match · ${PH.timing.ready} collection cards ready-made${PH.timing.onPhone ? `, ${PH.timing.onPhone} looked at here (${PH.timing.newCards} s)` : ''} · pockets ${PH.timing.pockets} s on the ${PH.timing.gpu ? 'graphics chip' : 'processor'}${PH.timing.model != null ? ` · matcher loaded in ${PH.timing.model} s` : ''}</small>` : ''}`;
+  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}${PH.timing ? `<br><small style="color:#71717a">Matched in ${PH.timing.secs} s after you tapped Match · ${PH.timing.ready} collection cards ready-made${PH.timing.onPhone ? `, ${PH.timing.onPhone} looked at here (${PH.timing.newCards} s)` : ''} · pockets ${PH.timing.pockets} s on the ${PH.timing.gpu ? 'graphics chip' : 'processor'}${PH.timing.allCards != null ? ` · all cards ${PH.timing.allCards} s` : ''}${PH.timing.model != null ? ` · matcher loaded in ${PH.timing.model} s` : ''}</small>` : ''}`;
   $('ph-add').textContent = n ? `Add as a new page (${n} card${n === 1 ? '' : 's'})` : 'Nothing to add';
   $('ph-add').disabled = !n;
 }
