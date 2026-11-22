@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - scripts/build-embeddings.mjs
+      - scripts/build-emb-index.py
       - .github/workflows/embeddings.yml
 
 permissions:
@@ -43,6 +44,10 @@ jobs:
         env:
           BUDGET_MIN: "150"
         run: node scripts/build-embeddings.mjs
+      - name: Build the all-cards index (for cards not in your collection)
+        run: |
+          pip install -q numpy
+          python3 scripts/build-emb-index.py
       - name: Save them to the site
         if: always()
         run: |
