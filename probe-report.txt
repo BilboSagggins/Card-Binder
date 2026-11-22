@@ -1,18 +1,33 @@
 ok
 
-cards (71830, 512)
-variance kept: 32 0.59  64 0.71  96 0.78  128 0.83
-pocket~0.85: 64 dims, top 20: right card found 99.6%  (file 4.9 MB)
-pocket~0.85: 64 dims, top 50: right card found 99.7%  (file 4.9 MB)
-pocket~0.85: 96 dims, top 20: right card found 100.0%  (file 7.1 MB)
-pocket~0.85: 96 dims, top 50: right card found 100.0%  (file 7.1 MB)
-pocket~0.85: 128 dims, top 20: right card found 100.0%  (file 9.2 MB)
-pocket~0.85: 128 dims, top 50: right card found 100.0%  (file 9.2 MB)
-pocket~0.8: 64 dims, top 20: right card found 99.1%  (file 4.9 MB)
-pocket~0.8: 64 dims, top 50: right card found 99.7%  (file 4.9 MB)
-pocket~0.8: 96 dims, top 20: right card found 100.0%  (file 7.1 MB)
-pocket~0.8: 96 dims, top 50: right card found 100.0%  (file 7.1 MB)
-pocket~0.8: 128 dims, top 20: right card found 100.0%  (file 9.2 MB)
-pocket~0.8: 128 dims, top 50: right card found 100.0%  (file 9.2 MB)
+signed in anonymously: True
+helper URLs: ['https://apis.google.com/js/api.js?onload=__iframefcb168942', 'https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.en.smUXTMp7CeY.O/m=gapi_iframes/rt']
+shelf binders: ['kyle', 'kyle--2', 'kyle--3']
+binder game: pokemon | collection items: 0
+Prices 1st time: 1.9s, 7 data requests, 0.00 MB
+saved copies before reload: {'news/news.json': '1795377592584', 'prices/pokemon-sealed.json': '1795377593376', 'prices/pokemon-jp-sealed.json': '1795377593376', 'prices/onepiece-sealed.json': '1795377593376', 'prices/onepiece.json': '1795377593376', 'prices/pokemon-zh.json': '1795377593376', 'prices/pokemon.json': '1795377593376', 'prices/pokemon-jp.json': '1795377593376'}
+page controlled by offline helper: True
+Prices after reload: 1.6s, 7 data requests, from offline helper: 7, internet bytes: 0.00 MB
+re-downloaded after reload: none
+waiting while "lining up corners" (prep runs in the background)
+match took 38.7s after tapping (page opened 45.0s ago)
+timing: {"secs":37.5,"wait":0,"newCards":0,"pockets":37.5,"prep":1.6,"model":6.4,"ready":147,"onPhone":0,"gpu":false,"allCards":1.1}
+review: 9 cards found · 8 to check (tap them) · 6 new to your collection
+Matched in 37.5 s after you tapped Match · 147 collection cards ready-made · pockets 37.5 s on the processor · all cards 1.1 s · matcher loaded in 6.4 s
+index loaded: 71830
+pockets: 1: Zeraora V [CS3b: Primordial Martial Arts - Torrent 132/122 zh] 87% check (NEW)
+2: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 88% check (yours)
+3: Ceruledge [Gem Pack Vol.5 25-03/07 zh] 80% check (NEW)
+4: Necrozma V [CS3b: Primordial Martial Arts - Torrent 136/122 zh] 88% check (NEW)
+5: Gouging Fire ex [CSV7: Blade Awakening 051/204 zh] 88% check (NEW)
+6: empty
+7: empty
+8: empty
+9: Articuno [SV09: Journey Together 161/159] 84% sure (yours)
+10: Reshiram ex [CSV8: Brilliant Fantasy 038/207 zh] 86% check (NEW)
+11: Chandelure V [CS4b: Nine Colors Gathering - Origin 134/132 zh] 87% check (NEW)
+12: Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 81% check (yours)
+blocked writes: ['BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/', 'BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/']
+errors: []
 
 
