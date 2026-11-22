@@ -8,7 +8,8 @@ for lst in ['pokemon', 'pokemon-zh', 'pokemon-jp']:
         ids = r[:, :4].copy().view('<u4')[:, 0]; sc = r[:, 4:8].copy().view('<f4')[:, 0]
         v = r[:, 8:].view(np.int8).astype(np.float32) * sc[:, None]
         for i in range(n):
-            if sc[i] > 0: X.append(v[i]); e = L['p'][str(ids[i])]; meta.append((e[1], L['groups'].get(str(e[3]), ''), lst))
+            e = L['p'].get(str(ids[i]))
+            if sc[i] > 0 and e: X.append(v[i]); meta.append((e[1], L['groups'].get(str(e[3]), ''), lst))
 X = np.array(X); X /= np.linalg.norm(X, axis=1, keepdims=True)
 Q = json.load(open('pockets.json'))
 want = {'1': 'moltres & zapdos', '2': 'moltres & zapdos', '3': 'moltres & zapdos', '4': 'moltres & zapdos', '5': 'moltres & zapdos', '9': 'articuno', '10': 'zapdos', '11': 'moltres', '12': 'ho-oh'}
