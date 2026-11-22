@@ -1,45 +1,38 @@
-ok
+ll-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 
-signed in anonymously: True
-helper URLs: ['https://apis.google.com/js/api.js?onload=__iframefcb359276', 'https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.en.smUXTMp7CeY.O/m=gapi_iframes/rt']
-shelf binders: ['kyle', 'kyle--2', 'kyle--3']
-binder game: pokemon | collection items: 0
-Prices 1st time: 2.2s, 7 data requests, 0.00 MB
-saved copies before reload: {'news/news.json': '1795378013883', 'prices/onepiece-sealed.json': '1795378014660', 'prices/pokemon-jp-sealed.json': '1795378014660', 'prices/onepiece.json': '1795378014659', 'prices/pokemon-jp.json': '1795378014658', 'prices/pokemon-sealed.json': '1795378014660', 'prices/pokemon-zh.json': '1795378014659', 'prices/pokemon.json': '1795378014658'}
-page controlled by offline helper: True
-Prices after reload: 1.6s, 7 data requests, from offline helper: 7, internet bytes: 0.00 MB
-re-downloaded after reload: none
-waiting while "lining up corners" (prep runs in the background)
-match took 40.8s after tapping (page opened 47.1s ago)
-timing: {"secs":39.6,"wait":0,"newCards":0,"pockets":39.6,"prep":1.5,"model":6.1,"ready":147,"onPhone":0,"gpu":false,"allCards":1.1}
-review: 9 cards found · 8 to check (tap them) · 6 new to your collection
-Matched in 39.6 s after you tapped Match · 147 collection cards ready-made · pockets 39.6 s on the processor · all cards 1.1 s · matcher loaded in 6.1 s
-index loaded: 71830
-pockets: 1: Zeraora V [CS3b: Primordial Martial Arts - Torrent 132/122 zh] 87% check (NEW)
-2: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 88% check (yours)
-3: Ceruledge [Gem Pack Vol.5 25-03/07 zh] 80% check (NEW)
-4: Necrozma V [CS3b: Primordial Martial Arts - Torrent 136/122 zh] 88% check (NEW)
-5: Gouging Fire ex [CSV7: Blade Awakening 051/204 zh] 88% check (NEW)
-6: empty
-7: empty
-8: empty
-9: Articuno [SV09: Journey Together 161/159] 84% sure (yours)
-10: Reshiram ex [CSV8: Brilliant Fantasy 038/207 zh] 86% check (NEW)
-11: Chandelure V [CS4b: Nine Colors Gathering - Origin 134/132 zh] 87% check (NEW)
-12: Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 81% check (yours)
-alts: 1: Zeraora V 87, Team Rocket's Moltres ex 87, Giratina 87, Blaziken 87, Greninja ex 87, Salamence ex 87, Registeel 87, Guzzlord 86
-2: Moltres & Zapdos & Articuno * 88, Reshiram EX 87, Moltres & Zapdos & Articuno  87, Zekrom 87, Dialga 86, Garchomp & Giratina GX 86, Reshiram EX 86, Team Rocket's Moltres ex 86
-3: Ceruledge 80, Wellspring Mask Ogerpon ex 79, Raikou & Suicune Legend 79, Vespiquen ex 79, Zangoose 79, Eternatus VMAX 78, Hydreigon ex 78, Greninja ex 78
-4: Necrozma V 88, Eternatus V 87, Zeraora V 87, Giratina 87, Miraidon 86, Giratina V 86, Tyranitar 86, Turtonator 86
-5: Gouging Fire ex 88, Hearthflame Mask Ogerpon ex 88, Toxtricity ex 88, Turtonator 88, Dusk Mane Necrozma GX 88, Cinderace ex 88, Hoopa ex 88, Giratina 88
-6: Regigigas V* 61, Ancient Mew* 61, Jamming Tower* 61, Charizard V* 61, Psyduck* 61, Charizard EX (100 Full Art)* 60, Pikachu (Pokemon Day 2026)* 60, Squirtle* 60
-7: Psyduck* 60, Ancient Mew* 60, Jamming Tower* 57, Pikachu (Pokemon Day 2026)* 56, Poliwhirl* 56, Squirtle* 56, Charizard V* 56, Mew ex - 205/165 (151 Metal * 56
-8: Ancient Mew* 57, Psyduck* 56, Regigigas V* 55, Charizard V* 55, Pikachu (Pokemon Day 2026)* 54, Lapras* 54, Jirachi ex* 54, Jamming Tower* 54
-9: Articuno* 84, Suicune 75, Glastrier (Energy Symbol Pat 74, Suicune 74, Raikou & Suicune Legend 74, Golisopod ex 74, Beartic - 049/189 (Holiday C 74, Kyurem EX 73
-10: Reshiram ex 86, Skarmory 86, Dracozolt V 85, Zekrom 85, Zapdos 85, Team Rocket's Zapdos 85, Kyurem 85, Skarmory 85
-11: Chandelure V 87, Giratina 86, Regieleki 86, Chandelure 86, Rolycoly 86, Chi-Yu 86, Zacian 86, Armarouge 86
-12: Ho-Oh V 82, Reshiram 82, Honedge 82, Talonflame V 82, Team Rocket's Moltres ex 82, Skarmory 82, Copperajah V 82, Ho-Oh 81
-blocked writes: ['BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/', 'BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/']
-errors: []
+cards 71830
+list means: |zh-en| 0.362  |jp-en| 0.300
+
+
+== raw: right Pokémon first in 4 of 9, among the 8 closest in 7 of 9
+   1: no   Garchomp & Giratina GX [CSM2b: Shining Synergy - Supreme 173/150 zh] 0.855 | Registeel [CSVH4eC: Happy Pack 028/049 zh] 0.850 | Chandelure [CSM2c: Shining Synergy - Summon 030/150 zh] 0.849
+   2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68 ] 0.881 | Moltres & Zapdos & Articuno GX [Hidden Fates 44/68 ] 0.871 | Miraidon ex [SV: Scarlet & Violet Promo Cards 028 ] 0.861
+   3: in 8 Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.792 | Raikou & Suicune Legend [L2: Revival Legends 067/080 jp] 0.778 | Gyarados VMAX [CS4b: Nine Colors Gathering - Origin 159/132 zh] 0.771
+   4: no   Yveltal EX [XY-By: Collection Y 063/060 jp] 0.876 | Necrozma V [CS3b: Primordial Martial Arts - Torrent 136/122 zh] 0.876 | Eternatus V [CS2b: Vivid Portrayals - Indigo 129/115 zh] 0.872
+   5: in 8 Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex 239/193 jp] 0.897 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 226/173 jp] 0.894 | Ultra Necrozma GX [CSM1a: Storming Emergence - Radiant 205/151 zh] 0.894
+   9: OK  Articuno [SV09: Journey Together 161/159 ] 0.849 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products 032/159 ] 0.805 | Articuno [SV09: Journey Together 032/159 ] 0.795
+   10: OK  Galarian Zapdos V (Full Art) [SWSH06: Chilling Reign 173/198 ] 0.860 | Falkner's Skarmory [Pokemon VS 007/141 jp] 0.855 | Zapdos ex [SV2a: Pokemon Card 151 204/165 jp] 0.853
+   11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals 229/182 ] 0.878 | Regieleki [CSVE1: Battle Party Dream Together 052/177 zh] 0.862 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards 014/094 ] 0.861
+   12: in 8 Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex 250/193 jp] 0.832 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.819 | Reshiram [CP2: Legendary Shine Collection 002/027 jp] 0.819
+== list style removed: right Pokémon first in 5 of 9, among the 8 closest in 8 of 9
+   1: in 8 Miraidon ex [SV: Scarlet & Violet Promo Cards 028 ] 0.851 | Moltres & Zapdos & Articuno GX [Hidden Fates 44/68 ] 0.848 | Miraidon - 121/162 (Cosmos Holo) (Best Buy) [Miscellaneous Cards & Products 121/162 ] 0.846
+   2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68 ] 0.887 | Moltres & Zapdos & Articuno GX [Hidden Fates 44/68 ] 0.877 | Miraidon ex [SV: Scarlet & Violet Promo Cards 028 ] 0.867
+   3: in 8 Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.793 | Raikou & Suicune Legend [L2: Revival Legends 067/080 jp] 0.779 | Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68 ] 0.777
+   4: no   Miraidon [SV05: Temporal Forces 121/162 ] 0.871 | M Manectric EX - 24a/119 [Alternate Art Promos 024a/119 ] 0.866 | Yveltal EX [XY-By: Collection Y 063/060 jp] 0.865
+   5: in 8 M Manectric EX - 24a/119 [Alternate Art Promos 024a/119 ] 0.885 | M Gyarados EX (Full Art) [XY - BREAKpoint 115/122 ] 0.880 | M Alakazam EX (Full Art) [XY - Fates Collide 118/124 ] 0.878
+   9: OK  Articuno [SV09: Journey Together 161/159 ] 0.844 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products 032/159 ] 0.800 | Articuno [SV09: Journey Together 032/159 ] 0.791
+   10: OK  Galarian Zapdos V (Full Art) [SWSH06: Chilling Reign 173/198 ] 0.866 | Zapdos ex [SV: Scarlet & Violet Promo Cards 049 ] 0.860 | Zapdos ex [SV: Scarlet & Violet 151 145/165 ] 0.859
+   11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals 229/182 ] 0.886 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards 014/094 ] 0.869 | Moltres [ME02: Phantasmal Flames 014/094 ] 0.868
+   12: OK  Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122 ] 0.830 | Moltres [ME02: Phantasmal Flames 014/094 ] 0.827 | Pidgeot EX (Full Art) [XY - Evolutions 104/108 ] 0.825
+== no Chinese: right Pokémon first in 4 of 9, among the 8 closest in 8 of 9
+   1: in 8 Miraidon ex [SV: Scarlet & Violet Promo Cards 028 ] 0.844 | Yveltal [SM12a: TAG TEAM GX: Tag All Stars 080/173 jp] 0.843 | Moltres & Zapdos & Articuno GX [Hidden Fates 44/68 ] 0.841
+   2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68 ] 0.881 | Moltres & Zapdos & Articuno GX [Hidden Fates 44/68 ] 0.871 | Miraidon ex [SV: Scarlet & Violet Promo Cards 028 ] 0.861
+   3: in 8 Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.792 | Raikou & Suicune Legend [L2: Revival Legends 067/080 jp] 0.778 | Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68 ] 0.766
+   4: no   Yveltal EX [XY-By: Collection Y 063/060 jp] 0.876 | Zekrom ex [SV11B: Black Bolt 161/086 jp] 0.866 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.862
+   5: in 8 Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex 239/193 jp] 0.897 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 226/173 jp] 0.894 | Greninja & Zoroark GX [SM12a: TAG TEAM GX: Tag All Stars 223/173 jp] 0.889
+   9: OK  Articuno [SV09: Journey Together 161/159 ] 0.849 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products 032/159 ] 0.805 | Articuno [SV09: Journey Together 032/159 ] 0.795
+   10: OK  Galarian Zapdos V (Full Art) [SWSH06: Chilling Reign 173/198 ] 0.860 | Falkner's Skarmory [Pokemon VS 007/141 jp] 0.855 | Zapdos ex [SV2a: Pokemon Card 151 204/165 jp] 0.853
+   11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals 229/182 ] 0.878 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards 014/094 ] 0.861 | Moltres [ME02: Phantasmal Flames 014/094 ] 0.861
+   12: in 8 Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex 250/193 jp] 0.832 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck 019/018 jp] 0.819 | Reshiram [CP2: Legendary Shine Collection 002/027 jp] 0.819
 
 
