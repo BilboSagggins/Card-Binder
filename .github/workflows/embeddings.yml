@@ -4,7 +4,7 @@ name: Card picture fingerprints
 # runs (it stops within its time budget and carries on next time); after that each run only looks at new cards.
 on:
   schedule:
-    - cron: "37 */6 * * *"
+    - cron: "37 */3 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   emb:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 200
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,7 +41,7 @@ jobs:
           ln -sfn ~/.cache/emb-node/node_modules "$GITHUB_WORKSPACE/node_modules"
       - name: Look at the cards
         env:
-          BUDGET_MIN: "290"
+          BUDGET_MIN: "150"
         run: node scripts/build-embeddings.mjs
       - name: Save them to the site
         if: always()

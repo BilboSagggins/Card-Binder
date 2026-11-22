@@ -1,6 +1,7 @@
 /* Picture fingerprints for the 📷 Photo page: every card in the daily price lists is looked at once here, by the same
    picture-matching AI the phone uses (CLIP ViT-B/16 through transformers.js), so the phone no longer has to download and look at
-   every card in your collection itself. Same two looks as the phone: the whole card, and its top 60%, added together.
+   every card in your collection itself. The same full-size picture, shrunk to 448 px like the phone does, gives the same
+   fingerprint as the phone's (checked: 1.0000; TCGplayer's 400 px pictures are framed differently and only reach 0.95). Same two looks as the phone: the whole card, and its top 60%, added together.
 
    emb/<list>/<setId>.bin: one record per card, [product id: uint32][scale: float32][512 × int8] (vector = int8 × scale).
    Cards with no picture yet are left out and tried again next run. emb/index.json says which sets are done. Works through the lists within a time budget and picks up
@@ -28,7 +29,7 @@ const norm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) |
 // TCGplayer's picture, or CardTrader's for the Chinese list (its picture path is in the list)
 const CT_IMG = 'https://www.cardtrader.com/uploads/blueprints/image/';
 async function load(pid, L) {
-  const e = L.p[pid], url = L.source === 'cardtrader' ? (e[5] ? CT_IMG + e[5].replace(/([^/]+)$/, 'show_$1') : null) : `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_400x400.jpg`;
+  const e = L.p[pid], url = L.source === 'cardtrader' ? (e[5] ? CT_IMG + e[5].replace(/([^/]+)$/, 'show_$1') : null) : `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_1000x1000.jpg`;
   if (!url) return null;
   for (let i = 0; i < 3; i++) {
     try {
