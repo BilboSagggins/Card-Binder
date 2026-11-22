@@ -2,9 +2,21 @@ ok
 
 binder layout 4x3
 captured by itself after 1.5s; camera off: True
-results after 1.5s from opening the camera
-review: 
-pockets: 
-errors: ['Error: Error (429) occurred while trying to load file: "https://huggingface.co/Xenova/clip-vit-base-patch16/resolve/main/preprocessor_config.json".\n    at https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:733992\n    at f (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:734015)\n    at async _ (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:735779)\n    at async d.from_pretrained (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:583808)\n    at async http://localhost:8123/:4848:18']
+results after 41.6s from opening the camera
+review: 9 cards found · 9 to check (tap them) · 1 new to your collection
+Matched in 39.4 s after you tapped Match · 147 collection cards ready-made · pockets 33.2 s on the processor · all cards 1 s · matcher loaded in 7.9 s
+pockets: 1: Zacian V [SWSH: Crown Zenith 095/159] 85% check (yours)
+2: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 87% check (yours)
+3: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 79% check (yours)
+4: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 86% check (yours)
+5: Zacian V [SWSH: Crown Zenith 095/159] 87% check (yours)
+6: empty
+7: empty
+8: empty
+9: Articuno [SV09: Journey Together 161/159] 81% check (yours)
+10: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 87% check (yours)
+11: Team Rocket's Moltres ex [SV10: Destined Rivals 229/182] 87% check (NEW)
+12: Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 84% check (yours)
+errors: []
 
 
