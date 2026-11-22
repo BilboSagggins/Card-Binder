@@ -1,43 +1,17 @@
-npm error     at TLSSocket.emit (node:domain:489:12)
-npm error     at addChunk (node:internal/streams/readable:569:12)
+npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+npm error code 1
+npm error path /tmp/emb/node_modules/onnxruntime-node
+npm error command failed
+npm error command sh -c node ./script/install
+npm error Downloading "https://github.com/microsoft/onnxruntime/releases/download/v1.21.0/onnxruntime-linux-x64-gpu-1.21.0.tgz"...
+npm error `nvcc` not found. Assuming CUDA 12.
+npm error /tmp/emb/node_modules/onnxruntime-node/script/install.js:112
+npm error
+npm error Error: Failed to download the binaries: 404 Not Found.
+npm error
+npm error Use "--onnxruntime-node-install-cuda=skip" to skip the installation. You will still be able to use ONNX Runtime, but the CUDA EP will not be available.
 npm error
 npm error Node.js v24.22.3
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-22T05_09_17_575Z-debug-0.log
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-22T05_09_48_898Z-debug-0.log
 npm 0
  
-DTYPE fp32
-
-from /tmp/emb/emb-test.mjs
-    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
-    at packageResolve (node:internal/modules/esm/resolve:784:25)
-    at moduleResolve (node:internal/modules/esm/resolve:873:18)
-    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
-    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
-    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
-    at #resolve (node:internal/modules/esm/loader:687:17)
-    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
-    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33) {
-  code: 'ERR_MODULE_NOT_FOUND'
-}
-
-Node.js v24.22.3
-
-DTYPE fp16
-
-from /tmp/emb/emb-test.mjs
-    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)
-    at packageResolve (node:internal/modules/esm/resolve:784:25)
-    at moduleResolve (node:internal/modules/esm/resolve:873:18)
-    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
-    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
-    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
-    at #resolve (node:internal/modules/esm/loader:687:17)
-    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
-    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33) {
-  code: 'ERR_MODULE_NOT_FOUND'
-}
-
-Node.js v24.22.3
-
