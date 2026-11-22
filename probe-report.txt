@@ -1,18 +1,23 @@
-npm warn install-scripts
 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 
-model ready
-onepiece The Dominance of God Release Event Cards: +75 (0.6 min, 75 this run)
-onepiece The Dominance of God: +163 (1.5 min, 238 this run)
-onepiece Extra Booster: One Piece Heroines Edition Vol. 2: +100 (2.1 min, 338 this run)
-Out of time after 338 cards; the next run carries on.
-
-
-index {"model":"Xenova/clip-vit-base-patch16","dims":512,"lists":{"onepiece":{"24820":100,"24833":163,"24834":75}},"complete":false,"updated":"2026-11-22T05:18:05.824Z"}
-cards 338 no picture 77 files 3
-Nami (OP01-016) (SP) | Nami (055) 0.831 ; Nami (061) 0.810 ; Domino 0.803 | norm 0.999
-Nico Robin (016) (SP) | Nico Robin (016) (Super Rare Alternate Art) 0.820 ; Nico Robin (010) (Super Leader Alternate Art) 0.811 ; Nojiko (Alternate Art) 0.793 | norm 0.999
-Nico Robin (010) | Nico Robin (010) (Heroine Leader) 0.897 ; Nico Robin (016) 0.876 ; Nico Robin 0.858 | norm 1.000
-Nico Olvia | Kalifa 0.880 ; Nico Robin (016) 0.858 ; Tsuru 0.857 | norm 1.000
+pool 541
+pool done in 233 s; 513 with pictures
+server vs phone Zapdos 0.9840
+server vs phone Zapdos 0.9793
+server vs phone Moltres (12) 0.9753
+server vs phone Zapdos (15) 0.9828
+server vs phone Articuno (17) 0.9790
+pocket 1: Moltres & Zapdos & Articuno GX [Hidden Fates 44/68] 0.825 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.821 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 102/173] 0.809
+pocket 2: Moltres & Zapdos & Articuno GX [Hidden Fates 44/68] 0.849 | Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 0.842 | Lugia ex [Trading Card Game Classic 017/034] 0.823
+pocket 3: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 0.779 | Moltres & Zapdos & Articuno GX [SM10b: Sky Legend 066/054] 0.747 | Lugia EX (Team Plasma) [Black and White Promos BW83] 0.741
+pocket 4: Moltres & Zapdos & Articuno GX [SM10b: Sky Legend 060/054] 0.829 | Lugia [SM-P: Sun & Moon Promos 237/SM-P] 0.818 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.816
+pocket 5: Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 226/173] 0.858 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.848 | Ho-oh ex [Pokemon TCG Classic: Charizard 007/032] 0.828
+pocket 6: Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.683 | Ho-Oh Legend (Top) [HeartGold SoulSilver 111/123] 0.679 | Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.672
+pocket 7: Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.663 | Ho-Oh Legend (Top) [HeartGold SoulSilver 111/123] 0.659 | Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.637
+pocket 8: Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.619 | Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.601 | Lugia Legend (Bottom) [HeartGold SoulSilver 114/123] 0.592
+pocket 9: Articuno [SV09: Journey Together 161/159] 0.791 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products 032/159] 0.756 | Articuno [SV09: Journey Together 032/159] 0.737
+pocket 10: Zapdos ex [SV: Scarlet & Violet 151 202/165] 0.853 | Zapdos ex [SV: Scarlet & Violet 151 145/165] 0.834 | Zapdos ex [SV: Scarlet & Violet Promo Cards 049] 0.834
+pocket 11: Team Rocket's Moltres ex [SV10: Destined Rivals 229/182] 0.838 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.835 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards 014/094] 0.830
+pocket 12: Galarian Moltres V [SI: Start Deck 100 422/414] 0.800 | Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 0.794 | Ho-Oh [HGSS Promos HGSS01] 0.785
 
 
