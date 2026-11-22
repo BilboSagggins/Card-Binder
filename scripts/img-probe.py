@@ -1,6 +1,3 @@
 import subprocess, os
-r = subprocess.run('echo \'{"name":"emb","private":true}\' > package.json && npm i --no-audit --no-fund --onnxruntime-node-install-cuda=skip @huggingface/transformers@3.5.1 2>&1 | tail -2', shell=True, capture_output=True, text=True); print(r.stdout[-300:])
-src = open('scripts/build-embeddings.mjs').read().replace("const LISTS = ['onepiece', 'pokemon', 'pokemon-jp'];", "const LISTS = ['onepiece'];")
-open('scripts/trial.mjs', 'w').write(src)
-r = subprocess.run(['node', 'scripts/trial.mjs'], capture_output=True, text=True, env={**os.environ, 'BUDGET_MIN': '2'}); print(r.stdout[-2500:]); print(r.stderr[-1500:])
-r = subprocess.run(['node', 'scripts/emb-check.mjs'], capture_output=True, text=True); print(r.stdout[-2500:]); print(r.stderr[-1000:])
+r = subprocess.run('echo \'{"name":"emb","private":true}\' > package.json && npm i --no-audit --no-fund --onnxruntime-node-install-cuda=skip @huggingface/transformers@3.5.1 2>&1 | tail -1', shell=True, capture_output=True, text=True); print(r.stdout[-200:])
+r = subprocess.run(['node', 'scripts/acc.mjs'], capture_output=True, text=True); print(r.stdout[-6000:]); print(r.stderr[-1500:])
