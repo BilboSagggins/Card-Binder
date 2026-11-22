@@ -1,45 +1,10 @@
 ok
 
-signed in anonymously: True
-helper URLs: ['https://apis.google.com/js/api.js?onload=__iframefcb103469', 'https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.en.smUXTMp7CeY.O/m=gapi_iframes/rt']
-shelf binders: ['kyle', 'kyle--2', 'kyle--3']
-binder game: pokemon | collection items: 0
-Prices 1st time: 2.0s, 7 data requests, 0.00 MB
-saved copies before reload: {'news/news.json': '1795378383264', 'prices/pokemon-jp-sealed.json': '1795378384026', 'prices/onepiece.json': '1795378384026', 'prices/onepiece-sealed.json': '1795378384026', 'prices/pokemon.json': '1795378384022', 'prices/pokemon-sealed.json': '1795378384026', 'prices/pokemon-jp.json': '1795378384026', 'prices/pokemon-zh.json': '1795378384026'}
-page controlled by offline helper: True
-Prices after reload: 1.6s, 7 data requests, from offline helper: 7, internet bytes: 0.00 MB
-re-downloaded after reload: none
-waiting while "lining up corners" (prep runs in the background)
-match took 29.7s after tapping (page opened 35.8s ago)
-timing: {"secs":28.7,"wait":0,"newCards":0,"pockets":28.7,"prep":1.3,"model":4.5,"ready":147,"onPhone":0,"gpu":false,"allCards":1}
-review: 9 cards found · 8 to check (tap them) · 2 new to your collection
-Matched in 28.7 s after you tapped Match · 147 collection cards ready-made · pockets 28.7 s on the processor · all cards 1 s · matcher loaded in 4.5 s
-index loaded: 71830
-pockets: 1: Zacian V [SWSH: Crown Zenith 095/159] 85% check (yours)
-2: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 89% check (yours)
-3: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 78% check (yours)
-4: Miraidon [SV05: Temporal Forces 121/162] 87% check (NEW)
-5: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 86% check (yours)
-6: empty
-7: empty
-8: empty
-9: Articuno [SV09: Journey Together 161/159] 84% sure (yours)
-10: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 85% check (yours)
-11: Team Rocket's Moltres ex [SV10: Destined Rivals 229/182] 87% check (NEW)
-12: Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 83% check (yours)
-alts: 1: Moltres & Zapdos & Articuno  86, Yveltal ex 86, Xerneas ex 86, Darkrai EX (Full Art) 86, Miraidon 86, Reshiram EX 86, Reshiram EX 85, Yveltal 85
-2: Moltres & Zapdos & Articuno * 89, Moltres & Zapdos & Articuno  88, Arceus V - 122/172 (Metal Ca 87, Kingdra EX (Full Art) 87, Reshiram EX 86, Kyurem EX (86 Full Art) 86, Manectric 86, Moltres & Zapdos & Articuno * 86
-3: Treasure Energy 79, Raikou & Suicune Legend 79, Moltres & Zapdos & Articuno * 78, Beast Energy Prism Star 78, Weakness Policy 78, Arceus V - 122/172 (Metal Ca 78, Capture Energy (Secret) 78, Ultra Space 78
-4: Miraidon 87, Scizor EX (Full Art) 86, Black Kyurem EX (145 Full Ar 86, Yveltal EX (144 Full Art) 86, Zacian V-UNION 86, M Manectric EX - 24a/119 86, Zekrom EX (97 Full Art) 86, N's Zekrom - 031 (Pokemon Ce 86
-5: M Manectric EX - 24a/119 87, M Gyarados EX (Full Art) 87, Flygon ex 86, Alolan Ninetales (SM-P Japan 86, Moltres & Zapdos & Articuno * 86, Scizor EX (Full Art) 86, Black Kyurem EX 86, Yveltal EX (144 Full Art) 85
-6: Regigigas V* 61, Ancient Mew* 61, Jamming Tower* 61, Charizard V* 61, Psyduck* 61, Charizard EX (100 Full Art)* 61, Pikachu (Pokemon Day 2026)* 61, Squirtle* 60
-7: Psyduck* 60, Ancient Mew* 59, Jamming Tower* 57, Pikachu (Pokemon Day 2026)* 56, Poliwhirl* 56, Squirtle* 56, Charizard V* 56, Mew ex - 205/165 (151 Metal * 56
-8: Ancient Mew* 57, Psyduck* 56, Regigigas V* 55, Charizard V* 55, Pikachu (Pokemon Day 2026)* 54, Lapras* 54, Jirachi ex* 54, Jamming Tower* 54
-9: Articuno* 84, Articuno 77, Glastrier (Energy Symbol Pat 74, Raikou & Suicune Legend 74, Suicune 74, Beartic - 049/189 (Holiday C 74, Roaring Moon - 109/162 (Cosm 74, Kyurem EX 73
-10: Unfezant (81 Delta) 86, Manectric 86, Talonflame 85, Reshiram ex 85, Mandibuzz 85, Moltres & Zapdos & Articuno * 85, Lugia 84, Skarmory 84
-11: Team Rocket's Moltres ex 87, Moltres - 014/094 (Cosmos Ho 87, Moltres 87, Heatmor 87, Turtonator 86, Chandelure V 86, Yveltal (EB Games) 85, Yveltal 85
-12: Pidgeot EX (Full Art) 84, Arceus V - 122/172 (Metal Ca 83, Ho-Oh EX (Full Art)* 83, Moltres 82, Rescue Energy 81, Reshiram 81, Galarian Zapdos V (Full Art) 81, Gouging Fire ex 81
-blocked writes: ['BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/', 'BLOCKED WRITE update https://card-binder-9879a-default-rtdb.firebaseio.com/']
-errors: []
+binder layout 4x3
+captured by itself after 1.5s; camera off: True
+results after 1.5s from opening the camera
+review: 
+pockets: 
+errors: ['Error: Error (429) occurred while trying to load file: "https://huggingface.co/Xenova/clip-vit-base-patch16/resolve/main/preprocessor_config.json".\n    at https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:733992\n    at f (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:734015)\n    at async _ (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:735779)\n    at async d.from_pretrained (https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1:1:583808)\n    at async http://localhost:8123/:4848:18']
 
 
