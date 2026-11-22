@@ -4837,7 +4837,7 @@ const phDtype = () => window.__phDtype || 'fp16';
 const PH = { img: null, quad: null, cols: 4, rows: 3, cells: [], pick: [], cands: [], busy: false };
 let phLibP = null, phModel = null;
 // The matcher: loaded once (about 170 MB the first time, then from this phone)
-function phLoadModel(onProgress) {
+function phLoadModelOnce(onProgress) {
   if (window.__phEmbed) return Promise.resolve();          // tests use a stand-in
   if (phModel) return Promise.resolve();
   if (!phLibP) phLibP = (async () => {
@@ -4856,6 +4856,19 @@ function phLoadModel(onProgress) {
     phModel = { lib, proc, vision };
   })().catch(e => { phLibP = null; throw e; });
   return phLibP;
+}
+// The AI's files come from HuggingFace, which sometimes says "too many requests" (429) or drops the connection: wait and try again, twice
+let phLoadP = null;
+function phLoadModel(onProgress) {
+  if (!phLoadP) phLoadP = (async () => {
+    let err;
+    for (const wait of [0, 4000, 12000]) {
+      if (wait) await new Promise(r => setTimeout(r, wait));
+      try { return await phLoadModelOnce(onProgress); } catch (e) { err = e; if (!/429|Too Many|fetch|network|load/i.test(String(e && (e.message || e)))) break; }
+    }
+    throw err;
+  })().catch(e => { phLoadP = null; throw e; });
+  return phLoadP;
 }
 const phNorm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return Float32Array.from(v, x => x / s); };
 const phDot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
