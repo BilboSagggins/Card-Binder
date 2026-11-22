@@ -4,10 +4,50 @@ cards 71830
 list means: |zh-en| 0.362  |jp-en| 0.300
 
 
+crowding: mean 0.909, max 1.000; zh 0.919 jp 0.923 en 0.891
+== raw, discount 0: 4 of 9
+== raw, discount 0.5: 4 of 9
+== raw, discount 0.75: 4 of 9
+   1: no Expert Belt - 87/99 (League Promo) [League & Championship Cards] 0.165 | Greninja ex (GameStop Metal Card) [Miscellaneous Cards & Products] 0.164 | Beast Ring - 102/131 (Pokemon League) [League & Championship Cards] 0.160
+   2: OK Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] 0.198 | Arceus V - 122/172 (Metal Card) [Miscellaneous Cards & Products] 0.188 | Moltres & Zapdos & Articuno GX [Hidden Fates] 0.181
+   3: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] 0.123 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] 0.111 | Raikou & Suicune Legend [L2: Revival Legends] 0.109
+   4: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] 0.193 | Necrozma V [CS3b: Primordial Martial Arts - Torrent] 0.175 | Raikou & Suicune Legend [L2: Revival Legends] 0.175
+   5: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] 0.217 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] 0.209 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars] 0.205
+   9: OK Articuno [SV09: Journey Together] 0.212 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] 0.153 | Articuno [SV09: Journey Together] 0.134
+   10: OK Zapdos ex [SV: Scarlet & Violet 151] 0.195 | Latios [SV08: Surging Sparks] 0.182 | Zapdos ex [SV: Scarlet & Violet 151] 0.177
+   11: OK Team Rocket's Moltres ex [SV10: Destined Rivals] 0.216 | Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) [Miscellaneous Cards & Products] 0.197 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] 0.193
+   12: no Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] 0.173 | Reshiram [EX Battle Boost] 0.161 | Ho-Oh Legend (Top) [HeartGold SoulSilver] 0.154
+== raw, discount 1.0: 4 of 9
+   1: no Expert Belt - 87/99 (League Promo) [League & Championship Cards] -0.051 | Greninja ex (GameStop Metal Card) [Miscellaneous Cards & Products] -0.053 | Celesteela - 100/168 (Pokemon League) [League & Championship Cards] -0.062
+   2: OK Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] -0.029 | Arceus V - 122/172 (Metal Card) [Miscellaneous Cards & Products] -0.037 | Skarmory (63) [Expedition] -0.043
+   3: no Championship Arena - 028 (2005 World Championships) [Nintendo Promos] -0.098 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.100 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] -0.102
+   4: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.030 | Zygarde EX - 54a/124 [Alternate Art Promos] -0.045 | Raikou & Suicune Legend [L2: Revival Legends] -0.048
+   5: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.006 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] -0.011 | Team Rocket's Moltres ex [CSV10C: Chasing Glory] -0.021
+   9: OK Articuno [SV09: Journey Together] 0.000 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] -0.064 | Articuno [SV09: Journey Together] -0.087
+   10: OK Zapdos ex [SV: Scarlet & Violet 151] -0.021 | Latios [SV08: Surging Sparks] -0.035 | Milotic C - 35/147 (League Promo) [League & Championship Cards] -0.046
+   11: OK Team Rocket's Moltres ex [SV10: Destined Rivals] -0.005 | Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) [Miscellaneous Cards & Products] -0.019 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] -0.021
+   12: no Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] -0.047 | Charmander - 044 (Pokemon Center Exclusive) [SV: Scarlet & Violet Promo Cards] -0.052 | Reshiram [EX Battle Boost] -0.055
+== centered, discount 0: 5 of 9
+== centered, discount 0.5: 5 of 9
+== centered, discount 0.75: 5 of 9
+   1: no Greninja ex (GameStop Metal Card) [Miscellaneous Cards & Products] -0.218 | Miraidon ex [SV: Scarlet & Violet Promo Cards] -0.250 | Entei GX - 10a/73 [Alternate Art Promos] -0.254
+   2: OK Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] -0.160 | Moltres & Zapdos & Articuno GX [Hidden Fates] -0.210 | Miraidon ex [SV: Scarlet & Violet Promo Cards] -0.217
+   3: no Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.254 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] -0.265 | Suicune & Entei Legend LEGEND (95) - 2011 (Ross Cawthon) [World Championship Decks] -0.272
+   4: no Cornerstone Mask Ogerpon ex [CSV8: Brilliant Fantasy] -0.211 | Necrozma V [CS3b: Primordial Martial Arts - Torrent] -0.217 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.230
+   5: OK Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars] -0.081 | Moltres & Zapdos & Articuno GX [CSM2c: Shining Synergy - Summon] -0.103 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex] -0.108
+   9: OK Articuno [SV09: Journey Together] 0.015 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] -0.124 | Articuno [SV09: Journey Together] -0.157
+   10: OK Zapdos ex [SV: Scarlet & Violet 151] -0.187 | Zapdos ex [SV: Scarlet & Violet Promo Cards] -0.213 | Zapdos ex [SV: Scarlet & Violet 151] -0.239
+   11: OK Team Rocket's Moltres ex [SV10: Destined Rivals] -0.070 | Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) [Miscellaneous Cards & Products] -0.122 | Team Rocket's Moltres ex [CSV10C: Chasing Glory] -0.167
+   12: no Reshiram [EX Battle Boost] -0.197 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] -0.212 | Ho-oh - 11/12 (Box Topper) [Jumbo Cards] -0.221
+== centered, discount 1.0: 5 of 9
+   1: no Greninja ex (GameStop Metal Card) [Miscellaneous Cards & Products] -0.435 | Miraidon ex [SV: Scarlet & Violet Promo Cards] -0.479 | Entei GX - 10a/73 [Alternate Art Promos] -0.481
+   2: OK Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] -0.387 | Moltres & Zapdos & Articuno GX [Hidden Fates] -0.440 | Moltres - 19/181 (Team Up Stamped) [Miscellaneous Cards & Products] -0.444
+   3: no Suicune & Entei Legend LEGEND (95) - 2011 (Ross Cawthon) [World Championship Decks] -0.462 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.478 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] -0.479
+   4: no Cornerstone Mask Ogerpon ex [CSV8: Brilliant Fantasy] -0.445 | Necrozma V [CS3b: Primordial Martial Arts - Torrent] -0.450 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck] -0.453
+   5: OK Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars] -0.310 | Moltres & Zapdos & Articuno GX [CSM2c: Shining Synergy - Summon] -0.336 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex] -0.340
+   9: OK Articuno [SV09: Journey Together] -0.197 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] -0.341 | Articuno [SV09: Journey Together] -0.378
+   10: OK Zapdos ex [SV: Scarlet & Violet 151] -0.403 | Zapdos ex [SV: Scarlet & Violet Promo Cards] -0.441 | Zapdos ex [SV: Scarlet & Violet 151] -0.466
+   11: OK Team Rocket's Moltres ex [SV10: Destined Rivals] -0.291 | Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) [Miscellaneous Cards & Products] -0.338 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] -0.382
+   12: no Reshiram [EX Battle Boost] -0.413 | Ho-Oh Legend (Bottom) [HeartGold SoulSilver] -0.414 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex] -0.432
 
-Traceback (most recent call last):
-  File "/home/runner/work/Card-Binder/Card-Binder/scripts/hub2.py", line 11, in <module>
-    if sc[i] > 0: X.append(v[i]); e = L['p'][str(ids[i])]; meta.append((e[1], L['groups'].get(str(e[3]), ''), lst))
-                                      ~~~~~~^^^^^^^^^^^^^
-KeyError: '733753'
 
