@@ -29,7 +29,7 @@ const norm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) |
 // TCGplayer's picture, or CardTrader's for the Chinese list (its picture path is in the list)
 const CT_IMG = 'https://www.cardtrader.com/uploads/blueprints/image/';
 async function load(pid, L) {
-  const e = L.p[pid], url = L.source === 'cardtrader' ? (e[5] ? CT_IMG + e[5].replace(/([^/]+)$/, 'show_$1') : null) : `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_1000x1000.jpg`;
+  const e = L.p[pid], url = L.source === 'cardtrader' ? (e[5] ? CT_IMG + e[5] : null) : `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_1000x1000.jpg`;
   if (!url) return null;
   for (let i = 0; i < 3; i++) {
     try {
