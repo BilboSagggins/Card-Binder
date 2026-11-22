@@ -1,30 +1,30 @@
 ok
 
---- after shelf: 21 requests, 0.47 MB
-        177 KB  x1  https://bilbosagggins.github.io/Card-Binder/
-         93 KB  x1  https://card-binder-9879a.firebaseapp.com/__/auth/iframe.js
-         62 KB  x2  https://fonts.gstatic.com/l/font
-         47 KB  x1  https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js
-         37 KB  x1  https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js
-         35 KB  x1  https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.en.smUXTMp7CeY.O/m=gapi_iframes/rt=j/sv=1/d=1/ed=1/rs=
-          9 KB  x1  https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js
-          6 KB  x1  https://apis.google.com/js/api.js
-          5 KB  x1  https://bilbosagggins.github.io/Card-Binder/tw.css
-          1 KB  x1  https://fonts.googleapis.com/css2
-          1 KB  x2  https://identitytoolkit.googleapis.com/v1/accounts:signUp
-          1 KB  x1  https://card-binder-9879a.firebaseapp.com/__/auth/iframe
-          0 KB  x2  https://identitytoolkit.googleapis.com/v1/accounts:lookup
-          0 KB  x1  https://bilbosagggins.github.io/Card-Binder/version.json
---- after binder: 35 requests, 0.59 MB
-binder {'pages': 7, 'cards': 68, 'layout': '4x3', 'heap': 17, 'imgs': 18}
-render(): 16 ms each
-page turn: 14 ms
-Need list: 0.1 s, 23 requests, 0.00 MB
-Collection: 0.0 s, 0 requests, 0.00 MB
-Prices: 0.5 s, 6 requests, 0.00 MB
-News: 0.2 s, 15 requests, 0.00 MB
-marks {'domcontentloaded': 0.7, 'shelf visible': 2.2, 'binder shown': 1.4}
+signed in anonymously: True
+helper page loaded: True
+shelf binders: ['kyle', 'kyle--2', 'kyle--3']
+binder game: pokemon | collection items: 0
+Prices 1st time: 1.8s, 7 data requests, 0.00 MB
+page controlled by offline helper: True
+Prices after reload: 1.6s, 7 data requests, from offline helper: 7, internet bytes: 0.00 MB
+waiting while "lining up corners" (prep runs in the background)
+match took 31.9s after tapping (page opened 38.2s ago)
+timing: {"secs":31.9,"wait":0,"newCards":0,"pockets":31.9,"prep":0.9,"model":3.1,"ready":147,"onPhone":0,"gpu":false}
+review: 9 cards found · 5 to check (tap them)
+Matched in 31.9 s after you tapped Match · 147 collection cards ready-made · pockets 31.9 s on the processor · matcher loaded in 3.1 s
+pockets: 1: Zacian V [SWSH: Crown Zenith 095/159] 84% check
+2: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 88% sure
+3: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 77% sure
+4: Zacian V [SWSH: Crown Zenith 095/159] 83% check
+5: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 82% check
+6: empty
+7: empty
+8: empty
+9: Articuno [SV09: Journey Together 161/159] 84% sure
+10: Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 83% check
+11: Alakazam ex [SV: Scarlet & Violet 151 065/165] 83% check
+12: Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 81% sure
 blocked writes: []
-console errors: []
+errors: []
 
 
