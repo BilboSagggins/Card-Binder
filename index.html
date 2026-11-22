@@ -4828,7 +4828,14 @@ function phLoadModel(onProgress) {
     lib.env.allowLocalModels = false;
     const seen = {};
     const progress_callback = p => { if (p.status === 'progress' && p.total) { seen[p.file] = [p.loaded, p.total]; const v = Object.values(seen); onProgress && onProgress(v.reduce((a, x) => a + x[0], 0), v.reduce((a, x) => a + x[1], 0)); } };
-    const [proc, vision] = await Promise.all([lib.AutoProcessor.from_pretrained(PH_MODEL), lib.CLIPVisionModelWithProjection.from_pretrained(PH_MODEL, { dtype: phDtype(), progress_callback })]);
+    const proc = await lib.AutoProcessor.from_pretrained(PH_MODEL);
+    // the phone's graphics chip (WebGPU) is many times faster when the browser has it; otherwise the processor (WebAssembly)
+    let vision = null;
+    if (navigator.gpu && !window.__phNoGpu) {
+      try { if (await navigator.gpu.requestAdapter()) { vision = await lib.CLIPVisionModelWithProjection.from_pretrained(PH_MODEL, { dtype: phDtype(), device: 'webgpu', progress_callback }); vision.__dev = 'webgpu'; } }
+      catch (e) { console.warn('WebGPU not usable, using the processor', e); vision = null; }
+    }
+    if (!vision) vision = await lib.CLIPVisionModelWithProjection.from_pretrained(PH_MODEL, { dtype: phDtype(), progress_callback });
     phModel = { lib, proc, vision };
   })().catch(e => { phLibP = null; throw e; });
   return phLibP;
@@ -4840,6 +4847,14 @@ async function phEmbedOne(canvas) {
   const { lib, proc, vision } = phModel;
   const out = await vision(await proc(await lib.RawImage.fromCanvas(canvas)));
   return phNorm(out.image_embeds.data);
+}
+// Several pictures in one pass of the AI (faster than one at a time)
+async function phEmbedMany(canvases) {
+  if (window.__phEmbed) return Promise.all(canvases.map(c => phEmbedOne(c)));
+  const { lib, proc, vision } = phModel;
+  const imgs = await Promise.all(canvases.map(c => lib.RawImage.fromCanvas(c)));
+  const out = await vision(await proc(imgs)), d = out.image_embeds.dims.at(-1), data = out.image_embeds.data;
+  return canvases.map((_, i) => phNorm(data.slice(i * d, (i + 1) * d)));
 }
 // Two looks at a card, the mix that won the tests with this model (6 of 6 on Kyle's test photo): the whole card, and its top 60%
 function phTop(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = Math.round(src.height * .6); c.getContext('2d').drawImage(src, 0, 0); return c; }
@@ -4865,6 +4880,46 @@ async function phLoadImage(url) {
 async function phEmbedUrl(url) {
   const key = PH_MODEL + '|v2|' + phDtype() + '|' + url, hit = await phCacheGet(key); if (hit) return hit;
   const e = await phEmbedCard(await phLoadImage(url)); phCachePut(key, e); return e;
+}
+/* The cards' picture fingerprints are worked out ahead of time on GitHub (emb/, .github/workflows/embeddings.yml) with the same AI,
+   so the phone only downloads them, one small file per set in your collection. A card that isn't there yet (a brand-new card)
+   is looked at on the phone as before. */
+const PH_EMB = { index: null, sets: {} };
+const phEmbUrls = f => [`https://raw.githubusercontent.com/BilboSagggins/Card-Binder/main/emb/${f}`, `emb/${f}`];
+async function phEmbIndex() {
+  if (PH_EMB.index !== null) return PH_EMB.index;
+  for (const u of phEmbUrls('index.json')) { try { const d = await fetchJSON(u, 15000); if (d && d.lists) return (PH_EMB.index = d); } catch (e) {} }
+  return (PH_EMB.index = false);
+}
+// the list a card comes from, and its id in that list
+const phEmbList = c => c.ctId ? ['pokemon-zh', String(c.ctId)] : c.tcgPid ? [c.game === 'onepiece' ? 'onepiece' : c.lang === 'ja' ? 'pokemon-jp' : 'pokemon', String(c.tcgPid)] : null;
+function phEmbSet(list, gid) {
+  const k = list + '/' + gid;
+  if (!PH_EMB.sets[k]) PH_EMB.sets[k] = (async () => {
+    for (const u of phEmbUrls(k + '.bin')) {
+      try {
+        const r = await fetch(u); if (!r.ok) continue;
+        const buf = await r.arrayBuffer(), dv = new DataView(buf), m = new Map(), rec = 520;
+        for (let o = 0; o + rec <= buf.byteLength; o += rec) {
+          const id = String(dv.getUint32(o, true)), sc = dv.getFloat32(o + 4, true); if (!sc) continue;
+          const v = new Float32Array(512); for (let d = 0; d < 512; d++) v[d] = dv.getInt8(o + 8 + d) * sc;
+          m.set(id, phNorm(v));
+        }
+        return m;
+      } catch (e) {}
+    }
+    return null;
+  })();
+  return PH_EMB.sets[k];
+}
+// A card's fingerprint: from the ready-made files when it's there, otherwise looked at on the phone
+async function phCardEmb(c, ready) {
+  const li = phEmbList(c), idx = ready && await phEmbIndex();
+  if (li && idx && idx.lists && idx.lists[li[0]]) {
+    const L = await loadTcgList(li[0]).catch(() => null), e = L && L.p && L.p[li[1]];
+    if (e && idx.lists[li[0]][e[3]]) { const m = await phEmbSet(li[0], e[3]); const v = m && m.get(li[1]); if (v) return { v, ready: true }; }
+  }
+  return null;
 }
 // Text directions for "an empty clear plastic binder pocket" vs "a pokemon trading card" (made once with the same model)
 const PH_EMPTY_TXT = phNorm([0.0172,0.0515,0.0393,0.0056,0.0051,-0.0178,-0.0221,-0.0584,0.0089,-0.0104,-0.0539,-0.0347,0.0422,-0.0504,0.0389,-0.0055,0.0274,0.0339,-0.0411,-0.0056,0.0287,-0.0009,-0.0135,0.0146,0.0172,-0.0295,0.0143,-0.0017,0.0268,0.0108,0.0105,0.0115,-0.02,0.0025,-0.0123,-0.0267,-0.0019,0.0128,-0.0439,-0.001,0.0016,0.0634,-0.0161,0.0362,0.0179,-0.0676,-0.0598,-0.0049,-0.0393,0.0219,0.0426,-0.0078,0.0064,0.0045,0.0087,0.0014,-0.0323,-0.0205,0.0472,0.0153,0.0401,-0.0109,0.0112,0.0161,-0.0237,0.0025,-0.0392,-0.0117,0.0182,0.0114,-0.0118,0.017,-0.0177,0.0008,-0.0204,0.0443,-0.0465,-0.0116,-0.0022,-0.0406,-0.0519,0.0576,0.011,-0.0055,0.0357,-0.0301,0.0482,-0.0197,-0.0021,-0.0036,0.0322,-0.0581,0.0058,0.061,-0.007,0.0134,-0.1575,0.001,0.0302,-0.0054,0.0249,-0.0215,-0.0065,-0.0432,0.0156,-0.0116,0.0159,-0.0019,-0.003,0.0469,-0.03,-0.0376,-0.0038,0.0109,0.0422,0.0113,-0.0443,-0.0172,-0.0142,0.003,0.0634,0.0129,0.0249,0.0254,0.0221,0.0346,-0.0015,-0.0293,0.036,0.0369,-0.001,0.0378,0.0405,0.0193,0.0373,-0.0041,-0.071,0.0182,0.0009,0.0106,-0.0018,-0.0632,0.0221,-0.0333,0.0579,-0.0262,-0.019,0.0343,0.0337,0.051,-0.017,0.0145,0.0316,-0.0688,0.0002,0.0139,0.0536,-0.0182,-0.0137,0.0058,0.006,-0.0508,-0.0078,-0.0557,-0.0234,0.0105,-0.043,-0.0352,0.0069,-0.0285,0.0366,0.0014,-0.0517,0.0628,0,-0.0211,0.0156,0.0236,0.0338,0.0036,-0.0386,-0.04,-0.0125,0.0705,0.0188,0.0245,0.0336,0.0317,0.0137,0.0407,0.0053,0.0233,0.0041,-0.0351,0.0142,0.047,0.0055,0.0262,0.0079,0.0145,0.0554,-0.0033,0.0085,0.008,-0.0126,0.0024,0.0281,-0.0224,-0.0147,-0.0144,-0.0176,-0.0196,-0.0014,0.034,0.0343,0.0458,0.0135,-0.0368,-0.0304,-0.0478,0.0457,-0.0319,0.0247,-0.0188,0.0307,0.0307,0.0019,0.049,-0.0006,0.0659,0.0163,0.002,0.0046,0.0316,0.0004,0.0242,0.004,-0.023,0.0712,-0.0355,0.0642,-0.0475,-0.0248,-0.0219,0.0373,-0.0064,-0.0546,0.0125,-0.0471,-0.0021,0.0391,-0.0038,-0.0467,0.0484,0.0438,-0.0394,-0.0461,0.0461,0.0273,0.035,-0.0253,0.0233,-0.0041,-0.0326,0.0131,-0.0022,0.0114,0.0263,0.0163,0.0449,-0.0103,0.0157,0.0103,-0.0059,0.0153,0.0154,-0.0294,0.062,-0.0597,-0.0015,0.0022,0.0024,0.0208,0.0427,-0.0152,0.0028,-0.0056,0.0772,-0.0647,-0.0638,-0.01,-0.0125,0.0946,0.0154,0.0205,-0.0163,-0.0026,0.0174,-0.0295,-0.0212,-0.0204,-0.0176,0.0016,-0.0057,0.029,-0.0067,-0.0217,-0.009,0.0208,0.0161,-0.0282,0.024,-0.0259,-0.0465,-0.0188,0.03,0.0231,-0.0287,0.0216,-0.0032,-0.0024,0.0304,0.0582,0.0013,-0.0365,0.0111,-0.0221,0.0129,0.0551,0.0295,0.0163,0.0225,-0.0039,-0.0084,0.0016,-0.0403,-0.0346,-0.0119,-0.0011,-0.0045,0.0146,-0.0351,-0.0134,-0.0614,-0.0448,0.0286,0.0133,0.0447,0.0047,0.0027,0.0263,-0.0193,0.0322,0.0175,-0.0128,-0.0182,-0.0178,-0.0008,-0.0144,0.0219,0.0121,0.0397,0.6952,0.071,0.0101,-0.0171,-0.0374,-0.0089,-0.0434,0.0139,-0.0365,0.0179,0.0196,0.015,-0.0383,0.0016,-0.0011,-0.036,0.0139,-0.041,-0.0199,-0.0265,-0.0253,-0.0454,-0.0476,-0.0002,-0.0576,-0.0215,-0.0192,0.0425,-0.0343,0.0028,-0.0075,-0.0074,-0.0285,0.0227,0.0104,-0.0234,0.0509,0.0169,-0.0164,-0.01,0.0127,0.011,0.0038,-0.0246,-0.0333,0.0298,0.0118,0.0306,-0.0236,0.0364,0.0012,0.0274,0.0255,0.0314,0.0091,0.0166,0.0331,-0.0182,0.0013,-0.0244,0.0084,-0.0281,0.0527,0.0053,0.0026,-0.0077,0.0201,0.0509,0.0039,0.037,0.0037,-0.0155,-0.0181,0.0201,0.011,-0.0364,0.01,-0.0241,-0.017,0.0012,0.1586,-0.0329,0.0326,0.0077,0.0714,0.0162,0.0042,0.0004,0.009,0.0116,-0.0273,-0.0332,-0.018,0.0021,-0.032,-0.0035,-0.0192,0.0566,0.0348,-0.0114,-0.0488,-0.007,-0.0228,-0.0401,-0.0487,0.0365,-0.0519,0.0472,-0.0138,-0.0126,-0.0464,-0.0459,0.0199,-0.0428,0.0119,-0.0245,-0.0262,-0.0173,-0.0881,0.1056,0.0057,-0.0175,0.0104,-0.0082,-0.0282,0.0021,-0.0027,-0.0031,0.0162,-0.0585,0.0236,0.0078,0.0158,-0.0261,0.0256,0.0041,0.0008,-0.0132,-0.0379,0.0317,-0.0559,0.0402,0.0489,0.0445,-0.0249,0.0223,0.0082,-0.0414,-0.0048,-0.0074]),
@@ -4934,7 +4989,8 @@ async function phCollectionCards() {
   const items = Object.entries((data && data.items) || {}).map(([id, it]) => ({ id, ...it })).filter(it => !isTotalRow(it.name));
   const seen = new Set(), out = [];
   for (const r of await pool(items, 8, async it => { const m = await resolveCollItem(it, game).catch(() => null); return m ? { card: m.card, collId: it.id } : null; })) {
-    if (!r || seen.has(r.card.tcgPid)) continue; seen.add(r.card.tcgPid); out.push(r);
+    const k = r && (r.card.tcgPid ? 'tcg' + r.card.tcgPid : r.card.ctId ? 'ct' + r.card.ctId : r.card.id || r.card.name + '|' + r.card.number);
+    if (!r || seen.has(k)) continue; seen.add(k); out.push(r);
   }
   return out;
 }
@@ -4944,16 +5000,36 @@ async function phMatch() {
   try {
     watchCollection(ownerOf(currentUser), S.game);
     if (!COLLECTIONS[collKey()]) await new Promise(r => setTimeout(r, 1200));
+    const t0 = performance.now();
     phMsg('Getting the picture matcher ready…', 2);
-    await phLoadModel((got, all) => phMsg(`Getting the picture matcher ready (first time only): ${(got / 1048576).toFixed(0)} of ${(all / 1048576).toFixed(0)} MB`, 2 + 38 * got / all));
-    phMsg('Finding your collection\'s cards…', 40);
+    let modelMsg = '';
+    const modelP = phLoadModel((got, all) => { modelMsg = `Getting the picture matcher ready (first time only): ${(got / 1048576).toFixed(0)} of ${(all / 1048576).toFixed(0)} MB`; phMsg(modelMsg, 2 + 48 * got / all); });
+    // meanwhile: your collection's cards and their ready-made fingerprints (small files, one per set)
     PH.cands = await phCollectionCards();
-    let done = 0;
-    PH.embs = await pool(PH.cands, 3, async x => { const e = await phEmbedUrl(x.card.image).catch(() => null); done++; phMsg(`Looking at your collection: ${done} of ${PH.cands.length}`, 42 + 40 * done / Math.max(1, PH.cands.length)); return e; });
+    let done = 0; const missing = [];
+    const ready = await pool(PH.cands, 6, async (x, j) => {
+      const r = await phCardEmb(x.card, true).catch(() => null); done++;
+      if (!modelMsg) phMsg(`Getting your collection\u2019s fingerprints: ${done} of ${PH.cands.length}`, 2 + 30 * done / Math.max(1, PH.cands.length));
+      if (!r) missing.push(j); return r ? r.v : null;
+    });
+    await modelP;
+    // cards with no ready-made fingerprint yet (brand-new ones) are looked at here, as before
+    let k = 0;
+    for (const j of missing) {
+      ready[j] = await phEmbedUrl(PH.cands[j].card.image).catch(() => null);
+      k++; phMsg(`Looking at ${missing.length} card${missing.length === 1 ? '' : 's'} not seen before: ${k} of ${missing.length}`, 50 + 30 * k / missing.length);
+    }
+    PH.embs = ready;
     const cells = phCutCells(); PH.cells = cells.map(cv => ({ cv, url: cv.toDataURL('image/jpeg', .8) }));
-    phMsg('Reading the pockets…', 85);
+    phMsg('Reading the pockets…', 82);
     const pe = [];
-    for (const [i, cv] of cells.entries()) { pe.push(await phEmbedViews(cv)); phMsg(`Reading the pockets: ${i + 1} of ${cells.length}`, 85 + 15 * (i + 1) / cells.length); }
+    for (let i = 0; i < cells.length; i += 4) {            // 4 pockets (8 looks) per pass of the AI
+      const group = cells.slice(i, i + 4), looks = await phEmbedMany(group.flatMap(cv => [cv, phTop(cv)]));
+      group.forEach((_, j) => { const full = looks[2 * j], top = looks[2 * j + 1]; pe.push({ full, card: phNorm(full.map((x, d) => x + top[d])) }); });
+      phMsg(`Reading the pockets: ${Math.min(cells.length, i + 4)} of ${cells.length}`, 82 + 18 * Math.min(cells.length, i + 4) / cells.length);
+    }
+    PH.timing = { secs: Math.round((performance.now() - t0) / 100) / 10, ready: PH.cands.length - missing.length, onPhone: missing.length, gpu: !!(phModel && phModel.vision && phModel.vision.__dev === 'webgpu') };
+    console.log('Photo page timing', PH.timing);
     PH.pick = pe.map((v, i) => {
       const e = v.card;
       const scored = PH.cands.map((x, j) => ({ ...x, score: PH.embs[j] ? phDot(e, PH.embs[j]) : -1 })).filter(x => x.score > -1).sort((a, b) => b.score - a.score);
@@ -4979,7 +5055,7 @@ function phRenderReview() {
       <span class="ph-badge">${p.empty ? '—' : p.sure ? '✓' : 'Check'}${!p.empty && !p.collId ? ' · new' : ''}</span></button>`).join('');
   g.querySelectorAll('.ph-cell').forEach(b => b.onclick = () => phOpenCell(+b.dataset.i));
   const n = PH.pick.filter(p => !p.empty).length, check = PH.pick.filter(p => !p.empty && !p.sure).length, fresh = PH.pick.filter(p => !p.empty && !p.collId).length;
-  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}`;
+  $('ph-review-t').innerHTML = `${n} card${n === 1 ? '' : 's'} found${check ? ` · <b>${check} to check</b> (tap them)` : ''}${fresh ? ` · ${fresh} new to your collection` : ''}${PH.timing ? `<br><small style="color:#71717a">Matched in ${PH.timing.secs} s</small>` : ''}`;
   $('ph-add').textContent = n ? `Add as a new page (${n} card${n === 1 ? '' : 's'})` : 'Nothing to add';
   $('ph-add').disabled = !n;
 }
