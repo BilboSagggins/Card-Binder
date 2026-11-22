@@ -1,13 +1,18 @@
 ok
 
-signed in anonymously: True
-helper URLs: ['https://apis.google.com/js/api.js?onload=__iframefcb343247', 'https://apis.google.com/_/scs/abc-static/_/js/k=gapi.lb.en.smUXTMp7CeY.O/m=gapi_iframes/rt']
-shelf binders: ['kyle', 'kyle--2', 'kyle--3']
-binder game: pokemon | collection items: 0
-Prices 1st time: 1.8s, 7 data requests, 0.00 MB
-saved copies before reload: {'news/news.json': '1795370108556', 'prices/onepiece.json': '1795370109343', 'prices/pokemon-jp-sealed.json': '1795370109343', 'prices/onepiece-sealed.json': '1795370109343', 'prices/pokemon-sealed.json': '1795370109343', 'prices/pokemon-zh.json': '1795370109342', 'prices/pokemon.json': '1795370109341', 'prices/pokemon-jp.json': '1795370109341'}
-page controlled by offline helper: True
-Prices after reload: 1.6s, 7 data requests, from offline helper: 7, internet bytes: 0.00 MB
-re-downloaded after reload: none
+cards (71829, 512)
+variance kept: 32 0.60  64 0.71  96 0.78  128 0.83
+pocket~0.85: 64 dims, top 20: right card found 99.3%  (file 4.9 MB)
+pocket~0.85: 64 dims, top 50: right card found 99.7%  (file 4.9 MB)
+pocket~0.85: 96 dims, top 20: right card found 99.9%  (file 7.1 MB)
+pocket~0.85: 96 dims, top 50: right card found 100.0%  (file 7.1 MB)
+pocket~0.85: 128 dims, top 20: right card found 100.0%  (file 9.2 MB)
+pocket~0.85: 128 dims, top 50: right card found 100.0%  (file 9.2 MB)
+pocket~0.8: 64 dims, top 20: right card found 99.1%  (file 4.9 MB)
+pocket~0.8: 64 dims, top 50: right card found 99.5%  (file 4.9 MB)
+pocket~0.8: 96 dims, top 20: right card found 99.9%  (file 7.1 MB)
+pocket~0.8: 96 dims, top 50: right card found 100.0%  (file 7.1 MB)
+pocket~0.8: 128 dims, top 20: right card found 100.0%  (file 9.2 MB)
+pocket~0.8: 128 dims, top 50: right card found 100.0%  (file 9.2 MB)
 
 
