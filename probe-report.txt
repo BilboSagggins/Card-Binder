@@ -1,23 +1,9 @@
-npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
-
-pool 541
-pool done in 233 s; 513 with pictures
-server vs phone Zapdos 0.9840
-server vs phone Zapdos 0.9793
-server vs phone Moltres (12) 0.9753
-server vs phone Zapdos (15) 0.9828
-server vs phone Articuno (17) 0.9790
-pocket 1: Moltres & Zapdos & Articuno GX [Hidden Fates 44/68] 0.825 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.821 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 102/173] 0.809
-pocket 2: Moltres & Zapdos & Articuno GX [Hidden Fates 44/68] 0.849 | Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates 66/68] 0.842 | Lugia ex [Trading Card Game Classic 017/034] 0.823
-pocket 3: Moltres & Zapdos & Articuno GX (Secret) [Hidden Fates 69/68] 0.779 | Moltres & Zapdos & Articuno GX [SM10b: Sky Legend 066/054] 0.747 | Lugia EX (Team Plasma) [Black and White Promos BW83] 0.741
-pocket 4: Moltres & Zapdos & Articuno GX [SM10b: Sky Legend 060/054] 0.829 | Lugia [SM-P: Sun & Moon Promos 237/SM-P] 0.818 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.816
-pocket 5: Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars 226/173] 0.858 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.848 | Ho-oh ex [Pokemon TCG Classic: Charizard 007/032] 0.828
-pocket 6: Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.683 | Ho-Oh Legend (Top) [HeartGold SoulSilver 111/123] 0.679 | Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.672
-pocket 7: Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.663 | Ho-Oh Legend (Top) [HeartGold SoulSilver 111/123] 0.659 | Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.637
-pocket 8: Ho-Oh BREAK - XY154 (XY Black Star Promo) [Jumbo Cards XY154] 0.619 | Lugia Legend (Top) [HeartGold SoulSilver 113/123] 0.601 | Lugia Legend (Bottom) [HeartGold SoulSilver 114/123] 0.592
-pocket 9: Articuno [SV09: Journey Together 161/159] 0.791 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products 032/159] 0.756 | Articuno [SV09: Journey Together 032/159] 0.737
-pocket 10: Zapdos ex [SV: Scarlet & Violet 151 202/165] 0.853 | Zapdos ex [SV: Scarlet & Violet 151 145/165] 0.834 | Zapdos ex [SV: Scarlet & Violet Promo Cards 049] 0.834
-pocket 11: Team Rocket's Moltres ex [SV10: Destined Rivals 229/182] 0.838 | Galarian Moltres V [SI: Start Deck 100 422/414] 0.835 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards 014/094] 0.830
-pocket 12: Galarian Moltres V [SI: Start Deck 100 422/414] 0.800 | Ho-Oh EX (Full Art) [XY - BREAKpoint 121/122] 0.794 | Ho-Oh [HGSS Promos HGSS01] 0.785
+610513 32/400 0.9071  16/400 0.9071  32/1000 1.0000
+90143 32/400 0.9749  16/400 0.9749  32/1000 1.0000
+42382 32/400 0.9881  16/400 0.9880  32/1000 1.0000
+527035 32/400 0.9723  16/400 0.9723  32/1000 1.0000
+557286 32/400 0.9254  16/400 0.9254  32/1000 1.0000
+454536 32/400 0.9576  16/400 0.9577  32/1000 1.0000
+average vs phone 32/400 0.9542  16/400 0.9542  32/1000 1.0000
 
 
