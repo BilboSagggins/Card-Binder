@@ -11,7 +11,7 @@ import path from 'path';
 
 env.allowLocalModels = false;
 const MODEL = 'Xenova/clip-vit-base-patch16', DIMS = 512;
-const LISTS = ['onepiece', 'pokemon', 'pokemon-jp'];            // One Piece first (small), then English, then Japanese
+const LISTS = ['onepiece', 'pokemon', 'pokemon-zh', 'pokemon-jp'];   // One Piece first (small), then English, Chinese, Japanese
 const BUDGET_MS = (+process.env.BUDGET_MIN || 300) * 60000, START = Date.now();
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUT = path.join(ROOT, 'emb');
@@ -25,10 +25,14 @@ const vision = await CLIPVisionModelWithProjection.from_pretrained(MODEL, { dtyp
 console.log('model ready');
 
 const norm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return Float32Array.from(v, x => x / s); };
-async function load(pid) {
+// TCGplayer's picture, or CardTrader's for the Chinese list (its picture path is in the list)
+const CT_IMG = 'https://www.cardtrader.com/uploads/blueprints/image/';
+async function load(pid, L) {
+  const e = L.p[pid], url = L.source === 'cardtrader' ? (e[5] ? CT_IMG + e[5].replace(/([^/]+)$/, 'show_$1') : null) : `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_400x400.jpg`;
+  if (!url) return null;
   for (let i = 0; i < 3; i++) {
     try {
-      let img = await RawImage.read(`https://tcgplayer-cdn.tcgplayer.com/product/${pid}_in_400x400.jpg`);
+      let img = await RawImage.read(url);
       const k = Math.min(1, 448 / Math.max(img.width, img.height));
       if (k < 1) img = await img.resize(Math.round(img.width * k), Math.round(img.height * k));
       return img;
@@ -83,10 +87,11 @@ for (const list of LISTS) {
     if (!todo.length) { index.lists[list][gid] = have.size; continue; }
     if (Date.now() - START > BUDGET_MS) { outOfTime = true; break; }
     const fresh = [];
-    let next = Promise.all(todo.slice(0, 8).map(load));
+    const get = p => load(p, L);
+    let next = Promise.all(todo.slice(0, 8).map(get));
     for (let i = 0; i < todo.length; i += 8) {
       const imgs = await next;
-      next = Promise.all(todo.slice(i + 8, i + 16).map(load));          // fetch the next pictures while the AI works
+      next = Promise.all(todo.slice(i + 8, i + 16).map(get));          // fetch the next pictures while the AI works
       const vecs = await embedBatch(imgs);
       todo.slice(i, i + 8).forEach((p, j) => { if (vecs[j]) fresh.push([p, vecs[j]]); else noPic++; });   // no picture yet: tried again next run
     }
