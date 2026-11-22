@@ -1,24 +1,18 @@
-npm warn Unknown cli config "--onnxruntime-node-install-cuda". This will stop working in the next major version of npm.
-npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-
-added 54 packages in 6s
-npm warn install-scripts 3 packages have install scripts not yet covered by allowScripts:
-npm warn install-scripts   onnxruntime-node@1.21.0 (postinstall: node ./script/install)
-npm warn install-scripts   sharp@0.34.5 (install: node install/check.js || npm run build)
-npm warn install-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
 npm warn install-scripts
 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
-npm 0
- 
-DTYPE fp32
-model ready 10.249 s
-200w per card: download 113 ms, AI 489 ms (2 views); total 12.0 s
-in_400x400 per card: download 106 ms, AI 479 ms (2 views); total 11.7 s
+
+model ready
+onepiece The Dominance of God Release Event Cards: +75 (0.6 min, 75 this run)
+onepiece The Dominance of God: +163 (1.5 min, 238 this run)
+onepiece Extra Booster: One Piece Heroines Edition Vol. 2: +100 (2.1 min, 338 this run)
+Out of time after 338 cards; the next run carries on.
 
 
-DTYPE fp16
-model ready 4.472 s
-200w per card: download 35 ms, AI 599 ms (2 views); total 12.7 s
-in_400x400 per card: download 32 ms, AI 590 ms (2 views); total 12.4 s
+index {"model":"Xenova/clip-vit-base-patch16","dims":512,"lists":{"onepiece":{"24820":100,"24833":163,"24834":75}},"complete":false,"updated":"2026-11-22T05:18:05.824Z"}
+cards 338 no picture 77 files 3
+Nami (OP01-016) (SP) | Nami (055) 0.831 ; Nami (061) 0.810 ; Domino 0.803 | norm 0.999
+Nico Robin (016) (SP) | Nico Robin (016) (Super Rare Alternate Art) 0.820 ; Nico Robin (010) (Super Leader Alternate Art) 0.811 ; Nojiko (Alternate Art) 0.793 | norm 0.999
+Nico Robin (010) | Nico Robin (010) (Heroine Leader) 0.897 ; Nico Robin (016) 0.876 ; Nico Robin 0.858 | norm 1.000
+Nico Olvia | Kalifa 0.880 ; Nico Robin (016) 0.858 ; Tsuru 0.857 | norm 1.000
 
 
