@@ -1,3 +1,4 @@
 import subprocess
-print(subprocess.run('pip install -q playwright 2>&1 | tail -1; python3 -m playwright install --with-deps chromium >/dev/null 2>&1; echo ok', shell=True, capture_output=True, text=True).stdout)
-r = subprocess.run(['python3', 'scripts/photo_e2e.py'], capture_output=True, text=True); print(r.stdout[-6000:]); print(r.stderr[-2500:])
+print(subprocess.run('git fetch -q origin main && git checkout origin/main -- emb && echo \'{"name":"emb","private":true}\' > package.json && npm i --no-audit --no-fund --onnxruntime-node-install-cuda=skip @huggingface/transformers@3.5.1 2>&1 | tail -1', shell=True, capture_output=True, text=True).stdout[-200:])
+r = subprocess.run(['node', 'scripts/hub.mjs'], capture_output=True, text=True); print(r.stdout[-9000:]); print(r.stderr[-1500:])
+subprocess.run('git rm -rq --cached emb; rm -rf emb', shell=True)
