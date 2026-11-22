@@ -1,36 +1,13 @@
-npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+ll-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 
 cards 71830
 list means: |zh-en| 0.362  |jp-en| 0.300
-== raw: right Pokémon on top in 4 of 9
-  1: no  Garchomp & Giratina GX [CSM2b: Shining Synergy - Supreme zh] 0.855 | Registeel [CSVH4eC: Happy Pack zh] 0.850 | Chandelure [CSM2c: Shining Synergy - Summon zh] 0.849
-  2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] 0.881 | Moltres & Zapdos & Articuno GX [Hidden Fates] 0.871 | Miraidon ex [SV: Scarlet & Violet Promo Cards] 0.861
-  3: no  Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck jp] 0.792 | Raikou & Suicune Legend [L2: Revival Legends jp] 0.778 | Gyarados VMAX [CS4b: Nine Colors Gathering - Origin zh] 0.771
-  4: no  Yveltal EX [XY-By: Collection Y jp] 0.876 | Necrozma V [CS3b: Primordial Martial Arts - Torrent zh] 0.876 | Eternatus V [CS2b: Vivid Portrayals - Indigo zh] 0.872
-  5: no  Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex jp] 0.897 | Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars jp] 0.894 | Ultra Necrozma GX [CSM1a: Storming Emergence - Radiant zh] 0.894
-  9: OK  Articuno [SV09: Journey Together] 0.849 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] 0.805 | Articuno [SV09: Journey Together] 0.795
-  10: OK  Galarian Zapdos V (Full Art) [SWSH06: Chilling Reign] 0.860 | Falkner's Skarmory [Pokemon VS jp] 0.855 | Zapdos ex [SV2a: Pokemon Card 151 jp] 0.853
-  11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals] 0.878 | Regieleki [CSVE1: Battle Party Dream Together zh] 0.862 | Moltres - 014/094 (Cosmos Holo) [Prize Pack Series Cards] 0.861
-  12: no  Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex jp] 0.832 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck jp] 0.819 | Reshiram [CP2: Legendary Shine Collection jp] 0.819
-== globalCentered: right Pokémon on top in 5 of 9
-  1: no  Miraidon ex [SV: Scarlet & Violet Promo Cards] 0.436 | Greninja ex [Scarlet & Violet Simplified Chinese Promos zh] 0.434 | Greninja ex (GameStop Metal Card) [Miscellaneous Cards & Products] 0.432
-  2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] 0.523 | Moltres & Zapdos & Articuno GX [Hidden Fates] 0.481 | Miraidon ex [SV: Scarlet & Violet Promo Cards] 0.470
-  3: no  Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck jp] 0.415 | VS Seeker - 2017 (Diego Cassiraga) [World Championship Decks] 0.388 | Legendary Pyroduct - 094/103 (Left) [ME06: Delta Reign] 0.377
-  4: no  Cornerstone Mask Ogerpon ex [CSV8: Brilliant Fantasy zh] 0.491 | Necrozma V [CS3b: Primordial Martial Arts - Torrent zh] 0.484 | Yveltal EX [XY-By: Collection Y jp] 0.447
-  5: OK  Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars jp] 0.608 | Moltres & Zapdos & Articuno GX [CSM2c: Shining Synergy - Summon zh] 0.595 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex jp] 0.586
-  9: OK  Articuno [SV09: Journey Together] 0.651 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] 0.528 | Articuno [SV09: Journey Together] 0.505
-  10: OK  Zapdos ex [SV: Scarlet & Violet Promo Cards] 0.469 | Zapdos ex [SV: Scarlet & Violet 151] 0.461 | Zapdos ex [SV: Scarlet & Violet 151] 0.444
-  11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals] 0.593 | Team Rocket's Moltres ex - 229/182 (Destined Rivals Stamp) [Miscellaneous Cards & Products] 0.528 | Team Rocket's Moltres ex [CSV10C: Chasing Glory zh] 0.505
-  12: no  Reshiram [EX Battle Boost jp] 0.451 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex jp] 0.447 | Ho-oh - 11/12 (Box Topper) [Jumbo Cards] 0.418
-== listCentered: right Pokémon on top in 5 of 9
-  1: no  Garchomp & Giratina GX [SM10a: GG End jp] 0.458 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex jp] 0.457 | Yveltal [CP3: PokeKyun Collection jp] 0.445
-  2: OK  Moltres & Zapdos & Articuno GX (Full Art) [Hidden Fates] 0.495 | Greninja & Zoroark GX [SM12a: TAG TEAM GX: Tag All Stars jp] 0.456 | Reshiram EX [EX Battle Boost jp] 0.455
-  3: no  Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck jp] 0.487 | Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex jp] 0.421 | Holon Energy WP [PCG-P Promotional cards jp] 0.402
-  4: no  Cornerstone Mask Ogerpon ex [CSV8: Brilliant Fantasy zh] 0.513 | Dialga EX [XYB: Dialga-EX + Aegislash-EX Hyper Metal Chain Deck jp] 0.481 | Yveltal EX [XY-By: Collection Y jp] 0.480
-  5: OK  Moltres & Zapdos & Articuno GX [SM12a: TAG TEAM GX: Tag All Stars jp] 0.606 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex jp] 0.595 | Dialga EX [M Master Deck Build Box Speed Style jp] 0.554
-  9: OK  Articuno [SV09: Journey Together] 0.609 | Articuno - 032/159 (Holiday Calendar) [Miscellaneous Cards & Products] 0.515 | Articuno [SV09: Journey Together] 0.487
-  10: OK  Zapdos ex [SV: Scarlet & Violet Promo Cards] 0.461 | Zapdos ex [SV2a: Pokemon Card 151 jp] 0.440 | Latios [SV7a: Paradise Dragona jp] 0.436
-  11: OK  Team Rocket's Moltres ex [SV10: Destined Rivals] 0.554 | Rare Candy [BW9: Megalo Cannon jp] 0.503 | Team Rocket's Moltres ex [CSV10C: Chasing Glory zh] 0.501
-  12: no  Mega Dragonite ex [M2a: High Class Pack: MEGA Dream ex jp] 0.498 | Reshiram [EX Battle Boost jp] 0.498 | Mega Hawlucha ex [M2a: High Class Pack: MEGA Dream ex jp] 0.423
 
+
+
+Traceback (most recent call last):
+  File "/home/runner/work/Card-Binder/Card-Binder/scripts/hub2.py", line 11, in <module>
+    if sc[i] > 0: X.append(v[i]); e = L['p'][str(ids[i])]; meta.append((e[1], L['groups'].get(str(e[3]), ''), lst))
+                                      ~~~~~~^^^^^^^^^^^^^
+KeyError: '733753'
 
